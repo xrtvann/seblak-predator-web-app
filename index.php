@@ -66,7 +66,7 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
   <nav class="pc-sidebar">
     <div class="navbar-wrapper">
       <div class="m-header">
-        <a href="#" class="b-brand text-black d-flex">
+        <a href="/" class="b-brand text-black d-flex">
           <!-- ========   Change your logo from here   ============ -->
           <div class="icon">
             <div
@@ -204,7 +204,7 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
                   <div class="list-group-item list-group-item-action">
                     <div class="d-flex">
                       <div class="flex-shrink-0">
-                        <img src="../assets/images/user/avatar-3.jpg" alt="user-image" class="user-avtar" />
+                        <img src="dist/assets/images/user/avatar-3.jpg" alt="user-image" class="user-avtar" />
                       </div>
                       <div class="flex-grow-1 ms-1">
                         <span class="float-end text-muted">10 min ago</span>
@@ -225,7 +225,7 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
           <li class="dropdown pc-h-item header-user-profile">
             <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#"
               role="button" aria-haspopup="false" aria-expanded="false">
-              <img src="../assets/images/user/avatar-2.jpg" alt="user-image" class="user-avtar" />
+              <img src="dist/assets/images/user/avatar-2.jpg" alt="user-image" class="user-avtar" />
               <span>
                 <i class="ti ti-settings"></i>
               </span>

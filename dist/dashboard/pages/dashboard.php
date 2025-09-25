@@ -62,7 +62,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="avtar avtar-lg">
-                        <i class="text-white ti ti-currency-rupiah"></i>
+                        <i class="text-white ti ti-wallet"></i>
                     </div>
                     <div class="ms-2">
                         <h4 class="text-white mb-1">2.5M</h4>
@@ -98,9 +98,11 @@
                 <h5>Selamat Datang di Seblak Predator!</h5>
             </div>
             <div class="card-body">
-                <p>Sistem manajemen untuk warung seblak Anda. Kelola menu, transaksi, dan laporan dengan mudah.</p>
                 <div class="row">
                     <div class="col-md-6">
+                        <p>Sistem manajemen untuk warung seblak Anda. Kelola menu, transaksi, dan laporan dengan mudah.
+                        </p>
+
                         <h6>Fitur Utama:</h6>
                         <ul class="list-unstyled">
                             <li><i class="ti ti-check text-success me-2"></i>Manajemen Menu & Kategori</li>

@@ -1,24 +1,26 @@
-<div class="row">
-    <!-- [ breadcrumb ] start -->
-    <div class="col-12">
-        <div class="page-header">
-            <div class="page-block">
-                <div class="row align-items-center">
-                    <div class="col-md-12">
-                        <div class="page-header-title">
-                            <h5 class="m-b-10">Kategori</h5>
-                        </div>
-                        <ul class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="index.php?page=dashboard">Home</a></li>
-                            <li class="breadcrumb-item" aria-current="page">Kategori</li>
-                        </ul>
-                    </div>
+<!-- [ breadcrumb ] start -->
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Kategori</h5>
                 </div>
+            </div>
+            <div class="col-auto">
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.php?page=dashboard">Home</a></li>
+                    <li class="breadcrumb-item"><a href="index.php?page=kategori">Produk</a></li>
+                    <li class="breadcrumb-item" aria-current="page">Kategori</li>
+                </ul>
             </div>
         </div>
     </div>
-    <!-- [ breadcrumb ] end -->
+</div>
+<!-- [ breadcrumb ] end -->
 
+<!-- [ Main Content ] start -->
+<div class="row">
     <!-- [ Statistics Cards ] start -->
     <div class="col-md-6 col-xxl-3">
         <div class="card">
@@ -143,3 +145,4 @@
     </div>
     <!-- [ Main Content ] end -->
 </div>
+<!-- [ Main Content ] end -->

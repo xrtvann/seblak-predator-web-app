@@ -56,6 +56,14 @@ body {
   background: #542ca7;
   color: #542ca7;
 }
+[data-pc-preset=preset-1] .bg-success-dark {
+  background: #00c853;
+  color: #ffffff;
+}
+[data-pc-preset=preset-1] .bg-warning-dark {
+  background: #ff9800;
+  color: #ffffff;
+}
 [data-pc-preset=preset-1] .pc-sidebar .pc-item.active > .pc-link, [data-pc-preset=preset-1] .pc-sidebar .pc-item:focus > .pc-link, [data-pc-preset=preset-1] .pc-sidebar .pc-item:hover > .pc-link {
   color: #e34122;
 }
@@ -499,6 +507,14 @@ body {
 [data-pc-preset=preset-2] .bg-secondary-dark {
   background: #008375;
   color: #008375;
+}
+[data-pc-preset=preset-2] .bg-success-dark {
+  background: #00c853;
+  color: #ffffff;
+}
+[data-pc-preset=preset-2] .bg-warning-dark {
+  background: #ff9800;
+  color: #ffffff;
 }
 [data-pc-preset=preset-2] .pc-sidebar .pc-item.active > .pc-link, [data-pc-preset=preset-2] .pc-sidebar .pc-item:focus > .pc-link, [data-pc-preset=preset-2] .pc-sidebar .pc-item:hover > .pc-link {
   color: #009688;
@@ -944,6 +960,14 @@ body {
   background: #e73267;
   color: #e73267;
 }
+[data-pc-preset=preset-3] .bg-success-dark {
+  background: #00c853;
+  color: #ffffff;
+}
+[data-pc-preset=preset-3] .bg-warning-dark {
+  background: #ff9800;
+  color: #ffffff;
+}
 [data-pc-preset=preset-3] .pc-sidebar .pc-item.active > .pc-link, [data-pc-preset=preset-3] .pc-sidebar .pc-item:focus > .pc-link, [data-pc-preset=preset-3] .pc-sidebar .pc-item:hover > .pc-link {
   color: #ec407a;
 }
@@ -1387,6 +1411,14 @@ body {
 [data-pc-preset=preset-4] .bg-secondary-dark {
   background: #ba6b1a;
   color: #ba6b1a;
+}
+[data-pc-preset=preset-4] .bg-success-dark {
+  background: #00c853;
+  color: #ffffff;
+}
+[data-pc-preset=preset-4] .bg-warning-dark {
+  background: #ff9800;
+  color: #ffffff;
 }
 [data-pc-preset=preset-4] .pc-sidebar .pc-item.active > .pc-link, [data-pc-preset=preset-4] .pc-sidebar .pc-item:focus > .pc-link, [data-pc-preset=preset-4] .pc-sidebar .pc-item:hover > .pc-link {
   color: #c77e23;
@@ -1832,6 +1864,14 @@ body {
   background: #31a09b;
   color: #31a09b;
 }
+[data-pc-preset=preset-5] .bg-success-dark {
+  background: #00c853;
+  color: #ffffff;
+}
+[data-pc-preset=preset-5] .bg-warning-dark {
+  background: #ff9800;
+  color: #ffffff;
+}
 [data-pc-preset=preset-5] .pc-sidebar .pc-item.active > .pc-link, [data-pc-preset=preset-5] .pc-sidebar .pc-item:focus > .pc-link, [data-pc-preset=preset-5] .pc-sidebar .pc-item:hover > .pc-link {
   color: #3fb0ac;
 }
@@ -2276,6 +2316,14 @@ body {
   background: #21937a;
   color: #21937a;
 }
+[data-pc-preset=preset-6] .bg-success-dark {
+  background: #00c853;
+  color: #ffffff;
+}
+[data-pc-preset=preset-6] .bg-warning-dark {
+  background: #ff9800;
+  color: #ffffff;
+}
 [data-pc-preset=preset-6] .pc-sidebar .pc-item.active > .pc-link, [data-pc-preset=preset-6] .pc-sidebar .pc-item:focus > .pc-link, [data-pc-preset=preset-6] .pc-sidebar .pc-item:hover > .pc-link {
   color: #2ca58d;
 }
@@ -2719,6 +2767,14 @@ body {
 [data-pc-preset=preset-7] .bg-secondary-dark {
   background: #3140a5;
   color: #3140a5;
+}
+[data-pc-preset=preset-7] .bg-success-dark {
+  background: #00c853;
+  color: #ffffff;
+}
+[data-pc-preset=preset-7] .bg-warning-dark {
+  background: #ff9800;
+  color: #ffffff;
 }
 [data-pc-preset=preset-7] .pc-sidebar .pc-item.active > .pc-link, [data-pc-preset=preset-7] .pc-sidebar .pc-item:focus > .pc-link, [data-pc-preset=preset-7] .pc-sidebar .pc-item:hover > .pc-link {
   color: #3f51b5;
