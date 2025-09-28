@@ -66,12 +66,12 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
   <nav class="pc-sidebar">
     <div class="navbar-wrapper">
       <div class="m-header">
-        <a href="/" class="b-brand text-black d-flex">
+        <a href="/" class="b-brand text-black d-flex align-items-md-center">
           <!-- ========   Change your logo from here   ============ -->
           <div class="icon">
             <div
-              class="bg-red-500 rounded-lg flex align-items-center justify-content-center flex-shrink-0 px-3 py-3 rounded">
-              <i class="fas fa-pepper-hot text-white text-2xl" aria-hidden="true"></i>
+              class="bg-red-500 rounded-lg flex align-items-center justify-content-center flex-shrink-0 px-2 py-2 rounded">
+              <i class="fas fa-pepper-hot text-white text-xl" aria-hidden="true"></i>
             </div>
           </div>
 
