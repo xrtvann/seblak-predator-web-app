@@ -15,23 +15,23 @@
   <meta name="author" content="codedthemes" />
 
   <!-- [Favicon] icon -->
-  <link rel="icon" href="../assets/images/favicon.svg" type="image/x-icon" />
+  <link rel="icon" href="../../dist/assets/images/favicon.svg" type="image/x-icon" />
   <!-- [Google Font] Family -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
     id="main-font-link" />
   <!-- [phosphor Icons] https://phosphoricons.com/ -->
-  <link rel="stylesheet" href="../assets/fonts/phosphor/duotone/style.css" />
+  <link rel="stylesheet" href="../../dist/assets/fonts/phosphor/duotone/style.css" />
   <!-- [Tabler Icons] https://tablericons.com -->
-  <link rel="stylesheet" href="../assets/fonts/tabler-icons.min.css" />
+  <link rel="stylesheet" href="../../dist/assets/fonts/tabler-icons.min.css" />
   <!-- [Feather Icons] https://feathericons.com -->
-  <link rel="stylesheet" href="../assets/fonts/feather.css" />
+  <link rel="stylesheet" href="../../dist/assets/fonts/feather.css" />
   <!-- [Font Awesome Icons] https://fontawesome.com/icons -->
-  <link rel="stylesheet" href="../assets/fonts/fontawesome.css" />
+  <link rel="stylesheet" href="../../dist/assets/fonts/fontawesome.css" />
   <!-- [Material Icons] https://fonts.google.com/icons -->
-  <link rel="stylesheet" href="../assets/fonts/material.css" />
+  <link rel="stylesheet" href="../../dist/assets/fonts/material.css" />
   <!-- [Template CSS Files] -->
-  <link rel="stylesheet" href="../assets/css/style.css" id="main-style-link" />
-  <link rel="stylesheet" href="../assets/css/style-preset.css" />
+  <link rel="stylesheet" href="../../dist/assets/css/style.css" id="main-style-link" />
+  <link rel="stylesheet" href="../../dist/assets/css/style-preset.css" />
 
 </head>
 <!-- [Head] end -->
@@ -52,7 +52,7 @@
         <div class="card mt-5">
           <div class="card-body">
             <a href="#" class="d-flex justify-content-center mt-3">
-              <img src="../assets/images/logo-150.png" alt="image" class="img-fluid" />
+              <img src="../../dist/assets/images/logo-150.png" alt="image" class="img-fluid" />
             </a>
             <div class="row">
               <div class="d-flex justify-content-center">
@@ -90,11 +90,11 @@
               <span>or</span>
             </div>
             <button type="button" class="btn mt-2 bg-light-primary bg-light text-muted" style="width: 100%">
-              <img src="../assets/images/authentication/google-icon.svg" alt="image" />Sign Up With Google
+              <img src="../../dist/assets/images/authentication/google-icon.svg" alt="image" />Sign Up With Google
             </button>
 
             <hr />
-            <h5 class="d-flex justify-content-center">Already have an account?<a href="login-v3.html" class="ms-2">Sign In</a></h5>
+            <h5 class="d-flex justify-content-center">Already have an account?<a href="login.php" class="ms-2">Sign In</a></h5>
           </div>
         </div>
       </div>
@@ -102,13 +102,13 @@
   </div>
   <!-- [ Main Content ] end -->
   <!-- Required Js -->
-  <script src="../assets/js/plugins/popper.min.js"></script>
-  <script src="../assets/js/plugins/simplebar.min.js"></script>
-  <script src="../assets/js/plugins/bootstrap.min.js"></script>
-  <script src="../assets/js/icon/custom-font.js"></script>
-  <script src="../assets/js/script.js"></script>
-  <script src="../assets/js/theme.js"></script>
-  <script src="../assets/js/plugins/feather.min.js"></script>
+  <script src="../../dist/assets/js/plugins/popper.min.js"></script>
+  <script src="../../dist/assets/js/plugins/simplebar.min.js"></script>
+  <script src="../../dist/assets/js/plugins/bootstrap.min.js"></script>
+  <script src="../../dist/assets/js/icon/custom-font.js"></script>
+  <script src="../../dist/assets/js/script.js"></script>
+  <script src="../../dist/assets/js/theme.js"></script>
+  <script src="../../dist/assets/js/plugins/feather.min.js"></script>
 
 
   <script>

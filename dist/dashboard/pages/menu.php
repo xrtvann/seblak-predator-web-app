@@ -266,9 +266,8 @@
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="card menu-card h-100">
                                     <div class="position-relative">
-                                        <img src="https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=400&h=250&fit=crop&crop=center"
-                                            class="card-img-top" alt="Seblak Level 2"
-                                            style="height: 200px; object-fit: cover;">
+                                        <img src="dist/assets/images/menu/spice-mild.png" class="card-img-top"
+                                            alt="Seblak Level 2" style="height: 200px; object-fit: cover;">
                                         <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
                                         <span
                                             class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
@@ -297,9 +296,8 @@
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="card menu-card h-100">
                                     <div class="position-relative">
-                                        <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=250&fit=crop&crop=center"
-                                            class="card-img-top" alt="Seblak Level 3"
-                                            style="height: 200px; object-fit: cover;">
+                                        <img src="dist/assets/images/menu/spice-spicy.png" class="card-img-top"
+                                            alt="Seblak Level 3" style="height: 200px; object-fit: cover;">
                                         <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
                                         <span
                                             class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
@@ -328,9 +326,8 @@
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="card menu-card h-100">
                                     <div class="position-relative">
-                                        <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=250&fit=crop&crop=center"
-                                            class="card-img-top" alt="Seblak Level 4"
-                                            style="height: 200px; object-fit: cover;">
+                                        <img src="dist/assets/images/menu/spice-hot.png" class="card-img-top"
+                                            alt="Seblak Level 4" style="height: 200px; object-fit: cover;">
                                         <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
                                         <span
                                             class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
@@ -360,9 +357,8 @@
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="card menu-card h-100">
                                     <div class="position-relative">
-                                        <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop&crop=center"
-                                            class="card-img-top" alt="Seblak Level 5"
-                                            style="height: 200px; object-fit: cover;">
+                                        <img src="dist/assets/images/menu/spice-extra.png" class="card-img-top"
+                                            alt="Seblak Level 5" style="height: 200px; object-fit: cover;">
                                         <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
                                         <span
                                             class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
@@ -675,13 +671,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-top pt-3 mt-4">
-                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
-                        <i class="ti ti-x"></i>
+                <div class="modal-footer pe-3 py-3">
+                    <button type="button" class="btn btn-danger d-flex align-items-center" data-bs-dismiss="modal">
+                        <i class="ti ti-x me-1"></i>
                         Batal
                     </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="ti ti-device-floppy"></i>
+                    <button type="submit" class="btn btn-success d-flex align-items-center">
+                        <i class="ti ti-device-floppy me-1"></i>
                         Simpan Menu
                     </button>
                 </div>
