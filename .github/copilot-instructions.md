@@ -32,6 +32,7 @@ gulp build-prod      # Production build with minification
 3. Add navigation link with `href="index.php?page=pagename"` format
 4. Include active menu logic: `<?php echo ($page === 'pagename') ? 'active' : ''; ?>`
 5. Use consistent breadcrumb structure from existing pages
+6. **ALWAYS use prepared statements** for any database operations in the page
 
 ## Code Conventions
 
@@ -39,6 +40,24 @@ gulp build-prod      # Production build with minification
 - Always add new pages to `$allowed_pages` whitelist array for security
 - Use `in_array($page, $allowed_pages)` pattern for route validation
 - Page files must match exactly with route names (e.g., `menu` route → `menu.php` file)
+
+**Database Security & Best Practices:**
+- **ALWAYS use prepared statements** for ALL SQL queries to prevent SQL injection
+- Use `mysqli_prepare()`, `mysqli_stmt_bind_param()`, and `mysqli_stmt_execute()` pattern
+- Never concatenate user input directly into SQL strings
+- Example pattern:
+  ```php
+  $query = "SELECT * FROM users WHERE email = ? AND status = ?";
+  $stmt = mysqli_prepare($koneksi, $query);
+  mysqli_stmt_bind_param($stmt, "ss", $email, $status);
+  mysqli_stmt_execute($stmt);
+  $result = mysqli_stmt_get_result($stmt);
+  ```
+- For INSERT operations: Use prepared statements with proper parameter binding
+- For UPDATE operations: Always include WHERE clause with prepared statement
+- For DELETE operations: Always use WHERE clause with prepared statement
+- Validate and sanitize ALL user inputs before database operations
+- Use `htmlspecialchars()` for output escaping to prevent XSS attacks
 
 **Active Menu State Management:**
 - Navigation items use PHP ternary operators for active state

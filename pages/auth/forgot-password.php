@@ -361,16 +361,16 @@
                                             <i class="ti ti-eye" id="toggleNewIcon"></i>
                                         </button>
                                     </div>
-                                    <div class="strength-meter mt-2">
+                                    <div class="strength-meter mt-2 mb-3">
                                         <div class="progress" style="height: 8px;">
                                             <div class="progress-bar" id="strengthBar" role="progressbar"
                                                 style="width: 0%"></div>
                                         </div>
-                                        <small id="strengthText" class="form-text text-muted">Masukkan password</small>
+                                        <small id="strengthText" class="form-text text-muted d-block mt-1"></small>
                                     </div>
                                 </div>
 
-                                <div class="form-group mb-3">
+                                <div class="form-group mb-3 mt-4">
                                     <label class="form-label">Konfirmasi Password</label>
                                     <div class="input-group">
                                         <input type="password" id="confirmPassword" class="form-control"
