@@ -69,22 +69,26 @@
               <div class="form-floating mb-3">
                 <input type="hidden" name="action" value="register">
                 <input type="text" class="form-control" id="floatingInput" name="field_name" required />
-                <label for="floatingInput">Fullname</label>
+                <label for="floatingInput">Name</label>
               </div>
               <div class="form-floating mb-3">
                 <input type="text" class="form-control" id="floatingInput2" name="field_username" required />
                 <label for="floatingInput2">Username</label>
               </div>
               <div class="form-floating mb-3">
-                <input type="password" class="form-control" id="floatingInput3" name="field_password" required />
-                <label for="floatingInput3">Password</label>
+                <input type="email" class="form-control" id="floatingInput3" name="field_email" required />
+                <label for="floatingInput3">Email</label>
               </div>
-              <div class="form-check mt-3s">
+              <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="floatingInput4" name="field_password" required />
+                <label for="floatingInput4">Password</label>
+              </div>
+              <!-- <div class="form-check mt-3s">
                 <input class="form-check-input input-primary" type="checkbox" id="customCheckc1" checked="" />
                 <label class="form-check-label" for="customCheckc1">
                   <span class="h5 mb-0">Agree with <span>Terms & Condition.</span></span>
                 </label>
-              </div>
+              </div> -->
               <div class="d-grid mt-4">
                 <button type="submit" class="btn btn-danger p-2">Sign Up</button>
               </div>

@@ -86,10 +86,21 @@
                 </div>
               <?php endif; ?>
 
-              <!-- Success Message -->
-              <?php if (isset($_GET['success']) && $_GET['success'] == '1'): ?>
+              <!-- Success Messages -->
+              <?php if (isset($_GET['success'])): ?>
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                  <i class="ti ti-check-circle me-2"></i>Registrasi berhasil! Silakan login dengan akun Anda.
+                  <?php
+                  switch ($_GET['success']) {
+                    case '1':
+                      echo '<i class="ti ti-check-circle me-2"></i>Registrasi berhasil! Silakan login dengan akun Anda.';
+                      break;
+                    case 'password_reset':
+                      echo '<i class="ti ti-shield-check me-2"></i>Password berhasil direset! Silakan login dengan password baru Anda.';
+                      break;
+                    default:
+                      echo '<i class="ti ti-check-circle me-2"></i>Operasi berhasil! Silakan login.';
+                  }
+                  ?>
                   <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
               <?php endif; ?>
@@ -119,7 +130,7 @@
                   <input class="form-check-input input-primary" type="checkbox" name="remember_me" id="customCheckc1" />
                   <label class="form-check-label text-muted" for="customCheckc1">Remember me</label>
                 </div>
-                <a href="#">
+                <a href="forgot-password.php">
                   <h5 class="text-primary">Forgot Password?</h5>
                 </a>
               </div>

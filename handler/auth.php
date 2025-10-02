@@ -6,6 +6,7 @@ function Register($koneksi)
 {
     $name = htmlspecialchars($_POST['field_name']);
     $username = htmlspecialchars($_POST['field_username']);
+    $email = htmlspecialchars($_POST['field_email']);
     $password = htmlspecialchars($_POST['field_password']);
 
     $sql = "SELECT id FROM users WHERE username = ?";
@@ -36,9 +37,9 @@ function Register($koneksi)
     $id = uniqid();
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
-    $sql = "INSERT INTO users (id, name, username, password_hash, role_id) VALUES (?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO users (id, name, email, username, password_hash, role_id) VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = mysqli_prepare($koneksi, $sql);
-    mysqli_stmt_bind_param($stmt, "sssss", $id, $name, $username, $hashed_password, $role_id);
+    mysqli_stmt_bind_param($stmt, "ssssss", $id, $name, $email, $username, $hashed_password, $role_id);
 
 
     if (mysqli_stmt_execute($stmt)) {
