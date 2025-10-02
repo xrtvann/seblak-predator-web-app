@@ -1,4 +1,6 @@
 <?php
+session_start();
+
 $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 $PageTitle = [
   'dashboard' => 'Dashboard',
@@ -233,28 +235,30 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
             <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
               <div class="dropdown-header">
                 <h4>
-                  Good Morning,
-                  <span class="small text-muted">John Doe</span>
+                  Selamat datang,
+                  <span class="small text-muted"><?= htmlspecialchars($_SESSION['user_name']) ?></span>
                 </h4>
-                <p class="text-muted">Project Admin</p>
+                <p class="text-muted">@<?= htmlspecialchars($_SESSION['username']) ?> •
+                  <?= ucfirst($_SESSION['role']) ?></p>
                 <hr />
                 <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
-                  <div class="upgradeplan-block bg-light-warning rounded">
-                    <h4>Explore full code</h4>
-                    <p class="text-muted">Buy now to get full access of code files</p>
-                    <a href="https://codedthemes.com/item/berry-bootstrap-5-admin-template/" target="_blank"
-                      class="btn btn-warning">Buy Now</a>
+                  <div class="upgradeplan-block bg-light-primary rounded">
+                    <h5><i class="ti ti-crown me-2"></i>Seblak Predator</h5>
+                    <p class="text-muted">Sistem Manajemen Restoran</p>
+                    <small class="text-muted">Login: <?= date('H:i, d M Y', $_SESSION['login_time']) ?></small>
                   </div>
                   <hr />
-                  <a href="../application/account-profile-v1.html" class="dropdown-item">
+                  <a href="index.php?page=user" class="dropdown-item">
                     <i class="ti ti-settings"></i>
-                    <span>Account Settings</span>
+                    <span>Pengaturan Akun</span>
                   </a>
-                  <a href="../application/social-profile.html" class="dropdown-item">
-                    <i class="ti ti-user"></i>
-                    <span>Social Profile</span>
+                  <a href="index.php?page=dashboard" class="dropdown-item">
+                    <i class="ti ti-dashboard"></i>
+                    <span>Dashboard</span>
                   </a>
-                  <a href="../pages/login-v1.html" class="dropdown-item">
+                  <div class="dropdown-divider"></div>
+                  <a href="handler/logout.php" class="dropdown-item text-danger"
+                    onclick="return confirm('Apakah Anda yakin ingin logout?')">
                     <i class="ti ti-logout"></i>
                     <span>Logout</span>
                   </a>

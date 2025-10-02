@@ -45,61 +45,65 @@
     </div>
   </div>
   <!-- [ Pre-loader ] End -->
+  <form action="../../handler/auth.php" method="POST">
+    <div class="auth-main">
+      <div class="auth-wrapper v3">
+        <div class="auth-form">
 
-  <div class="auth-main">
-    <div class="auth-wrapper v3">
-      <div class="auth-form">
-        <div class="card mt-5">
-          <div class="card-body">
-            <a href="#" class="d-flex justify-content-center mt-3">
-              <img src="../../dist/assets/images/logo-150.png" alt="image" class="img-fluid" />
-            </a>
-            <div class="row">
-              <div class="d-flex justify-content-center">
-                <div class="auth-header">
-                  <h2 class="text-red-500 mt-5"><b>Sign up</b></h2>
-                  <p class="f-16 mt-2">Enter your credentials to continue</p>
+          <div class="card mt-5">
+            <div class="card-body">
+              <a href="#" class="d-flex justify-content-center mt-3">
+                <img src="../../dist/assets/images/logo-150.png" alt="image" class="img-fluid" />
+              </a>
+              <div class="row">
+                <div class="d-flex justify-content-center">
+                  <div class="auth-header">
+                    <h2 class="text-red-500 mt-5"><b>Sign up</b></h2>
+                    <p class="f-16 mt-2">Enter your credentials to continue</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <h5 class="my-4 d-flex justify-content-center">Sign Up with Email address</h5>
-            
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="floatingInput" placeholder="Email Address / Username" />
-              <label for="floatingInput">Fullname</label>
-            </div>
-            <div class="form-floating mb-3">
-              <input type="email" class="form-control" id="floatingInput2" placeholder="Email Address / Username" />
-              <label for="floatingInput2">Username</label>
-            </div>
-            <div class="form-floating mb-3">
-              <input type="email" class="form-control" id="floatingInput3" placeholder="Password" />
-              <label for="floatingInput3">Password</label>
-            </div>
-            <div class="form-check mt-3s">
-              <input class="form-check-input input-primary" type="checkbox" id="customCheckc1" checked="" />
-              <label class="form-check-label" for="customCheckc1">
-                <span class="h5 mb-0">Agree with <span>Terms & Condition.</span></span>
-              </label>
-            </div>
-            <div class="d-grid mt-4">
-              <button type="button" class="btn btn-danger p-2">Sign Up</button>
-            </div>
-            <div class="saprator mt-3">
-              <span>or</span>
-            </div>
-            <button type="button" class="btn mt-2 bg-light-primary bg-light text-muted" style="width: 100%">
-              <img src="../../dist/assets/images/authentication/google-icon.svg" alt="image" />Sign Up With Google
-            </button>
+              <h5 class="my-4 d-flex justify-content-center">Sign Up with Email address</h5>
 
-            <hr />
-            <h5 class="d-flex justify-content-center">Already have an account?<a href="login.php" class="ms-2">Sign In</a></h5>
+              <div class="form-floating mb-3">
+                <input type="hidden" name="action" value="register">
+                <input type="text" class="form-control" id="floatingInput" name="field_name" required />
+                <label for="floatingInput">Fullname</label>
+              </div>
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="floatingInput2" name="field_username" required />
+                <label for="floatingInput2">Username</label>
+              </div>
+              <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="floatingInput3" name="field_password" required />
+                <label for="floatingInput3">Password</label>
+              </div>
+              <div class="form-check mt-3s">
+                <input class="form-check-input input-primary" type="checkbox" id="customCheckc1" checked="" />
+                <label class="form-check-label" for="customCheckc1">
+                  <span class="h5 mb-0">Agree with <span>Terms & Condition.</span></span>
+                </label>
+              </div>
+              <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-danger p-2">Sign Up</button>
+              </div>
+              <div class="saprator mt-3">
+                <span>or</span>
+              </div>
+              <button type="button" class="btn mt-2 bg-light-primary bg-light text-muted" style="width: 100%">
+                <img src="../../dist/assets/images/authentication/google-icon.svg" alt="image" />Sign Up With Google
+              </button>
+
+              <hr />
+              <h5 class="d-flex justify-content-center">Already have an account?<a href="login.php" class="ms-2">Sign
+                  In</a></h5>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </form>
   <!-- [ Main Content ] end -->
   <!-- Required Js -->
   <script src="../../dist/assets/js/plugins/popper.min.js"></script>

@@ -46,58 +46,104 @@
   </div>
   <!-- [ Pre-loader ] End -->
 
-  <div class="auth-main">
-    <div class="auth-wrapper v3">
-      <div class="auth-form">
-        <div class="card my-5">
-          <div class="card-body">
-            <a href="#" class="d-flex justify-content-center">
-              <img src="../../dist/assets/images/logo-150.png" alt="image" class="" />
-            </a>
-            <div class="row">
-              <div class="d-flex justify-content-center">
-                <div class="auth-header">
-                  <h2 class="text-red-500 mt-5"><b>Hi, Welcome Back</b></h2>
-                  <p class="f-16 mt-2">Enter your credentials to continue</p>
+  <form action="../../handler/auth.php" method="POST">
+    <div class="auth-main">
+      <div class="auth-wrapper v3">
+        <div class="auth-form">
+          <div class="card my-5">
+            <div class="card-body">
+              <a href="#" class="d-flex justify-content-center">
+                <img src="../../dist/assets/images/logo-150.png" alt="image" class="" />
+              </a>
+              <div class="row">
+                <div class="d-flex justify-content-center">
+                  <div class="auth-header">
+                    <h2 class="text-red-500 mt-5"><b>Hi, Welcome Back</b></h2>
+                    <p class="f-16 mt-2">Enter your credentials to continue</p>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="floatingInput" placeholder="Username" />
-              <label for="floatingInput"> Username</label>
-            </div>
-            <div class="form-floating mb-3">
-              <input type="password" class="form-control" id="floatingInput1" placeholder="Password" />
-              <label for="floatingInput1">Password</label>
-            </div>
-            <div class="d-flex mt-1 justify-content-between">
-              <div class="form-check">
-                <input class="form-check-input input-primary" type="checkbox" id="customCheckc1" checked="" />
-                <label class="form-check-label text-muted" for="customCheckc1">Remember me</label>
-              </div>
-              <a href="#">
-                <h5 class="text-primary">Forgot Password?</h5>
-              </a>
-            </div>
-            <div class="d-grid mt-4">
-              <button type="button" class="btn btn-danger">Sign In</button>
-            </div>
-            <div class="saprator mt-3">
-              <span>or</span>
-            </div>
-            <div class="d-grid">
-              <button type="button" class="btn mt-2 bg-light-primary bg-light text-muted">
-                <img src="../../dist/assets/images/authentication/google-icon.svg" alt="image" />Sign In With Google
-              </button>
-            </div>
 
-            <hr />
-            <h5 class="d-flex justify-content-center">Don't have an account?<a href="register.php" class="ms-2">Sign Up</a></h5>
+              <!-- Error Messages -->
+              <?php if (isset($_GET['error'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                  <?php
+                  switch ($_GET['error']) {
+                    case 'empty_fields':
+                      echo '<i class="ti ti-alert-circle me-2"></i>Username dan password harus diisi!';
+                      break;
+                    case 'invalid_credentials':
+                      echo '<i class="ti ti-x-circle me-2"></i>Username atau password salah!';
+                      break;
+                    case 'db_error':
+                      echo '<i class="ti ti-database-off me-2"></i>Terjadi kesalahan sistem. Silakan coba lagi.';
+                      break;
+                    default:
+                      echo '<i class="ti ti-alert-triangle me-2"></i>Terjadi kesalahan. Silakan coba lagi.';
+                  }
+                  ?>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+              <?php endif; ?>
+
+              <!-- Success Message -->
+              <?php if (isset($_GET['success']) && $_GET['success'] == '1'): ?>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                  <i class="ti ti-check-circle me-2"></i>Registrasi berhasil! Silakan login dengan akun Anda.
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+              <?php endif; ?>
+
+              <!-- Logout Message -->
+              <?php if (isset($_GET['logout']) && $_GET['logout'] == '1'): ?>
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                  <i class="ti ti-info-circle me-2"></i>Anda telah berhasil logout. Silakan login kembali.
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+              <?php endif; ?>
+
+              <input type="hidden" name="action" value="login">
+
+              <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="floatingInput" name="field_username" placeholder="Username"
+                  required />
+                <label for="floatingInput"> Username</label>
+              </div>
+              <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="floatingInput1" name="field_password"
+                  placeholder="Password" required />
+                <label for="floatingInput1">Password</label>
+              </div>
+              <div class="d-flex mt-1 justify-content-between">
+                <div class="form-check">
+                  <input class="form-check-input input-primary" type="checkbox" name="remember_me" id="customCheckc1" />
+                  <label class="form-check-label text-muted" for="customCheckc1">Remember me</label>
+                </div>
+                <a href="#">
+                  <h5 class="text-primary">Forgot Password?</h5>
+                </a>
+              </div>
+              <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-danger">Sign In</button>
+              </div>
+              <div class="saprator mt-3">
+                <span>or</span>
+              </div>
+              <div class="d-grid">
+                <button type="button" class="btn mt-2 bg-light-primary bg-light text-muted">
+                  <img src="../../dist/assets/images/authentication/google-icon.svg" alt="image" />Sign In With Google
+                </button>
+              </div>
+
+              <hr />
+              <h5 class="d-flex justify-content-center">Don't have an account?<a href="register.php" class="ms-2">Sign
+                  Up</a></h5>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </form>
   <!-- [ Main Content ] end -->
   <!-- Required Js -->
   <script src="../../dist/assets/js/plugins/popper.min.js"></script>
@@ -131,6 +177,32 @@
 
   <script>
     preset_change('preset-1');
+  </script>
+
+  <script>
+    // Auto dismiss alerts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function () {
+      const alerts = document.querySelectorAll('.alert');
+      alerts.forEach(function (alert) {
+        setTimeout(function () {
+          if (alert && alert.parentNode) {
+            alert.style.transition = 'opacity 0.5s';
+            alert.style.opacity = '0';
+            setTimeout(function () {
+              if (alert.parentNode) {
+                alert.parentNode.removeChild(alert);
+              }
+            }, 500);
+          }
+        }, 5000);
+      });
+
+      // Focus on username input
+      const usernameInput = document.getElementById('floatingInput');
+      if (usernameInput) {
+        usernameInput.focus();
+      }
+    });
   </script>
 
 

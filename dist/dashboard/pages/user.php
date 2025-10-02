@@ -1,23 +1,25 @@
-<div class="row">
-    <!-- [ breadcrumb ] start -->
-    <div class="col-12">
-        <div class="page-header">
-            <div class="page-block">
-                <div class="row align-items-center">
-                    <div class="col-md-12">
-                        <div class="page-header-title">
-                            <h5 class="m-b-10">User Management</h5>
-                        </div>
-                        <ul class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="index.php?page=dashboard">Home</a></li>
-                            <li class="breadcrumb-item" aria-current="page">User</li>
-                        </ul>
-                    </div>
+<!-- [ breadcrumb ] start -->
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">User Management</h5>
                 </div>
+            </div>
+            <div class="col-auto">
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.php?page=dashboard">Home</a></li>
+                    <li class="breadcrumb-item" aria-current="page">User</li>
+                </ul>
             </div>
         </div>
     </div>
-    <!-- [ breadcrumb ] end -->
+</div>
+<!-- [ breadcrumb ] end -->
+
+<!-- [ Main Content ] start -->
+<div class="row">
 
     <!-- [ Statistics Cards ] start -->
     <div class="col-md-6 col-xxl-3">
@@ -90,16 +92,20 @@
     </div>
     <!-- [ Statistics Cards ] end -->
 
-    <!-- [ Main Content ] start -->
-    <div class="col-12">
+    <!-- [ Data User ] start -->
+    <div class="col-sm-12">
         <div class="card">
             <div class="card-header">
-                <h5>Data User</h5>
-                <div class="card-header-right">
-                    <button class="btn btn-primary">
-                        <i class="ti ti-plus"></i>
-                        Tambah User
-                    </button>
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5>Data User</h5>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary">
+                            <i class="ti ti-plus"></i>
+                            Tambah User
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -118,24 +124,32 @@
                         <tbody>
                             <tr>
                                 <td>1</td>
-                                <td>Admin</td>
+                                <td><strong>Admin</strong></td>
                                 <td>admin@seblakpredator.com</td>
-                                <td><span class="badge bg-primary">Administrator</span></td>
+                                <td><span class="badge bg-warning">Administrator</span></td>
                                 <td><span class="badge bg-success">Aktif</span></td>
                                 <td>
-                                    <button class="btn btn-sm btn-warning"><i class="ti ti-edit"></i></button>
-                                    <button class="btn btn-sm btn-danger"><i class="ti ti-trash"></i></button>
+                                    <button class="btn btn-sm btn-warning" title="Edit">
+                                        <i class="ti ti-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" title="Hapus">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                             <tr>
                                 <td>2</td>
-                                <td>Kasir 1</td>
+                                <td><strong>Kasir 1</strong></td>
                                 <td>kasir1@seblakpredator.com</td>
                                 <td><span class="badge bg-info">Kasir</span></td>
                                 <td><span class="badge bg-success">Aktif</span></td>
                                 <td>
-                                    <button class="btn btn-sm btn-warning"><i class="ti ti-edit"></i></button>
-                                    <button class="btn btn-sm btn-danger"><i class="ti ti-trash"></i></button>
+                                    <button class="btn btn-sm btn-warning" title="Edit">
+                                        <i class="ti ti-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" title="Hapus">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -144,5 +158,6 @@
             </div>
         </div>
     </div>
-    <!-- [ Main Content ] end -->
+    <!-- [ Data User ] end -->
 </div>
+<!-- [ Main Content ] end -->
