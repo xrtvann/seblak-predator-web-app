@@ -239,7 +239,8 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
                   <span class="small text-muted"><?= htmlspecialchars($_SESSION['user_name']) ?></span>
                 </h4>
                 <p class="text-muted">@<?= htmlspecialchars($_SESSION['username']) ?> •
-                  <?= ucfirst($_SESSION['role']) ?></p>
+                  <?= ucfirst($_SESSION['role']) ?>
+                </p>
                 <hr />
                 <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
                   <div class="upgradeplan-block bg-light-primary rounded">

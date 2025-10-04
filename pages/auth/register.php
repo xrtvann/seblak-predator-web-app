@@ -79,6 +79,7 @@
                 <input type="email" class="form-control" id="floatingInput3" name="field_email" required />
                 <label for="floatingInput3">Email</label>
               </div>
+
               <div class="form-floating mb-3">
                 <input type="password" class="form-control" id="floatingInput4" name="field_password" required />
                 <label for="floatingInput4">Password</label>
@@ -92,12 +93,7 @@
               <div class="d-grid mt-4">
                 <button type="submit" class="btn btn-danger p-2">Sign Up</button>
               </div>
-              <div class="saprator mt-3">
-                <span>or</span>
-              </div>
-              <button type="button" class="btn mt-2 bg-light-primary bg-light text-muted" style="width: 100%">
-                <img src="../../dist/assets/images/authentication/google-icon.svg" alt="image" />Sign Up With Google
-              </button>
+
 
               <hr />
               <h5 class="d-flex justify-content-center">Already have an account?<a href="login.php" class="ms-2">Sign
@@ -118,30 +114,18 @@
   <script src="../../dist/assets/js/theme.js"></script>
   <script src="../../dist/assets/js/plugins/feather.min.js"></script>
 
-
+  <!-- Theme Configuration -->
   <script>
     layout_change('light');
-  </script>
-
-  <script>
     font_change('Roboto');
-  </script>
-
-  <script>
     change_box_container('false');
-  </script>
-
-  <script>
     layout_caption_change('true');
-  </script>
-
-  <script>
     layout_rtl_change('false');
-  </script>
-
-  <script>
     preset_change('preset-1');
   </script>
+
+  <!-- Authentication Module -->
+  <script src="../../src/assets/js/auth.js"></script>
 
 
 </body>

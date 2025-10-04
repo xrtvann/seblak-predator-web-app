@@ -1,0 +1,17 @@
+{
+    "name": "seblak-predator/restaurant-management",
+    "description": "Seblak Predator Restaurant Management System",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "phpmailer/phpmailer": "^6.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "SeblakPredator\\": "src/"
+        }
+    },
+    "config": {
+        "vendor-dir": "vendor"
+    }
+}

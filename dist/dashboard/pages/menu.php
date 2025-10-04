@@ -4,14 +4,14 @@
         <div class="row align-items-center">
             <div class="col">
                 <div class="page-header-title">
-                    <h5 class="m-b-10">Menu</h5>
+                    <h5 class="m-b-10" id="pageTitleText">Menu</h5>
                 </div>
             </div>
             <div class="col-auto">
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="index.php">Home</a></li>
                     <li class="breadcrumb-item"><a href="javascript: void(0)">Produk</a></li>
-                    <li class="breadcrumb-item" aria-current="page">Menu</li>
+                    <li class="breadcrumb-item" aria-current="page" id="breadcrumbText">Menu</li>
                 </ul>
             </div>
         </div>
@@ -27,12 +27,14 @@
             <div class="card-header">
                 <div class="row align-items-center">
                     <div class="col">
-                        <h5>Data Menu</h5>
+                        <h5 id="cardTitleText">Data Menu</h5>
+                        <p class="text-muted mb-0 d-none" id="cardSubtitleText">Isi form di bawah untuk
+                            menambahkan menu baru</p>
                     </div>
                     <div class="col-auto">
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center" id="headerActions">
                             <!-- View Toggle Tabs -->
-                            <ul class="nav nav-pills me-3" id="pills-tab" role="tablist">
+                            <ul class="nav nav-pills me-3" id="viewToggleTabs">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="pills-table-tab" data-bs-toggle="pill"
                                         data-bs-target="#pills-table" type="button" role="tab"
@@ -49,15 +51,85 @@
                                 </li>
                             </ul>
 
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahMenu">
+                            <button class="btn btn-primary" id="btnTambahMenu" onclick="showFormTambah()">
                                 <i class="ti ti-plus"></i>
                                 Tambah Menu
+                            </button>
+
+                            <button class="btn btn-outline-secondary d-none" id="btnKembali" onclick="showDataMenu()">
+                                <i class="ti ti-arrow-left me-2"></i>
+                                Kembali
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body">
+            <div class="card-body" id="mainContentArea">
+                <!-- Content will be loaded dynamically by JavaScript -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Memuat data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- [ Data Menu ] end -->
+</div>
+<!-- [ Main Content ] end -->
+
+<!-- JavaScript untuk Toggle Konten Menu -->
+<script>
+    // Initialize page - show data menu by default
+    document.addEventListener('DOMContentLoaded', function () {
+        showDataMenu();
+    });
+
+    // Function to show data menu (list view)
+    function showDataMenu() {
+        const mainContent = document.getElementById('mainContentArea');
+
+        // Update header
+        document.getElementById('pageTitleText').textContent = 'Menu';
+        document.getElementById('breadcrumbText').textContent = 'Menu';
+        document.getElementById('cardTitleText').textContent = 'Data Menu';
+        document.getElementById('cardSubtitleText').classList.add('d-none');
+
+        // Toggle buttons using Bootstrap classes
+        document.getElementById('btnTambahMenu').classList.remove('d-none');
+        document.getElementById('btnKembali').classList.add('d-none');
+        document.getElementById('viewToggleTabs').classList.remove('d-none');
+
+        // Set content
+        mainContent.innerHTML = getDataMenuHTML();
+    }
+
+    // Function to show form tambah menu
+    function showFormTambah() {
+        const mainContent = document.getElementById('mainContentArea');
+
+        // Update header
+        document.getElementById('pageTitleText').textContent = 'Tambah Menu';
+        document.getElementById('breadcrumbText').textContent = 'Tambah Menu';
+        document.getElementById('cardTitleText').textContent = 'Form Tambah Menu';
+        document.getElementById('cardSubtitleText').classList.remove('d-none');
+
+        // Toggle buttons using Bootstrap classes
+        document.getElementById('btnTambahMenu').classList.add('d-none');
+        document.getElementById('btnKembali').classList.remove('d-none');
+        document.getElementById('viewToggleTabs').classList.add('d-none');
+
+        // Set content
+        mainContent.innerHTML = getFormTambahHTML();
+
+        // Initialize form functionality
+        initFormTambah();
+    }
+
+    // Get Data Menu HTML
+    function getDataMenuHTML() {
+        return `
                 <!-- Tab Content -->
                 <div class="tab-content" id="pills-tabContent">
                     <!-- Table View -->
@@ -230,7 +302,7 @@
                     <div class="tab-pane fade" id="pills-card" role="tabpanel" aria-labelledby="pills-card-tab"
                         tabindex="0">
                         <div class="row g-3">
-                            <!-- Menu Card 1 - Seblak Level 1 -->
+                            <!-- Menu Card 1 -->
                             <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
                                 <div class="card menu-card h-100">
                                     <div class="position-relative">
@@ -238,22 +310,18 @@
                                             class="card-img-top" alt="Seblak Level 1"
                                             style="height: 200px; object-fit: cover;">
                                         <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
-                                        <span
-                                            class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
+                                        <span class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
                                     </div>
                                     <div class="card-body d-flex flex-column">
                                         <h5 class="card-title">Seblak Level 1 (Original)</h5>
-                                        <p class="card-text text-muted small">Seblak dengan rasa original, cocok untuk
-                                            pemula</p>
+                                        <p class="card-text text-muted small">Seblak dengan rasa original, cocok untuk pemula</p>
                                         <div class="d-flex justify-content-between align-items-center mt-auto">
                                             <h4 class="text-primary mb-0">Rp 10.000</h4>
                                             <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                    title="Edit">
+                                                <button type="button" class="btn btn-sm btn-outline-warning" title="Edit">
                                                     <i class="ti ti-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    title="Hapus">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Hapus">
                                                     <i class="ti ti-trash"></i>
                                                 </button>
                                             </div>
@@ -261,395 +329,135 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Menu Card 2 - Seblak Level 2 -->
-                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                                <div class="card menu-card h-100">
-                                    <div class="position-relative">
-                                        <img src="dist/assets/images/menu/spice-mild.png" class="card-img-top"
-                                            alt="Seblak Level 2" style="height: 200px; object-fit: cover;">
-                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
-                                        <span
-                                            class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title">Seblak Level 2 (Sedang)</h5>
-                                        <p class="card-text text-muted small">Seblak dengan tingkat pedas sedang</p>
-                                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                                            <h4 class="text-primary mb-0">Rp 12.000</h4>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                    title="Edit">
-                                                    <i class="ti ti-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    title="Hapus">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Menu Card 3 - Seblak Level 3 -->
-                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                                <div class="card menu-card h-100">
-                                    <div class="position-relative">
-                                        <img src="dist/assets/images/menu/spice-spicy.png" class="card-img-top"
-                                            alt="Seblak Level 3" style="height: 200px; object-fit: cover;">
-                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
-                                        <span
-                                            class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title">Seblak Level 3 (Pedas)</h5>
-                                        <p class="card-text text-muted small">Seblak pedas untuk pecinta rasa pedas</p>
-                                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                                            <h4 class="text-primary mb-0">Rp 14.000</h4>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                    title="Edit">
-                                                    <i class="ti ti-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    title="Hapus">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Menu Card 4 - Seblak Level 4 -->
-                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                                <div class="card menu-card h-100">
-                                    <div class="position-relative">
-                                        <img src="dist/assets/images/menu/spice-hot.png" class="card-img-top"
-                                            alt="Seblak Level 4" style="height: 200px; object-fit: cover;">
-                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
-                                        <span
-                                            class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title">Seblak Level 4 (Extra Pedas)</h5>
-                                        <p class="card-text text-muted small">Seblak extra pedas untuk yang berani
-                                            tantangan</p>
-                                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                                            <h4 class="text-primary mb-0">Rp 16.000</h4>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                    title="Edit">
-                                                    <i class="ti ti-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    title="Hapus">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Menu Card 5 - Seblak Level 5 -->
-                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                                <div class="card menu-card h-100">
-                                    <div class="position-relative">
-                                        <img src="dist/assets/images/menu/spice-extra.png" class="card-img-top"
-                                            alt="Seblak Level 5" style="height: 200px; object-fit: cover;">
-                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
-                                        <span
-                                            class="badge bg-primary position-absolute top-0 start-0 m-2">Makanan</span>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title">Seblak Level 5 (Predator)</h5>
-                                        <p class="card-text text-muted small">🔥 Level tertinggi! Hanya untuk predator
-                                            sejati</p>
-                                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                                            <h4 class="text-primary mb-0">Rp 18.000</h4>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                    title="Edit">
-                                                    <i class="ti ti-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    title="Hapus">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Menu Card 6 - Es Teh Manis -->
-                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                                <div class="card menu-card h-100">
-                                    <div class="position-relative">
-                                        <img src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=250&fit=crop&crop=center"
-                                            class="card-img-top" alt="Es Teh Manis"
-                                            style="height: 200px; object-fit: cover;">
-                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
-                                        <span class="badge bg-info position-absolute top-0 start-0 m-2">Minuman</span>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title">Es Teh Manis</h5>
-                                        <p class="card-text text-muted small">Minuman segar untuk meredakan pedas</p>
-                                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                                            <h4 class="text-primary mb-0">Rp 5.000</h4>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                    title="Edit">
-                                                    <i class="ti ti-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    title="Hapus">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Menu Card 7 - Es Jeruk -->
-                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                                <div class="card menu-card h-100">
-                                    <div class="position-relative">
-                                        <img src="https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400&h=250&fit=crop&crop=center"
-                                            class="card-img-top" alt="Es Jeruk"
-                                            style="height: 200px; object-fit: cover;">
-                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
-                                        <span class="badge bg-info position-absolute top-0 start-0 m-2">Minuman</span>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title">Es Jeruk</h5>
-                                        <p class="card-text text-muted small">Jeruk segar dengan rasa asam manis</p>
-                                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                                            <h4 class="text-primary mb-0">Rp 6.000</h4>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                    title="Edit">
-                                                    <i class="ti ti-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    title="Hapus">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Menu Card 8 - Teh Hangat -->
-                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                                <div class="card menu-card h-100">
-                                    <div class="position-relative">
-                                        <img src="https://images.unsplash.com/photo-1497534547324-0ebb3f54ca68?w=400&h=250&fit=crop&crop=center"
-                                            class="card-img-top" alt="Teh Hangat"
-                                            style="height: 200px; object-fit: cover;">
-                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
-                                        <span class="badge bg-info position-absolute top-0 start-0 m-2">Minuman</span>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title">Teh Hangat</h5>
-                                        <p class="card-text text-muted small">Teh hangat untuk menghangatkan badan</p>
-                                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                                            <h4 class="text-primary mb-0">Rp 4.000</h4>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                    title="Edit">
-                                                    <i class="ti ti-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    title="Hapus">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Menu Card 9 - Es Lemon -->
-                            <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
-                                <div class="card menu-card h-100">
-                                    <div class="position-relative">
-                                        <img src="https://images.unsplash.com/photo-1553830591-d8632a99e6ff?w=400&h=250&fit=crop&crop=center"
-                                            class="card-img-top" alt="Es Lemon"
-                                            style="height: 200px; object-fit: cover;">
-                                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
-                                        <span class="badge bg-info position-absolute top-0 start-0 m-2">Minuman</span>
-                                    </div>
-                                    <div class="card-body d-flex flex-column">
-                                        <h5 class="card-title">Es Lemon</h5>
-                                        <p class="card-text text-muted small">Lemon segar dengan rasa asam yang
-                                            menyegarkan</p>
-                                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                                            <h4 class="text-primary mb-0">Rp 7.000</h4>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                                    title="Edit">
-                                                    <i class="ti ti-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    title="Hapus">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Add more cards as needed (same structure) -->
                         </div>
                     </div>
                 </div>
+        `;
+    }
 
-                <!-- Custom CSS for Equal Card Heights -->
-
-            </div>
-        </div>
-    </div>
-    <!-- [ Data Menu ] end -->
-</div>
-<!-- [ Main Content ] end -->
-
-<!-- Modal Tambah Menu -->
-<div class="modal fade" id="modalTambahMenu" tabindex="-1" aria-labelledby="modalTambahMenuLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTambahMenuLabel">
-                    <i class="ti ti-plus text-primary"></i>
-                    Tambah Menu Baru
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="formTambahMenu" novalidate>
-                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+    // Get Form Tambah HTML
+    function getFormTambahHTML() {
+        return `
+                <form id="formTambahMenu" method="POST" action="handler/menu_handler.php" enctype="multipart/form-data" novalidate>
+                    <input type="hidden" name="action" value="tambah">
+                    
                     <div class="row">
-                        <!-- Nama Menu -->
-                        <div class="col-12 mb-3">
-                            <label for="namaMenu" class="form-label">
-                                <i class="ti ti-soup text-primary"></i>
-                                Nama Menu <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" class="form-control" id="namaMenu" name="namaMenu" required
-                                placeholder="Contoh: Seblak Pedas, Es Teh Manis, dll">
-                            <div class="invalid-feedback">
-                                Nama menu harus diisi
-                            </div>
-                            <div class="form-text">Masukkan nama menu yang jelas dan menarik</div>
-                        </div>
+                        <!-- Kolom Kiri - Form Input -->
+                        <div class="col-lg-8">
+                            <div class="row">
+                                <!-- Nama Menu -->
+                                <div class="col-12 mb-3">
+                                    <label for="namaMenu" class="form-label">
+                                        <i class="ti ti-soup text-primary"></i>
+                                        Nama Menu <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="namaMenu" name="namaMenu" required
+                                        placeholder="Contoh: Seblak Pedas, Es Teh Manis, dll">
+                                    <div class="invalid-feedback">Nama menu harus diisi</div>
+                                    <div class="form-text">Masukkan nama menu yang jelas dan menarik</div>
+                                </div>
 
-                        <!-- Kategori -->
-                        <div class="col-md-6 mb-3">
-                            <label for="kategori" class="form-label">
-                                <i class="ti ti-category text-info"></i>
-                                Kategori <span class="text-danger">*</span>
-                            </label>
-                            <select class="form-select" id="kategori" name="kategori" required>
-                                <option value="">Pilih Kategori</option>
-                                <option value="makanan">🍜 Makanan</option>
-                                <option value="minuman">🥤 Minuman</option>
-                                <option value="dessert">🍮 Dessert</option>
-                                <option value="snack">🍿 Snack</option>
-                            </select>
-                            <div class="invalid-feedback">
-                                Kategori harus dipilih
-                            </div>
-                        </div>
+                                <!-- Kategori & Harga -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="kategori" class="form-label">
+                                        <i class="ti ti-category text-info"></i>
+                                        Kategori <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" id="kategori" name="kategori" required>
+                                        <option value="">Pilih Kategori</option>
+                                        <option value="makanan">🍜 Makanan</option>
+                                        <option value="minuman">🥤 Minuman</option>
+                                        <option value="dessert">🍮 Dessert</option>
+                                        <option value="snack">🍿 Snack</option>
+                                    </select>
+                                    <div class="invalid-feedback">Kategori harus dipilih</div>
+                                </div>
 
-                        <!-- Harga -->
-                        <div class="col-md-6 mb-3">
-                            <label for="harga" class="form-label">
-                                <i class="ti ti-currency-rupiah text-success"></i>
-                                Harga <span class="text-danger">*</span>
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">Rp</span>
-                                <input type="number" class="form-control" id="harga" name="harga" required
-                                    placeholder="15000" min="1000" step="500">
-                                <div class="invalid-feedback">
-                                    Harga harus diisi dengan minimal Rp 1.000
+                                <div class="col-md-6 mb-3">
+                                    <label for="harga" class="form-label">
+                                        <i class="ti ti-currency-dollar text-success"></i>
+                                        Harga <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">Rp</span>
+                                        <input type="number" class="form-control" id="harga" name="harga" required
+                                            placeholder="15000" min="1000" step="500">
+                                        <div class="invalid-feedback">Harga harus diisi dengan minimal Rp 1.000</div>
+                                    </div>
+                                    <div class="form-text">Masukkan harga tanpa titik atau koma</div>
+                                </div>
+
+                                <!-- Deskripsi -->
+                                <div class="col-12 mb-3">
+                                    <label for="deskripsi" class="form-label">
+                                        <i class="ti ti-file-description text-secondary"></i>
+                                        Deskripsi Menu
+                                    </label>
+                                    <textarea class="form-control" id="deskripsi" name="deskripsi" rows="4"
+                                        placeholder="Deskripsi singkat tentang menu ini (opsional)"></textarea>
+                                    <div class="form-text">Jelaskan keunikan atau bahan utama menu ini</div>
+                                </div>
+
+                                <!-- Upload Gambar -->
+                                <div class="col-12 mb-3">
+                                    <label for="gambarMenu" class="form-label">
+                                        <i class="ti ti-camera text-warning"></i>
+                                        Gambar Menu
+                                    </label>
+                                    <input type="file" class="form-control" id="gambarMenu" name="gambarMenu" accept="image/*">
+                                    <div class="form-text">
+                                        <small>Format yang didukung: JPG, PNG, GIF (Maksimal 2MB)</small>
+                                    </div>
+                                    <!-- Preview gambar -->
+                                    <div id="imagePreview" class="mt-3" style="display: none;">
+                                        <img id="previewImg" src="" alt="Preview" class="img-thumbnail"
+                                            style="max-width: 300px; max-height: 200px;">
+                                        <button type="button" class="btn btn-sm btn-danger ms-2 mt-2" onclick="removeImagePreview()">
+                                            <i class="ti ti-x"></i> Hapus
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Status & Stok -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="status" class="form-label">
+                                        <i class="ti ti-toggle-right text-success"></i>
+                                        Status Menu
+                                    </label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="aktif" selected>✅ Aktif</option>
+                                        <option value="nonaktif">❌ Nonaktif</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="stok" class="form-label">
+                                        <i class="ti ti-package text-info"></i>
+                                        Stok Tersedia
+                                    </label>
+                                    <input type="number" class="form-control" id="stok" name="stok" placeholder="100" min="0" value="999">
+                                    <div class="form-text">Kosongkan jika stok tidak terbatas</div>
                                 </div>
                             </div>
-                            <div class="form-text">Masukkan harga tanpa titik atau koma</div>
                         </div>
 
-                        <!-- Deskripsi -->
-                        <div class="col-12 mb-3">
-                            <label for="deskripsi" class="form-label">
-                                <i class="ti ti-file-description text-secondary"></i>
-                                Deskripsi Menu
-                            </label>
-                            <textarea class="form-control" id="deskripsi" name="deskripsi" rows="3"
-                                placeholder="Deskripsi singkat tentang menu ini (opsional)"></textarea>
-                            <div class="form-text">Jelaskan keunikan atau bahan utama menu ini</div>
-                        </div>
-
-                        <!-- Upload Gambar -->
-                        <div class="col-12 mb-3">
-                            <label for="gambarMenu" class="form-label">
-                                <i class="ti ti-camera text-warning"></i>
-                                Gambar Menu
-                            </label>
-                            <input type="file" class="form-control" id="gambarMenu" name="gambarMenu" accept="image/*">
-                            <div class="form-text">
-                                <small>Format yang didukung: JPG, PNG, GIF (Maksimal 2MB)</small>
-                            </div>
-                            <!-- Preview gambar -->
-                            <div id="imagePreview" class="mt-3" style="display: none;">
-                                <img id="previewImg" src="" alt="Preview" class="img-thumbnail"
-                                    style="max-width: 200px; max-height: 150px;">
-                                <button type="button" class="btn btn-sm btn-danger ms-2" onclick="removeImagePreview()">
-                                    <i class="ti ti-x"></i> Hapus
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Status -->
-                        <div class="col-md-6 mb-3">
-                            <label for="status" class="form-label">
-                                <i class="ti ti-toggle-right text-success"></i>
-                                Status Menu
-                            </label>
-                            <select class="form-select" id="status" name="status">
-                                <option value="aktif" selected>✅ Aktif</option>
-                                <option value="nonaktif">❌ Nonaktif</option>
-                            </select>
-                        </div>
-
-                        <!-- Stok (opsional) -->
-                        <div class="col-md-6 mb-3">
-                            <label for="stok" class="form-label">
-                                <i class="ti ti-package text-info"></i>
-                                Stok Tersedia
-                            </label>
-                            <input type="number" class="form-control" id="stok" name="stok" placeholder="100" min="0"
-                                value="999">
-                            <div class="form-text">Kosongkan jika stok tidak terbatas</div>
-                        </div>
-                    </div>
-
-                    <!-- Preview Card -->
-                    <div class="col-12 mt-4">
-                        <div class="border rounded p-3 bg-light">
-                            <h6 class="text-primary mb-3">
-                                <i class="ti ti-eye"></i>
-                                Preview Menu
-                            </h6>
-                            <div id="menuPreview" class="row">
-                                <div class="col-md-4">
-                                    <div class="card">
+                        <!-- Kolom Kanan - Preview Card -->
+                        <div class="col-lg-4">
+                            <div class="card border bg-light sticky-top" style="top: 20px;">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">
+                                        <i class="ti ti-eye"></i>
+                                        Preview Menu
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="card menu-card h-100 shadow-sm">
                                         <div class="position-relative">
                                             <img id="previewCardImg"
                                                 src="https://via.placeholder.com/400x250/e9ecef/6c757d?text=No+Image"
                                                 class="card-img-top" alt="Preview"
-                                                style="height: 150px; object-fit: cover;">
+                                                style="height: 200px; object-fit: cover;">
                                             <span id="previewStatus"
                                                 class="badge bg-success position-absolute top-0 end-0 m-2">Aktif</span>
                                             <span id="previewKategori"
@@ -657,38 +465,45 @@
                                         </div>
                                         <div class="card-body">
                                             <h6 id="previewNama" class="card-title">Nama Menu</h6>
-                                            <p id="previewDeskripsi" class="card-text text-muted small">Deskripsi
-                                                menu...</p>
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <p id="previewDeskripsi" class="card-text text-muted small">Deskripsi menu...</p>
+                                            <div class="d-flex justify-content-between align-items-center mt-3">
                                                 <h5 id="previewHarga" class="text-success mb-0">Rp 0</h5>
-                                                <span id="previewLevel" class="badge bg-danger"
-                                                    style="display: none;">Level 1</span>
+                                                <span id="previewStok" class="badge bg-info">Stok: 999</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                <div class="card-footer bg-light">
+                                    <small class="text-muted">
+                                        <i class="ti ti-info-circle"></i>
+                                        Preview akan diupdate secara otomatis
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer pe-3 py-3">
-                    <button type="button" class="btn btn-danger d-flex align-items-center" data-bs-dismiss="modal">
-                        <i class="ti ti-x me-1"></i>
-                        Batal
-                    </button>
-                    <button type="submit" class="btn btn-success d-flex align-items-center">
-                        <i class="ti ti-device-floppy me-1"></i>
-                        Simpan Menu
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
-<!-- JavaScript untuk Modal Tambah Menu -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
+                    <!-- Action Buttons -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-danger" onclick="showDataMenu()">
+                                    <i class="ti ti-x me-1"></i>
+                                    Batal
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="ti ti-device-floppy me-1"></i>
+                                    Simpan Menu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+        `;
+    }
+
+    // Initialize Form Tambah functionality
+    function initFormTambah() {
         // Form elements
         const form = document.getElementById('formTambahMenu');
         const namaMenu = document.getElementById('namaMenu');
@@ -696,6 +511,7 @@
         const harga = document.getElementById('harga');
         const deskripsi = document.getElementById('deskripsi');
         const status = document.getElementById('status');
+        const stok = document.getElementById('stok');
         const gambarInput = document.getElementById('gambarMenu');
 
         // Preview elements
@@ -703,8 +519,8 @@
         const previewKategori = document.getElementById('previewKategori');
         const previewHarga = document.getElementById('previewHarga');
         const previewDeskripsi = document.getElementById('previewDeskripsi');
-        const previewLevel = document.getElementById('previewLevel');
         const previewStatus = document.getElementById('previewStatus');
+        const previewStok = document.getElementById('previewStok');
         const previewCardImg = document.getElementById('previewCardImg');
 
         // Update preview in real-time
@@ -715,7 +531,16 @@
             // Kategori
             const katText = kategori.options[kategori.selectedIndex].text;
             previewKategori.textContent = katText !== 'Pilih Kategori' ? katText : 'Kategori';
-            previewKategori.className = `badge position-absolute top-0 start-0 m-2 ${kategori.value === 'makanan' ? 'bg-primary' : kategori.value === 'minuman' ? 'bg-info' : 'bg-secondary'}`;
+
+            // Dynamic badge color based on kategori
+            const badgeColors = {
+                'makanan': 'bg-primary',
+                'minuman': 'bg-info',
+                'dessert': 'bg-warning',
+                'snack': 'bg-secondary'
+            };
+            const badgeColor = badgeColors[kategori.value] || 'bg-secondary';
+            previewKategori.className = 'badge ' + badgeColor + ' position-absolute top-0 start-0 m-2';
 
             // Harga
             const hargaVal = parseInt(harga.value) || 0;
@@ -724,16 +549,17 @@
             // Deskripsi
             previewDeskripsi.textContent = deskripsi.value || 'Deskripsi menu...';
 
-            // Hide level badge since we removed level pedas
-            previewLevel.style.display = 'none';
-
             // Status
             previewStatus.textContent = status.value === 'aktif' ? 'Aktif' : 'Nonaktif';
-            previewStatus.className = `badge position-absolute top-0 end-0 m-2 ${status.value === 'aktif' ? 'bg-success' : 'bg-secondary'}`;
+            previewStatus.className = 'badge position-absolute top-0 end-0 m-2 ' + (status.value === 'aktif' ? 'bg-success' : 'bg-secondary');
+
+            // Stok
+            const stokVal = parseInt(stok.value) || 0;
+            previewStok.textContent = 'Stok: ' + stokVal;
         }
 
         // Event listeners for real-time preview
-        [namaMenu, kategori, harga, deskripsi, status].forEach(element => {
+        [namaMenu, kategori, harga, deskripsi, status, stok].forEach(element => {
             element.addEventListener('input', updatePreview);
             element.addEventListener('change', updatePreview);
         });
@@ -778,55 +604,25 @@
             submitBtn.innerHTML = '<i class="ti ti-loader rotate"></i> Menyimpan...';
             submitBtn.disabled = true;
 
-            // Simulate save process (replace with actual AJAX call)
-            setTimeout(function () {
-                // Reset form
-                form.reset();
-                form.classList.remove('was-validated');
-                updatePreview();
-                removeImagePreview();
+            // Submit form (replace with actual backend call)
+            // form.submit();
 
-                // Close modal
-                bootstrap.Modal.getInstance(document.getElementById('modalTambahMenu')).hide();
-
-                // Show success message
-                showSuccessMessage('Menu berhasil ditambahkan!');
-
-                // Reset button
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }, 2000);
+            // For demo: show success and return to list
+            setTimeout(() => {
+                alert('Menu berhasil ditambahkan!');
+                showDataMenu();
+            }, 1500);
         });
 
-        // Initialize preview on modal show
-        document.getElementById('modalTambahMenu').addEventListener('shown.bs.modal', function () {
-            updatePreview();
-        });
-    });
+        // Initialize preview
+        updatePreview();
+    }
 
-    // Helper functions
+    // Helper function to remove image preview
     function removeImagePreview() {
         document.getElementById('imagePreview').style.display = 'none';
         document.getElementById('gambarMenu').value = '';
         document.getElementById('previewCardImg').src = 'https://via.placeholder.com/400x250/e9ecef/6c757d?text=No+Image';
-    }
-
-    function showSuccessMessage(message) {
-        // Create and show success alert
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
-        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        alertDiv.innerHTML = `
-        <i class="ti ti-check-circle"></i>
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-        document.body.appendChild(alertDiv);
-
-        // Auto remove after 3 seconds
-        setTimeout(function () {
-            alertDiv.remove();
-        }, 3000);
     }
 
     // CSS for rotating loader
@@ -838,6 +634,10 @@
     }
     .rotate {
         animation: rotate 1s linear infinite;
+    }
+    .sticky-top {
+        position: -webkit-sticky;
+        position: sticky;
     }
 `;
     document.head.appendChild(style);

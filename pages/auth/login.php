@@ -137,14 +137,7 @@
               <div class="d-grid mt-4">
                 <button type="submit" class="btn btn-danger">Sign In</button>
               </div>
-              <div class="saprator mt-3">
-                <span>or</span>
-              </div>
-              <div class="d-grid">
-                <button type="button" class="btn mt-2 bg-light-primary bg-light text-muted">
-                  <img src="../../dist/assets/images/authentication/google-icon.svg" alt="image" />Sign In With Google
-                </button>
-              </div>
+
 
               <hr />
               <h5 class="d-flex justify-content-center">Don't have an account?<a href="register.php" class="ms-2">Sign
