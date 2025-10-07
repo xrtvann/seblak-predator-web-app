@@ -686,31 +686,34 @@
                         </div>
                     </div>
                     
-                    <!-- Table with simplified header -->
-                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light sticky-top">
-                                <tr class="column-headers">
-                                    <th style="min-width: 50px;">#</th>
-                                    <th style="min-width: 100px;">Gambar</th>
-                                    <th style="min-width: 200px;">Nama Menu</th>
-                                    <th style="min-width: 120px;">Kategori</th>
-                                    <th style="min-width: 120px;">Harga</th>
-                                    <th style="min-width: 100px;">Status</th>
-                                    <th style="min-width: 120px;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="menuTableBody">
-                                <tr>
-                                    <td colspan="7" class="text-center">
-                                        <div class="spinner-border spinner-border-sm" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                        Loading menu data...
+                    <!-- Table with sticky header -->  
+                    <div class="table-container">
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light table-header-sticky">
+                                    <tr class="column-headers">
+                                        <th style="min-width: 50px;">#</th>
+                                        <th style="min-width: 100px;">Gambar</th>
+                                        <th style="min-width: 200px;">Nama Menu</th>
+                                        <th style="min-width: 120px;">Kategori</th>
+                                        <th style="min-width: 120px;">Harga</th>
+                                        <th style="min-width: 100px;">Status</th>
+                                        <th style="min-width: 120px;">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="menuTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <div class="spinner-border spinner-border-sm" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            Loading menu data...
+                                        </td>
                                     </td>
                                 </tr>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     
                     <!-- Pagination Controls -->
@@ -1285,11 +1288,64 @@
 
 <!-- Custom CSS for Scrollable Table -->
 <style>
-    /* Scrollable table container */
-    .table-responsive {
+    /* Table container */
+    .table-container {
+        position: relative;
         border: 1px solid #dee2e6;
         border-radius: 0 0 0.375rem 0.375rem;
         border-top: none;
+        overflow: hidden;
+    }
+
+    /* Scrollable table container */
+    .table-responsive {
+        border: none;
+        border-radius: 0;
+        position: relative;
+        background: white;
+    }
+
+    /* Sticky table header */
+    .table-header-sticky {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: var(--bs-gray-100) !important;
+    }
+
+    .table-header-sticky th {
+        background-color: var(--bs-gray-100) !important;
+        border-bottom: 2px solid #dee2e6;
+        border-top: 1px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+        padding: 1rem 0.75rem;
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        /* Remove left and right borders */
+        border-left: none;
+        border-right: none;
+        background-clip: padding-box;
+    }
+
+    .table-header-sticky th:last-child {
+        border-right: none;
+    }
+
+    /* Ensure table borders don't scroll with content */
+    .table-responsive table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-responsive .table thead th {
+        border-left: none;
+        border-right: none;
+    }
+
+    .table-responsive .table thead th:first-child {
+        border-left: none;
     }
 
     /* External controls section styling */
@@ -1324,7 +1380,7 @@
     .table-header-controls {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: start;
         gap: 1rem;
         flex-wrap: wrap;
     }
@@ -1665,12 +1721,6 @@
     }
 
     /* Table styling improvements */
-    .sticky-top {
-        position: sticky;
-        top: 0;
-        z-index: 1020;
-    }
-
     .table-light {
         background-color: var(--bs-gray-100) !important;
     }
@@ -1680,7 +1730,6 @@
         font-weight: 600;
         color: #495057;
         padding: 1rem 0.75rem;
-        background-color: var(--bs-gray-100) !important;
     }
 
     /* Enhanced table styling */
@@ -1741,7 +1790,7 @@
     .table-header-controls {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: start;
         gap: 15px;
         flex-wrap: wrap;
     }
