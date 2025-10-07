@@ -42,7 +42,7 @@ function getAllProducts()
 
     try {
         // Build query with optional filters
-        $whereConditions = ["p.is_active = TRUE"];
+        $whereConditions = ["1=1"]; // Always true condition to allow flexible filtering
         $params = [];
         $types = "";
 
@@ -55,6 +55,13 @@ function getAllProducts()
         if (isset($_GET['is_topping'])) {
             $whereConditions[] = "p.is_topping = ?";
             $params[] = $_GET['is_topping'] === 'true' ? 1 : 0;
+            $types .= "i";
+        }
+
+        // Optional is_active filter (now as parameter instead of default)
+        if (isset($_GET['is_active'])) {
+            $whereConditions[] = "p.is_active = ?";
+            $params[] = $_GET['is_active'] === 'true' ? 1 : 0;
             $types .= "i";
         }
 
@@ -147,7 +154,7 @@ function getProductById()
                          c.name as category_name, c.type as category_type
                   FROM products p 
                   JOIN categories c ON p.category_id = c.id 
-                  WHERE p.id = ? AND p.is_active = TRUE";
+                  WHERE p.id = ?";
 
         $stmt = mysqli_prepare($koneksi, $query);
         mysqli_stmt_bind_param($stmt, "s", $product_id);

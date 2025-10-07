@@ -52,8 +52,9 @@
                             </ul>
 
                             <!-- Action Buttons -->
-                            <button type="button" class="btn btn-primary" id="btnTambahMenu" onclick="showFormTambah()">
-                                <i class="ti ti-plus"></i> Tambah Menu
+                            <button type="button" class="btn btn-primary d-flex" id="btnTambahMenu"
+                                onclick="showFormTambah()">
+                                <i class="ti ti-plus me-2"></i> Tambah Menu
                             </button>
                             <button type="button" class="btn btn-secondary d-none" id="btnKembali"
                                 onclick="showDataMenu()">
@@ -74,39 +75,6 @@
     <!-- [ Data Menu ] end -->
 </div>
 <!-- [ Main Content ] end -->
-
-<!-- Success/Error Notification -->
-<div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-    <div id="notification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
-            <strong class="me-auto" id="notificationTitle">Notification</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body" id="notificationBody">
-            <!-- Notification message -->
-        </div>
-    </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">Konfirmasi Hapus</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Apakah Anda yakin ingin menghapus menu "<span id="deleteItemName"></span>"?</p>
-                <p class="text-muted">Data yang sudah dihapus tidak dapat dikembalikan.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Hapus</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- JavaScript untuk CRUD Menu -->
 <script>
@@ -572,6 +540,12 @@
         // Set content
         mainContent.innerHTML = getFormHTML();
 
+        // Update form title in the header
+        const formTitle = document.getElementById('formTitle');
+        if (formTitle) {
+            formTitle.textContent = data ? 'Edit Menu' : 'Tambah Menu Baru';
+        }
+
         // Populate form if editing
         if (data) {
             populateForm(data);
@@ -748,14 +722,23 @@
     // Get form HTML
     function getFormHTML() {
         return `
-            <form id="menuForm" enctype="multipart/form-data">
+            <!-- Form Container with Table Header Background -->
+            <div class="card">
+                <div class="card-header table-light">
+                    <div class="d-flex align-items-center">
+                        <i class="ti ti-forms me-2 text-white" style="font-size: 1.5rem;"></i>
+                        <h4 class="mb-0 text-white fw-bold" id="formTitle" style="font-size: 1.25rem;">Tambah Menu Baru</h4>
+                    </div>
+                </div>
+                <div class="card-body table-light p-4">
+                    <form id="menuForm" enctype="multipart/form-data">
                 <div class="row">
                     <!-- Left Column - Form Fields -->
                     <div class="col-lg-8">
                         <!-- Basic Information Card -->
                         <div class="card mb-3">
                             <div class="card-header">
-                                <h6 class="mb-0"><i class="ti ti-info-circle me-2"></i>Informasi Dasar</h6>
+                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-info-circle me-2"></i>Informasi Dasar</h6>
                             </div>
                             <div class="card-body">
                                 <div class="row">
@@ -792,20 +775,25 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="menuImage" class="form-label">URL Gambar</label>
-                                            <input type="url" class="form-control" id="menuImage" name="image_url" 
-                                                   placeholder="https://example.com/image.jpg"
-                                                   onchange="updateImagePreview()" onkeyup="updateImagePreview()">
-                                            <div class="form-text">URL gambar untuk preview menu</div>
+                                            <label class="form-label">Gambar Menu</label>
+                                            
+                                            <!-- File Upload Only -->
+                                            <input type="file" class="form-control" id="menuImageFile" name="image_file" 
+                                                   accept="image/*" onchange="handleFileUpload(this)">
+                                            <div class="form-text">Upload gambar (JPG, PNG, GIF - Max: 2MB)</div>
+                                            <div id="uploadProgress" class="progress mt-2" style="display: none; height: 4px;">
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                                     role="progressbar" style="width: 0%"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="menuDescription" class="form-label">Deskripsi</label>
+                                    <label for="menuDescription" class="form-label">Deskripsi (Opsional)</label>
                                     <textarea class="form-control" id="menuDescription" name="description" rows="4" 
                                               placeholder="Deskripsi menu yang menarik untuk pelanggan..."></textarea>
-                                    <div class="form-text">Deskripsi yang menarik akan meningkatkan minat pelanggan</div>
+                                 
                                 </div>
                             </div>
                         </div>
@@ -813,7 +801,7 @@
                         <!-- Additional Settings Card -->
                         <div class="card mb-3">
                             <div class="card-header">
-                                <h6 class="mb-0"><i class="ti ti-settings me-2"></i>Pengaturan Tambahan</h6>
+                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-settings me-2"></i>Pengaturan Tambahan</h6>
                             </div>
                             <div class="card-body">
                                 <div class="row">
@@ -844,16 +832,24 @@
                     <div class="col-lg-4">
                         <div class="card sticky-top" style="top: 20px;">
                             <div class="card-header">
-                                <h6 class="mb-0"><i class="ti ti-eye me-2"></i>Preview Menu</h6>
+                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-eye me-2"></i>Preview Menu</h6>
                             </div>
                             <div class="card-body">
                                 <!-- Menu Preview Card -->
                                 <div class="card border" id="menuPreviewCard">
                                     <div class="position-relative">
-                                        <img id="previewImage" 
-                                             src="https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=250&fit=crop" 
-                                             alt="Preview" class="card-img-top" 
-                                             style="height: 180px; object-fit: cover;">
+                                        <!-- Image Preview -->
+                                        <div id="previewImageContainer" class="position-relative" style="height: 180px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                                            <!-- Default placeholder icon -->
+                                            <div id="previewPlaceholder" class="text-center">
+                                                <i class="ti ti-photo text-muted" style="font-size: 3rem;"></i>
+                                                <p class="text-muted mt-2 mb-0 small">Belum ada gambar</p>
+                                            </div>
+                                            <!-- Actual image (hidden by default) -->
+                                            <img id="previewImage" 
+                                                 alt="Preview" class="card-img-top" 
+                                                 style="height: 180px; object-fit: cover; display: none;">
+                                        </div>
                                         <div class="position-absolute top-0 end-0 p-2">
                                             <span class="badge bg-success" id="previewStatus">Active</span>
                                         </div>
@@ -866,7 +862,7 @@
                                             <span class="badge bg-light-info text-info d-none" id="previewTopping">Topping</span>
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h5 class="mb-0 text-success" id="previewPrice">Rp 0</h5>
+                                            <h5 class="mb-0" id="previewPrice">Rp 0</h5>
                                             <small class="text-muted">Preview</small>
                                         </div>
                                     </div>
@@ -890,18 +886,18 @@
                 <!-- Form Actions -->
                 <div class="row">
                     <div class="col-12">
-                        <div class="card">
+                        <div class="card border-0 bg-light">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-light" onclick="showDataMenu()">
+                                    <button type="button" class="btn btn-light border" onclick="showDataMenu()">
                                         <i class="ti ti-arrow-left me-1"></i> Kembali ke Daftar
                                     </button>
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
-                                            <i class="ti ti-refresh me-1"></i> Reset Form
+                                        <button type="button" class="btn btn-secondary d-flex" onclick="resetForm()">
+                                            <i class="ti ti-refresh me-2"></i> Reset Form
                                         </button>
-                                        <button type="submit" class="btn btn-primary" id="submitBtn">
-                                            <i class="ti ti-check me-1"></i> <span id="submitText">Simpan Menu</span>
+                                        <button type="submit" class="btn btn-success d-flex" id="submitBtn">
+                                            <i class="ti ti-check me-2"></i> <span id="submitText">Simpan Menu</span>
                                         </button>
                                     </div>
                                 </div>
@@ -909,7 +905,9 @@
                         </div>
                     </div>
                 </div>
-            </form>
+                    </form>
+                </div>
+            </div>
         `;
     }
 
@@ -1068,6 +1066,17 @@
     function initForm() {
         populateCategorySelect();
 
+        // Clear any upload status
+        const fileInput = document.getElementById('menuImageFile');
+        if (fileInput) {
+            fileInput.value = '';
+            fileInput.removeAttribute('data-uploaded-url');
+            fileInput.removeAttribute('data-has-file');
+        }
+
+        // Reset image preview to placeholder for new forms
+        resetImagePreview();
+
         const form = document.getElementById('menuForm');
         form.addEventListener('submit', handleFormSubmit);
     }
@@ -1079,16 +1088,48 @@
         const submitBtn = document.getElementById('submitBtn');
         const originalText = submitBtn.innerHTML;
 
-        // Show loading
-        submitBtn.innerHTML = '<i class="ti ti-loader"></i> Processing...';
-        submitBtn.disabled = true;
+        // Show loading with SweetAlert
+        showLoading('Menyimpan...', 'Sedang memproses data menu, tunggu sebentar...');
 
         try {
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
 
+            // Handle image upload if file is selected
+            const fileInput = document.getElementById('menuImageFile');
+            const hasFile = fileInput.getAttribute('data-has-file') === 'true';
+            const existingUrl = fileInput.getAttribute('data-uploaded-url');
+
+            if (hasFile && fileInput.files[0]) {
+                // Upload the file now
+                const uploadFormData = new FormData();
+                uploadFormData.append('image', fileInput.files[0]);
+
+                const uploadResponse = await fetch('api/upload/image.php', {
+                    method: 'POST',
+                    body: uploadFormData
+                });
+
+                const uploadResult = await uploadResponse.json();
+
+                if (uploadResult.success) {
+                    data.image_url = uploadResult.data.relative_url;
+                } else {
+                    throw new Error('Gagal mengupload gambar: ' + uploadResult.message);
+                }
+            } else if (existingUrl) {
+                // Use existing uploaded URL (for edit mode)
+                data.image_url = existingUrl;
+            } else {
+                data.image_url = ''; // No file uploaded
+            }
+
+            // Remove file input data as it's not needed in JSON
+            delete data.image_file;
+
             // Convert checkbox to boolean
             data.is_topping = formData.has('is_topping');
+            data.is_active = formData.has('is_active');
 
             // Convert price to number
             data.price = parseFloat(data.price);
@@ -1111,31 +1152,30 @@
 
             const result = await response.json();
 
+            // Hide loading
+            hideAlert();
+
             if (result.success) {
-                showNotification(result.message, 'success');
-                showDataMenu(); // Return to data view
+                showSuccess('Berhasil!', result.message, () => {
+                    showDataMenu(); // Return to data view after user closes success alert
+                });
             } else {
-                showNotification('Error: ' + result.message, 'error');
+                showError('Gagal!', result.message);
             }
 
         } catch (error) {
             console.error('Error:', error);
-            showNotification('Error connecting to server', 'error');
-        } finally {
-            // Restore button
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
+            hideAlert();
+            showError('Error!', 'Terjadi kesalahan saat menghubungi server');
         }
     }
 
     // Delete menu
     function deleteMenu(id, name) {
-        document.getElementById('deleteItemName').textContent = name;
+        showDeleteConfirmation(name, async () => {
+            // Show loading
+            showLoading('Menghapus...', 'Sedang menghapus menu, tunggu sebentar...');
 
-        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        modal.show();
-
-        document.getElementById('confirmDeleteBtn').onclick = async () => {
             try {
                 const response = await fetch(`api/menu/products.php?id=${id}`, {
                     method: 'DELETE'
@@ -1143,21 +1183,23 @@
 
                 const result = await response.json();
 
-                if (result.success) {
-                    showNotification(result.message, 'success');
-                    loadMenuData(); // Reload data
-                } else {
-                    showNotification('Error: ' + result.message, 'error');
-                }
+                // Hide loading
+                hideAlert();
 
-                modal.hide();
+                if (result.success) {
+                    showSuccess('Berhasil!', result.message, () => {
+                        loadMenuData(); // Reload data after user closes success alert
+                    });
+                } else {
+                    showError('Gagal!', result.message);
+                }
 
             } catch (error) {
                 console.error('Error:', error);
-                showNotification('Error connecting to server', 'error');
-                modal.hide();
+                hideAlert();
+                showError('Error!', 'Terjadi kesalahan saat menghubungi server');
             }
-        };
+        });
     }
 
     // Utility functions
@@ -1165,26 +1207,129 @@
         return new Intl.NumberFormat('id-ID').format(price);
     }
 
-    function showNotification(message, type = 'info') {
-        const notification = document.getElementById('notification');
-        const title = document.getElementById('notificationTitle');
-        const body = document.getElementById('notificationBody');
-
-        title.textContent = type === 'success' ? 'Success' : type === 'error' ? 'Error' : 'Notification';
-        body.textContent = message;
-
-        // Remove existing classes
-        notification.className = 'toast';
-
-        // Add appropriate class
-        if (type === 'success') {
-            notification.classList.add('bg-success', 'text-white');
-        } else if (type === 'error') {
-            notification.classList.add('bg-danger', 'text-white');
+    // Handle file selection and preview (upload happens on form submit)
+    function handleFileUpload(input) {
+        const file = input.files[0];
+        if (!file) {
+            resetImagePreview();
+            return;
         }
 
-        const toast = new bootstrap.Toast(notification);
-        toast.show();
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (!allowedTypes.includes(file.type)) {
+            showError('Format File Tidak Valid', 'Silakan pilih file gambar (JPG, PNG, GIF)');
+            input.value = '';
+            resetImagePreview();
+            return;
+        }
+
+        // Validate file size (2MB)
+        const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+        if (file.size > maxSize) {
+            showError('File Terlalu Besar', 'Ukuran file maksimal 2MB');
+            input.value = '';
+            resetImagePreview();
+            return;
+        }
+
+        // Store file for later upload
+        input.setAttribute('data-has-file', 'true');
+
+        // Show preview immediately using FileReader
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const previewImage = document.getElementById('previewImage');
+            const previewPlaceholder = document.getElementById('previewPlaceholder');
+
+            if (previewImage && previewPlaceholder) {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+            }
+        };
+        reader.readAsDataURL(file);
+
+        // Show success message for file selection
+        showToast('success', 'Gambar dipilih! Klik "Simpan Menu" untuk mengupload.');
+    }
+
+    // Reset image preview to placeholder
+    function resetImagePreview() {
+        const previewImage = document.getElementById('previewImage');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+
+        if (previewImage && previewPlaceholder) {
+            previewImage.style.display = 'none';
+            previewImage.src = '';
+            previewPlaceholder.style.display = 'block';
+        }
+    }
+
+    // Show upload progress animation
+    function showUploadProgress() {
+        const progressContainer = document.getElementById('uploadProgress');
+        const progressBar = progressContainer.querySelector('.progress-bar');
+
+        if (progressContainer && progressBar) {
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            // Animate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15 + 5; // 5-20% increments
+                if (progress > 90) {
+                    progress = 90; // Stop at 90% until upload completes
+                    clearInterval(interval);
+                }
+                progressBar.style.width = progress + '%';
+            }, 100);
+
+            // Store interval ID for cleanup
+            progressContainer.setAttribute('data-interval', interval);
+        }
+    }
+
+    // Hide upload progress
+    function hideUploadProgress() {
+        const progressContainer = document.getElementById('uploadProgress');
+        const progressBar = progressContainer.querySelector('.progress-bar');
+
+        if (progressContainer && progressBar) {
+            // Clear any running interval
+            const interval = progressContainer.getAttribute('data-interval');
+            if (interval) {
+                clearInterval(interval);
+                progressContainer.removeAttribute('data-interval');
+            }
+
+            // Complete progress to 100%
+            progressBar.style.width = '100%';
+
+            // Hide after brief delay
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+            }, 500);
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        // Use SweetAlert instead of Bootstrap toast
+        switch (type) {
+            case 'success':
+                showSuccess('Success!', message);
+                break;
+            case 'error':
+                showError('Error!', message);
+                break;
+            case 'warning':
+                showWarning('Warning!', message);
+                break;
+            default:
+                showInfo('Information', message);
+        }
     }
 
     // Pagination functions
@@ -2293,6 +2438,92 @@
         .form-select-sm,
         .form-control-sm {
             font-size: 0.75rem;
+        }
+    }
+
+    /* Form Container Styling */
+    .table-light {
+        background-color: #f8f9fa !important;
+        border: 1px solid #dee2e6;
+    }
+
+    .card-header.table-light {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-bottom: 2px solid #dee2e6;
+        color: white;
+    }
+
+    .card-body.table-light {
+        background-color: #f8f9fa;
+    }
+
+    /* Enhanced form styling */
+    .table-light .card {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease;
+    }
+
+    .table-light .card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .table-light .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: none;
+    }
+
+    /* Form field enhancements */
+    .table-light .form-control:focus,
+    .table-light .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    /* Upload progress styling */
+    .progress-bar {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Preview card enhancements */
+    .sticky-top {
+        position: sticky !important;
+        top: 20px !important;
+    }
+
+    /* Form title styling */
+    #formTitle {
+        color: white !important;
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+
+    /* Preview image placeholder styling */
+    #previewImageContainer {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.375rem;
+        transition: border-color 0.3s ease;
+    }
+
+    #previewImageContainer:hover {
+        border-color: #adb5bd;
+    }
+
+    #previewPlaceholder {
+        opacity: 0.7;
+    }
+
+    #previewPlaceholder i {
+        color: #6c757d;
+    }
+
+    /* Responsive form layout */
+    @media (max-width: 992px) {
+        .sticky-top {
+            position: relative !important;
+            top: auto !important;
         }
     }
 </style>

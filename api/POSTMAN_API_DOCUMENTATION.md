@@ -28,6 +28,55 @@ All API responses follow this standard format:
 
 ---
 
+## 📤 File Upload API
+
+### Upload Menu Image
+**POST** `/upload/image.php`
+
+**Description:** Upload an image file for menu items
+
+**Headers:**
+```
+Content-Type: multipart/form-data
+```
+
+**Request Body:**
+```
+Form Data:
+- image: File (JPG, PNG, GIF - Max: 2MB)
+```
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "message": "Image uploaded successfully",
+  "data": {
+    "filename": "menu_65f8b2a1c4d3f_1710123456.jpg",
+    "url": "http://localhost/seblak-predator/uploads/menu-images/menu_65f8b2a1c4d3f_1710123456.jpg",
+    "relative_url": "uploads/menu-images/menu_65f8b2a1c4d3f_1710123456.jpg",
+    "size": 524288,
+    "type": "image/jpeg"
+  }
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "message": "Invalid file type. Only JPG, PNG, and GIF are allowed"
+}
+```
+
+**Validation Rules:**
+- File types: JPG, JPEG, PNG, GIF only
+- Maximum file size: 2MB
+- Files are stored in `/uploads/menu-images/` directory
+- Unique filename generated automatically
+
+---
+
 ## 🏷️ Categories API
 
 ### Get All Categories

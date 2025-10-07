@@ -258,8 +258,7 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
                     <span>Dashboard</span>
                   </a>
                   <div class="dropdown-divider"></div>
-                  <a href="handler/logout.php" class="dropdown-item text-danger"
-                    onclick="return confirm('Apakah Anda yakin ingin logout?')">
+                  <a href="#" class="dropdown-item text-danger" onclick="handleLogout()">
                     <i class="ti ti-logout"></i>
                     <span>Logout</span>
                   </a>
@@ -298,6 +297,11 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
   <script src="dist/assets/js/plugins/popper.min.js"></script>
   <script src="dist/assets/js/plugins/simplebar.min.js"></script>
   <script src="dist/assets/js/plugins/bootstrap.min.js"></script>
+
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Custom Alert Functions -->
+  <script src="src/assets/js/sweetalert/alert.js"></script>
   <script src="dist/assets/js/icon/custom-font.js"></script>
   <script src="dist/assets/js/script.js"></script>
   <script src="dist/assets/js/theme.js"></script>
@@ -335,6 +339,23 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
   <script src="dist/assets/js/plugins/apexcharts.min.js"></script>
   <script src="dist/assets/js/pages/dashboard-default.js"></script>
   <!-- [Page Specific JS] end -->
+
+  <!-- Global SweetAlert Functions -->
+  <script>
+    function handleLogout() {
+      showConfirmation(
+        'Konfirmasi Logout',
+        'Apakah Anda yakin ingin keluar dari sistem?',
+        () => {
+          showLoading('Logging out...', 'Sedang memproses logout...');
+          window.location.href = 'handler/logout.php';
+        },
+        null,
+        'Ya, Logout',
+        'Batal'
+      );
+    }
+  </script>
 </body>
 <!-- [Body] end -->
 
