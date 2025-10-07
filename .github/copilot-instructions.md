@@ -653,3 +653,143 @@ GET /api/sync/categories.php?since={timestamp}
 - Use pagination for large data sets
 - Cache frequently accessed data
 - Minimize database queries per request
+
+## API Documentation & Testing
+
+This project includes comprehensive API documentation and testing tools for development and integration purposes.
+
+### Documentation Files
+
+**Comprehensive API Documentation:**
+- `api/POSTMAN_API_DOCUMENTATION.md` - Complete REST API reference with all endpoints, request/response examples, and validation rules
+- `api/QUICK_SETUP_GUIDE.md` - Step-by-step guide for setting up and testing APIs with Postman
+- `api/README.md` - Basic API reference with cURL examples (legacy)
+
+**Postman Integration:**
+- `api/Seblak_Predator_API.postman_collection.json` - Ready-to-import Postman collection with 16+ pre-configured requests
+- `api/Seblak_Predator_Environment.postman_environment.json` - Postman environment file with variables and base URL configuration
+
+### Current API Coverage
+
+**Implemented Endpoints (Ready for Testing):**
+
+**Categories Management:**
+- `GET /api/menu/categories.php` - Get all active categories
+- `POST /api/menu/categories.php` - Create new category
+- `PUT /api/menu/categories.php?id={id}` - Update existing category
+- `DELETE /api/menu/categories.php?id={id}` - Soft delete category
+
+**Products Management:**
+- `GET /api/menu/products.php` - Get all products with filtering and pagination
+- `GET /api/menu/products.php?id={id}` - Get specific product by ID
+- `POST /api/menu/products.php` - Create new product
+- `PUT /api/menu/products.php?id={id}` - Update existing product
+- `DELETE /api/menu/products.php?id={id}` - Soft delete product
+
+**Mobile Synchronization:**
+- `GET /api/sync/categories.php` - Sync categories for mobile app
+- `GET /api/sync/products.php` - Sync products for mobile app
+- Both support `?since={timestamp}` for incremental sync
+
+### Future API Endpoints (Planned)
+
+Based on the database schema and restaurant management requirements, the following endpoints should be implemented:
+
+**Authentication Module (`/api/auth/`):**
+```php
+POST /api/auth/login.php
+POST /api/auth/register.php  
+POST /api/auth/forgot-password.php
+POST /api/auth/reset-password.php
+PUT /api/auth/change-password.php
+POST /api/auth/refresh-token.php
+POST /api/auth/logout.php
+```
+
+**User Management (`/api/users/`):**
+```php
+GET /api/users/users.php - Get all users (admin only)
+GET /api/users/users.php?id={id} - Get user profile
+POST /api/users/users.php - Create new user
+PUT /api/users/users.php?id={id} - Update user profile
+DELETE /api/users/users.php?id={id} - Deactivate user
+GET /api/users/roles.php - Get all user roles
+```
+
+**Order Management (`/api/orders/`):**
+```php
+GET /api/orders/orders.php - Get orders with filtering
+GET /api/orders/orders.php?id={id} - Get specific order
+POST /api/orders/orders.php - Create new order
+PUT /api/orders/orders.php?id={id} - Update order status
+DELETE /api/orders/orders.php?id={id} - Cancel order
+GET /api/orders/items.php?order_id={id} - Get order items
+POST /api/orders/items.php - Add items to order
+```
+
+**Product Variants (`/api/menu/variants/`):**
+```php
+GET /api/menu/variants/groups.php?product_id={id} - Get variant groups for product
+POST /api/menu/variants/groups.php - Create variant group
+PUT /api/menu/variants/groups.php?id={id} - Update variant group
+DELETE /api/menu/variants/groups.php?id={id} - Delete variant group
+GET /api/menu/variants/options.php?group_id={id} - Get variant options
+POST /api/menu/variants/options.php - Create variant option
+PUT /api/menu/variants/options.php?id={id} - Update variant option
+DELETE /api/menu/variants/options.php?id={id} - Delete variant option
+```
+
+**Product Toppings (`/api/menu/toppings/`):**
+```php
+GET /api/menu/toppings/available.php?product_id={id} - Get available toppings for product
+POST /api/menu/toppings/assign.php - Assign topping to product
+DELETE /api/menu/toppings/assign.php?product_id={id}&topping_id={id} - Remove topping assignment
+```
+
+**Analytics & Reports (`/api/analytics/`):**
+```php
+GET /api/analytics/dashboard.php - Dashboard statistics
+GET /api/analytics/sales.php?period={daily|weekly|monthly} - Sales analytics
+GET /api/analytics/products.php - Product performance metrics
+GET /api/analytics/categories.php - Category performance metrics
+```
+
+### API Development Standards for New Endpoints
+
+**File Structure Pattern:**
+```
+api/
+├── module_name/
+│   ├── resource.php (main CRUD endpoint)
+│   ├── specific_action.php (specialized actions)
+│   └── nested_resource.php (sub-resources)
+├── helpers.php (shared utilities)
+└── documentation files
+```
+
+**Endpoint Implementation Checklist:**
+- [ ] **Security**: Use prepared statements, input validation, authentication
+- [ ] **Response Format**: Follow consistent JSON response structure
+- [ ] **HTTP Methods**: Proper GET/POST/PUT/DELETE handling
+- [ ] **Status Codes**: Use appropriate HTTP status codes (200, 201, 400, 401, 404, 500)
+- [ ] **Pagination**: Implement for list endpoints with `page` and `per_page` parameters
+- [ ] **Filtering**: Support common filters like `category_id`, `is_active`, `search`
+- [ ] **Validation**: Validate all input fields with proper error messages
+- [ ] **Documentation**: Update API documentation and Postman collection
+- [ ] **Testing**: Add test scenarios for success and error cases
+
+**Required Updates When Adding New Endpoints:**
+1. **API Documentation**: Add to `api/POSTMAN_API_DOCUMENTATION.md`
+2. **Postman Collection**: Add requests to `api/Seblak_Predator_API.postman_collection.json`
+3. **Testing Guide**: Update test scenarios in documentation
+4. **Database Schema**: Update if new tables or relationships needed
+5. **Mobile Sync**: Add sync endpoints if data needed in mobile app
+
+### Testing Workflow for New APIs
+
+1. **Development Testing**: Use Postman collection for manual testing
+2. **Documentation**: Document all endpoints with examples
+3. **Error Testing**: Test validation, authentication, and error scenarios
+4. **Performance Testing**: Verify response times and database query optimization
+5. **Security Testing**: Validate input sanitization and authorization
+6. **Mobile Integration**: Test synchronization with mobile app requirements
