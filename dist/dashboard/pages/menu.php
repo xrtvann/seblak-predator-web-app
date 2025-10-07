@@ -664,12 +664,12 @@
                                 <div class="sort-wrapper">
                                     <i class="ti ti-sort-descending sort-icon"></i>
                                     <select class="form-select sort-select" id="sortBy" onchange="applySorting()">
-                                        <option value="created_at_desc">Newest</option>
-                                        <option value="updated_at_desc">Updated</option>
+                                        <option value="created_at_desc">Terbaru</option>
+                                        <option value="updated_at_desc">Diperbarui</option>
                                         <option value="name_asc">A-Z</option>
                                         <option value="name_desc">Z-A</option>
-                                        <option value="price_asc">Price ↑</option>
-                                        <option value="price_desc">Price ↓</option>
+                                        <option value="price_asc">Harga Terendah</option>
+                                        <option value="price_desc">Harga Tertinggi</option>
                                     </select>
                                 </div>
                             </div>
