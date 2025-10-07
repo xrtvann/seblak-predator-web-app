@@ -972,7 +972,7 @@
                 </td>
                 <td>
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-outline-info" onclick="editMenu('${item.id}')" title="Edit">
+                        <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editMenu('${item.id}')" title="Edit">
                             <i class="ti ti-edit"></i>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name}')" title="Delete">
@@ -1022,7 +1022,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 text-success">Rp ${formatPrice(item.price)}</h5>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-sm btn-outline-info" onclick="editMenu('${item.id}')" title="Edit">
+                                <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editMenu('${item.id}')" title="Edit">
                                     <i class="ti ti-edit"></i>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name}')" title="Delete">
