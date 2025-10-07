@@ -130,7 +130,7 @@ function getAllProducts()
                 'per_page' => $per_page,
                 'last_page' => $last_page
             ],
-            'message' => 'Products retrieved successfully'
+            'message' => 'Produk berhasil diambil'
         ]);
 
     } catch (Exception $e) {
@@ -237,11 +237,11 @@ function getProductById()
             echo json_encode([
                 'success' => true,
                 'data' => $row,
-                'message' => 'Product retrieved successfully'
+                'message' => 'Produk berhasil diambil'
             ]);
         } else {
             http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Product not found']);
+            echo json_encode(['success' => false, 'message' => 'Produk tidak ditemukan']);
         }
 
     } catch (Exception $e) {
@@ -261,7 +261,7 @@ function createProduct()
 
     if (json_last_error() !== JSON_ERROR_NONE) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Invalid JSON format']);
+        echo json_encode(['success' => false, 'message' => 'Format JSON tidak valid']);
         return;
     }
 
@@ -285,7 +285,7 @@ function createProduct()
 
         if (mysqli_num_rows($categoryResult) === 0) {
             http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Invalid category ID']);
+            echo json_encode(['success' => false, 'message' => 'ID kategori tidak valid']);
             return;
         }
 
@@ -313,7 +313,7 @@ function createProduct()
             http_response_code(201);
             echo json_encode([
                 'success' => true,
-                'message' => 'Product created successfully',
+                'message' => 'Produk berhasil dibuat',
                 'product_id' => $id
             ]);
         } else {
@@ -344,7 +344,7 @@ function updateProduct()
 
     if (json_last_error() !== JSON_ERROR_NONE) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Invalid JSON format']);
+        echo json_encode(['success' => false, 'message' => 'Format JSON tidak valid']);
         return;
     }
 
@@ -358,7 +358,7 @@ function updateProduct()
 
         if (mysqli_num_rows($checkResult) === 0) {
             http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'Product not found']);
+            echo json_encode(['success' => false, 'message' => 'Produk tidak ditemukan']);
             return;
         }
 
@@ -406,7 +406,7 @@ function updateProduct()
 
             if (mysqli_num_rows($categoryResult) === 0) {
                 http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Invalid category ID']);
+                echo json_encode(['success' => false, 'message' => 'ID kategori tidak valid']);
                 return;
             }
 
@@ -439,7 +439,7 @@ function updateProduct()
             http_response_code(200);
             echo json_encode([
                 'success' => true,
-                'message' => 'Product updated successfully'
+                'message' => 'Produk berhasil diupdate'
             ]);
         } else {
             throw new Exception('Failed to update product: ' . mysqli_error($koneksi));
@@ -476,11 +476,11 @@ function deleteProduct()
                 http_response_code(200);
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Product deleted successfully'
+                    'message' => 'Produk berhasil dihapus'
                 ]);
             } else {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Product not found']);
+                echo json_encode(['success' => false, 'message' => 'Produk tidak ditemukan']);
             }
         } else {
             throw new Exception('Failed to delete product: ' . mysqli_error($koneksi));

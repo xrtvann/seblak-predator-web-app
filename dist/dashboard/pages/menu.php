@@ -76,6 +76,103 @@
 </div>
 <!-- [ Main Content ] end -->
 
+<!-- Enhanced Image Display Styles -->
+<style>
+    /* Table View Image Enhancements */
+    .menu-image-container {
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .menu-image-container:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .menu-image {
+        transition: opacity 0.3s ease;
+    }
+
+    .menu-image:hover {
+        opacity: 0.9;
+    }
+
+    /* Card View Image Enhancements */
+    .menu-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid #e9ecef;
+    }
+
+    .menu-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .menu-card-image {
+        transition: transform 0.3s ease;
+    }
+
+    .menu-card:hover .menu-card-image {
+        transform: scale(1.1);
+    }
+
+    .card-image-container {
+        border-radius: 0.375rem 0.375rem 0 0;
+    }
+
+    .image-overlay {
+        background: linear-gradient(45deg, transparent 70%, rgba(0, 0, 0, 0.1) 100%);
+        border-radius: 0 0.375rem 0 0;
+    }
+
+    /* Loading states */
+    .image-loading {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+    }
+
+    @keyframes loading {
+        0% {
+            background-position: 200% 0;
+        }
+
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        .menu-image-container {
+            width: 50px !important;
+            height: 35px !important;
+        }
+
+        .menu-image {
+            width: 50px !important;
+            height: 35px !important;
+        }
+
+        .menu-card-image {
+            height: 120px !important;
+        }
+    }
+
+    /* Image error state */
+    .menu-image[src*="unsplash"] {
+        filter: sepia(20%) saturate(120%) hue-rotate(15deg);
+    }
+
+    /* Topping badge styling */
+    .badge.bg-light-warning {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+        border: 1px solid rgba(255, 193, 7, 0.2);
+    }
+</style>
+
 <!-- JavaScript untuk CRUD Menu -->
 <script>
     let currentEditId = null;
@@ -889,7 +986,7 @@
                         <div class="card border-0 bg-light">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
-                                    <button type="button" class="btn btn-light border" onclick="showDataMenu()">
+                                    <button type="button" class="btn btn-light border d-flex" onclick="showDataMenu()">
                                         <i class="ti ti-arrow-left me-1"></i> Kembali ke Daftar
                                     </button>
                                     <div class="d-flex gap-2">
@@ -950,8 +1047,21 @@
             row.innerHTML = `
                 <td>${actualIndex}</td>
                 <td>
-                    <img src="${item.image_url || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=100&h=60&fit=crop'}" 
-                         alt="${item.name}" class="img-fluid" style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                    <div class="menu-image-container position-relative" style="width: 60px; height: 40px;">
+                        <img src="${getImageUrl(item.image_url, 'small')}" 
+                             alt="${item.name}" 
+                             class="img-fluid menu-image" 
+                             style="width: 60px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e9ecef;"
+                             onerror="this.src='https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=100&h=60&fit=crop'; this.onerror=null;"
+                             loading="lazy"
+                             onload="handleImageLoad(this)"
+                             onerror="handleImageError(this)">
+                        <!-- Loading placeholder -->
+                        <div class="image-loading position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light border rounded" 
+                             style="display: none !important;">
+                            <div class="spinner-border spinner-border-sm text-muted" style="width: 16px; height: 16px;"></div>
+                        </div>
+                    </div>
                 </td>
                 <td>
                     <h6 class="mb-1">${item.name}</h6>
@@ -1003,9 +1113,28 @@
             const cardCol = document.createElement('div');
             cardCol.className = 'col-xl-3 col-md-6 col-sm-12 mb-3';
             cardCol.innerHTML = `
-                <div class="card h-100">
-                    <img src="${item.image_url || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop'}" 
-                         alt="${item.name}" class="card-img-top" style="height: 150px; object-fit: cover;">
+                <div class="card h-100 menu-card">
+                    <div class="card-image-container position-relative" style="height: 150px; overflow: hidden;">
+                        <img src="${getImageUrl(item.image_url, 'medium')}" 
+                             alt="${item.name}" 
+                             class="card-img-top menu-card-image" 
+                             style="height: 150px; object-fit: cover; transition: transform 0.3s ease;"
+                             onerror="this.src='https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop'; this.onerror=null;"
+                             loading="lazy"
+                             onload="handleImageLoad(this)"
+                             onerror="handleImageError(this)">
+                        <!-- Image overlay for better text readability -->
+                        <div class="image-overlay position-absolute top-0 end-0 p-2">
+                            <span class="badge bg-${item.is_active ? 'success' : 'danger'}">
+                                ${item.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </div>
+                        <!-- Loading placeholder -->
+                        <div class="image-loading position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light" 
+                             style="display: none !important;">
+                            <div class="spinner-border text-muted"></div>
+                        </div>
+                    </div>
                     <div class="card-body d-flex flex-column">
                         <h6 class="card-title">${item.name}</h6>
                         <p class="card-text text-muted f-12 flex-grow-1">${item.description || 'No description'}</p>
@@ -1013,9 +1142,7 @@
                             <span class="badge bg-light-${item.category_type === 'product' ? 'primary' : 'info'} text-${item.category_type === 'product' ? 'primary' : 'info'}">
                                 ${item.category_name}
                             </span>
-                            <span class="badge bg-light-${item.is_active ? 'success' : 'danger'} text-${item.is_active ? 'success' : 'danger'}">
-                                ${item.is_active ? 'Active' : 'Inactive'}
-                            </span>
+                            ${item.is_topping ? '<span class="badge bg-light-warning text-warning">Topping</span>' : ''}
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 text-success">Rp ${formatPrice(item.price)}</h5>
@@ -1166,7 +1293,7 @@
         } catch (error) {
             console.error('Error:', error);
             hideAlert();
-            showError('Error!', 'Terjadi kesalahan saat menghubungi server');
+            showError('Kesalahan!', 'Terjadi kesalahan saat menghubungi server');
         }
     }
 
@@ -1197,7 +1324,7 @@
             } catch (error) {
                 console.error('Error:', error);
                 hideAlert();
-                showError('Error!', 'Terjadi kesalahan saat menghubungi server');
+                showError('Kesalahan!', 'Terjadi kesalahan saat menghubungi server');
             }
         });
     }
@@ -1205,6 +1332,38 @@
     // Utility functions
     function formatPrice(price) {
         return new Intl.NumberFormat('id-ID').format(price);
+    }
+
+    // Enhanced image URL handling
+    function getImageUrl(imageUrl, size = 'medium') {
+        if (!imageUrl) {
+            // Return default placeholder based on size
+            switch (size) {
+                case 'small':
+                    return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=100&h=60&fit=crop';
+                case 'large':
+                    return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=250&fit=crop';
+                default:
+                    return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop';
+            }
+        }
+
+        // Check if it's a relative path (uploaded file)
+        if (imageUrl.startsWith('uploads/')) {
+            return imageUrl; // Browser will resolve relative to domain
+        }
+
+        // Check if it's already a full URL
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            return imageUrl;
+        }
+
+        // If it's a relative path without 'uploads/', assume it's in uploads
+        if (!imageUrl.includes('://')) {
+            return 'uploads/menu-images/' + imageUrl;
+        }
+
+        return imageUrl;
     }
 
     // Handle file selection and preview (upload happens on form submit)
@@ -1319,16 +1478,16 @@
         // Use SweetAlert instead of Bootstrap toast
         switch (type) {
             case 'success':
-                showSuccess('Success!', message);
+                showSuccess('Berhasil!', message);
                 break;
             case 'error':
-                showError('Error!', message);
+                showError('Kesalahan!', message);
                 break;
             case 'warning':
-                showWarning('Warning!', message);
+                showWarning('Peringatan!', message);
                 break;
             default:
-                showInfo('Information', message);
+                showInfo('Informasi', message);
         }
     }
 
@@ -1429,6 +1588,81 @@
         // Scroll to top of table
         document.getElementById('pills-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+
+    // Image handling functions
+    function handleImageLoad(img) {
+        // Hide loading placeholder if it exists
+        const loadingDiv = img.parentElement.querySelector('.image-loading');
+        if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+        }
+
+        // Add loaded class for animations
+        img.classList.add('image-loaded');
+    }
+
+    function handleImageError(img) {
+        // Hide loading placeholder
+        const loadingDiv = img.parentElement.querySelector('.image-loading');
+        if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+        }
+
+        // Set fallback image with proper error handling
+        if (!img.src.includes('unsplash.com')) {
+            img.src = 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop';
+        }
+
+        // Add error class for styling
+        img.classList.add('image-error');
+    }
+
+    function preloadImage(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+            img.src = src;
+        });
+    }
+
+    // Initialize image lazy loading and optimization
+    function initializeImageOptimization() {
+        // Add intersection observer for lazy loading if supported
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+
+                        // Show loading state
+                        const loadingDiv = img.parentElement.querySelector('.image-loading');
+                        if (loadingDiv) {
+                            loadingDiv.style.display = 'flex';
+                        }
+
+                        // Load the actual image
+                        if (img.dataset.src) {
+                            img.src = img.dataset.src;
+                            img.removeAttribute('data-src');
+                        }
+
+                        observer.unobserve(img);
+                    }
+                });
+            });
+
+            // Observe all images with data-src attribute
+            document.querySelectorAll('img[data-src]').forEach(img => {
+                imageObserver.observe(img);
+            });
+        }
+    }
+
+    // Call image optimization after DOM content is loaded
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeImageOptimization();
+    });
 </script>
 
 <!-- Custom CSS for Scrollable Table -->
