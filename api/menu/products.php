@@ -300,16 +300,60 @@ function createProduct()
         $id = 'prod_' . uniqid();
         $name = mysqli_real_escape_string($koneksi, trim($input['name']));
         $description = isset($input['description']) ? mysqli_real_escape_string($koneksi, trim($input['description'])) : null;
-        $image_url = isset($input['image_url']) ? mysqli_real_escape_string($koneksi, trim($input['image_url'])) : null;
+
+        // Handle image_url properly - store only filename, not full path
+        $image_url = '';  // Default to empty string instead of NULL
+        if (isset($input['image_url']) && !empty(trim($input['image_url']))) {
+            $imageUrlValue = trim($input['image_url']);
+
+            // If it's a full path like "uploads/menu-images/filename.jpg", extract just the filename
+            if (strpos($imageUrlValue, 'uploads/menu-images/') === 0) {
+                $image_url = str_replace('uploads/menu-images/', '', $imageUrlValue);
+            } else {
+                $image_url = $imageUrlValue;
+            }
+
+            // Escape for database
+            $image_url = mysqli_real_escape_string($koneksi, $image_url);
+        }
+
         $is_topping = isset($input['is_topping']) ? (bool) $input['is_topping'] : false;
+
+        // DEBUG: Log what we're about to insert
+        error_log("DEBUG - About to insert product:");
+        error_log("ID: " . $id);
+        error_log("Name: " . $name);
+        error_log("Image URL (processed): '" . ($image_url ?: 'EMPTY') . "'");
+        error_log("Original image_url from input: '" . ($input['image_url'] ?? 'NOT_SET') . "'");
+        error_log("Image URL length: " . strlen($image_url));
+        error_log("Image URL type: " . gettype($image_url));
+
+        // Let's also check the extraction logic
+        if (isset($input['image_url']) && !empty(trim($input['image_url']))) {
+            $testValue = trim($input['image_url']);
+            error_log("Original full path: " . $testValue);
+            if (strpos($testValue, 'uploads/menu-images/') === 0) {
+                $extracted = str_replace('uploads/menu-images/', '', $testValue);
+                error_log("Extracted filename: " . $extracted);
+            }
+        }
 
         // Insert product
         $insertQuery = "INSERT INTO products (id, category_id, name, description, image_url, price, is_topping, is_active, created_at, updated_at) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         $insertStmt = mysqli_prepare($koneksi, $insertQuery);
-        mysqli_stmt_bind_param($insertStmt, "ssssidi", $id, $input['category_id'], $name, $description, $image_url, $price, $is_topping);
+        mysqli_stmt_bind_param($insertStmt, "sssssdi", $id, $input['category_id'], $name, $description, $image_url, $price, $is_topping);
 
         if (mysqli_stmt_execute($insertStmt)) {
+            // DEBUG: Check what was actually inserted
+            $checkQuery = "SELECT image_url FROM products WHERE id = ?";
+            $checkStmt = mysqli_prepare($koneksi, $checkQuery);
+            mysqli_stmt_bind_param($checkStmt, "s", $id);
+            mysqli_stmt_execute($checkStmt);
+            $result = mysqli_stmt_get_result($checkStmt);
+            $row = mysqli_fetch_assoc($result);
+            error_log("DEBUG - Actually inserted image_url: '" . ($row['image_url'] ?: 'NULL') . "'");
+
             http_response_code(201);
             echo json_encode([
                 'success' => true,
@@ -381,7 +425,17 @@ function updateProduct()
         if (isset($input['image_url'])) {
             $updateFields[] = "image_url = ?";
             $types .= "s";
-            $values[] = mysqli_real_escape_string($koneksi, trim($input['image_url']));
+
+            // Handle image_url properly - store only filename, not full path
+            $imageUrlValue = trim($input['image_url']);
+            if (!empty($imageUrlValue)) {
+                // If it's a full path like "uploads/menu-images/filename.jpg", extract just the filename
+                if (strpos($imageUrlValue, 'uploads/menu-images/') === 0) {
+                    $imageUrlValue = str_replace('uploads/menu-images/', '', $imageUrlValue);
+                }
+            }
+
+            $values[] = mysqli_real_escape_string($koneksi, $imageUrlValue);
         }
 
         if (isset($input['price'])) {

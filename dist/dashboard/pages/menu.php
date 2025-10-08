@@ -1,3 +1,4 @@
+
 <!-- [ breadcrumb ] start -->
 <div class="page-header">
     <div class="page-block">
@@ -821,13 +822,7 @@
         return `
             <!-- Form Container with Table Header Background -->
             <div class="card">
-                <div class="card-header table-light">
-                    <div class="d-flex align-items-center">
-                        <i class="ti ti-forms me-2 text-white" style="font-size: 1.5rem;"></i>
-                        <h4 class="mb-0 text-white fw-bold" id="formTitle" style="font-size: 1.25rem;">Tambah Menu Baru</h4>
-                    </div>
-                </div>
-                <div class="card-body table-light p-4">
+                <div class="card-body table-light p-4 rounded">
                     <form id="menuForm" enctype="multipart/form-data">
                 <div class="row">
                     <!-- Left Column - Form Fields -->
@@ -1222,12 +1217,25 @@
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
 
+            // Debug: Log what's in the form data
+            console.log('Form data before processing:', data);
+
             // Handle image upload if file is selected
             const fileInput = document.getElementById('menuImageFile');
             const hasFile = fileInput.getAttribute('data-has-file') === 'true';
             const existingUrl = fileInput.getAttribute('data-uploaded-url');
+            const actualFileExists = fileInput.files && fileInput.files[0];
 
-            if (hasFile && fileInput.files[0]) {
+            console.log('File detection:', {
+                hasFile: hasFile,
+                existingUrl: existingUrl,
+                actualFileExists: actualFileExists,
+                filesLength: fileInput.files ? fileInput.files.length : 0
+            });
+
+            if (actualFileExists) {
+                console.log('Uploading file:', fileInput.files[0].name);
+
                 // Upload the file now
                 const uploadFormData = new FormData();
                 uploadFormData.append('image', fileInput.files[0]);
@@ -1238,21 +1246,29 @@
                 });
 
                 const uploadResult = await uploadResponse.json();
+                console.log('Upload result:', uploadResult);
 
                 if (uploadResult.success) {
                     data.image_url = uploadResult.data.relative_url;
+                    console.log('Set image_url to:', data.image_url);
                 } else {
                     throw new Error('Gagal mengupload gambar: ' + uploadResult.message);
                 }
             } else if (existingUrl) {
                 // Use existing uploaded URL (for edit mode)
                 data.image_url = existingUrl;
+                console.log('Using existing URL:', existingUrl);
             } else {
-                data.image_url = ''; // No file uploaded
+                // No file uploaded - set to empty string (not null to avoid database issues)
+                data.image_url = '';
+                console.log('No image file, setting image_url to empty string');
             }
 
             // Remove file input data as it's not needed in JSON
             delete data.image_file;
+
+            // Debug: Log final data being sent
+            console.log('Final data being sent to API:', data);
 
             // Convert checkbox to boolean
             data.is_topping = formData.has('is_topping');
@@ -1336,7 +1352,9 @@
 
     // Enhanced image URL handling
     function getImageUrl(imageUrl, size = 'medium') {
-        if (!imageUrl) {
+        // Handle invalid values: null, undefined, empty string, '0', 'null'
+        if (!imageUrl || imageUrl === '0' || imageUrl === 'null' || imageUrl === 'undefined' || imageUrl.trim() === '') {
+            console.log('Using fallback image for invalid value:', imageUrl);
             // Return default placeholder based on size
             switch (size) {
                 case 'small':
@@ -1348,22 +1366,23 @@
             }
         }
 
-        // Check if it's a relative path (uploaded file)
-        if (imageUrl.startsWith('uploads/')) {
-            return imageUrl; // Browser will resolve relative to domain
-        }
-
-        // Check if it's already a full URL
+        // Check if it's already a full URL (external image)
         if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
             return imageUrl;
         }
 
-        // If it's a relative path without 'uploads/', assume it's in uploads
-        if (!imageUrl.includes('://')) {
+        // Check if it's already a full relative path (legacy support)
+        if (imageUrl.startsWith('uploads/menu-images/')) {
+            return imageUrl;
+        }
+
+        // If it's just a filename, prepend the upload path
+        if (!imageUrl.includes('/') && !imageUrl.includes('://')) {
             return 'uploads/menu-images/' + imageUrl;
         }
 
-        return imageUrl;
+        // Default fallback
+        return 'uploads/menu-images/' + imageUrl;
     }
 
     // Handle file selection and preview (upload happens on form submit)
@@ -1410,7 +1429,7 @@
         reader.readAsDataURL(file);
 
         // Show success message for file selection
-        showToast('success', 'Gambar dipilih! Klik "Simpan Menu" untuk mengupload.');
+        showToast('success', 'Gambar dipilih!');
     }
 
     // Reset image preview to placeholder
