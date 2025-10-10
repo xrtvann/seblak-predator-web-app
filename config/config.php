@@ -4,88 +4,59 @@
  * Contains application-wide settings and security configurations
  */
 
+// Load environment variables
+require_once __DIR__ . '/env.php';
+
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Database Configuration
-define('DB_HOST', 'localhost');
-define('DB_USERNAME', 'root');
-define('DB_PASSWORD', '');
-define('DB_NAME', 'seblak_app');
+// Database Configuration - Load from environment
+define('DB_HOST', EnvLoader::get('DB_HOST', 'localhost'));
+define('DB_USERNAME', EnvLoader::get('DB_USER', 'root'));
+define('DB_PASSWORD', EnvLoader::get('DB_PASSWORD', ''));
+define('DB_NAME', EnvLoader::get('DB_NAME', 'seblak_app'));
+define('DB_PORT', EnvLoader::get('DB_PORT', 3306));
 
 // Application Configuration
-define('APP_NAME', 'Seblak Predator');
-define('APP_URL', 'http://localhost/seblak-predator'); // Change to https:// in production
+define('APP_NAME', EnvLoader::get('APP_NAME', 'Seblak Predator'));
+define('APP_URL', EnvLoader::get('APP_URL', 'http://localhost/seblak-predator'));
+define('APP_ENV', EnvLoader::get('APP_ENV', 'development'));
+define('APP_DEBUG', EnvLoader::get('APP_DEBUG', true));
 
-// Email Configuration (PHPMailer)
-define('SMTP_HOST', 'smtp.gmail.com'); // Change to your SMTP host
-define('SMTP_PORT', 587);
-define('SMTP_USERNAME', 'your-email@gmail.com'); // Change to your email
-define('SMTP_PASSWORD', 'your-app-password'); // Use app password, not regular password
-define('SMTP_FROM_EMAIL', 'noreply@seblakpredator.com');
-define('SMTP_FROM_NAME', APP_NAME);
+// Email Configuration (PHPMailer) - Load from environment
+define('SMTP_HOST', EnvLoader::get('MAIL_HOST', 'smtp.gmail.com'));
+define('SMTP_PORT', EnvLoader::get('MAIL_PORT', 587));
+define('SMTP_USERNAME', EnvLoader::get('MAIL_USERNAME', 'your-email@gmail.com'));
+define('SMTP_PASSWORD', EnvLoader::get('MAIL_PASSWORD', 'your-app-password'));
+define('SMTP_FROM_EMAIL', EnvLoader::get('MAIL_FROM_ADDRESS', 'noreply@seblakpredator.com'));
+define('SMTP_FROM_NAME', EnvLoader::get('MAIL_FROM_NAME', APP_NAME));
 
-// Security Configuration
+// Security Configuration - Load from environment
 define('CSRF_TOKEN_NAME', 'csrf_token');
 define('CSRF_TOKEN_TIME_NAME', 'csrf_token_time');
-define('CSRF_TOKEN_EXPIRE', 3600); // 1 hour in seconds
+define('CSRF_TOKEN_EXPIRE', EnvLoader::get('CSRF_TOKEN_EXPIRY', 3600));
 
-// Rate Limiting Configuration
-define('RATE_LIMIT_REQUESTS', 3); // Maximum 3 requests
-define('RATE_LIMIT_PERIOD', 900); // Within 15 minutes (900 seconds)
+// Rate Limiting Configuration - Load from environment
+define('RATE_LIMIT_REQUESTS', EnvLoader::get('MAX_LOGIN_ATTEMPTS', 5));
+define('RATE_LIMIT_PERIOD', EnvLoader::get('LOGIN_ATTEMPT_WINDOW', 900));
 
 // OTP Configuration
 define('OTP_LENGTH', 6);
 define('OTP_EXPIRE_MINUTES', 15);
-define('OTP_RESEND_COOLDOWN', 60); // 60 seconds between resend requests
+define('OTP_RESEND_COOLDOWN', 60);
 
 // Password Configuration
-define('PASSWORD_MIN_LENGTH', 8);
+define('PASSWORD_MIN_LENGTH', EnvLoader::get('PASSWORD_MIN_LENGTH', 8));
+
+// Development/Production mode detection
+define('DEVELOPMENT_MODE', EnvLoader::get('APP_ENV', 'development') !== 'production');
 
 // Force HTTPS in production
-if (!defined('DEVELOPMENT_MODE')) {
-    define('DEVELOPMENT_MODE', true); // Set to false in production
-}
-
-// Redirect to HTTPS if not in development mode
 if (!DEVELOPMENT_MODE && (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on')) {
     header("Location: https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
     exit();
-}
-
-/**
- * Generate CSRF Token
- */
-function generateCSRFToken()
-{
-    if (
-        empty($_SESSION[CSRF_TOKEN_NAME]) || empty($_SESSION[CSRF_TOKEN_TIME_NAME]) ||
-        (time() - $_SESSION[CSRF_TOKEN_TIME_NAME]) > CSRF_TOKEN_EXPIRE
-    ) {
-        $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
-        $_SESSION[CSRF_TOKEN_TIME_NAME] = time();
-    }
-    return $_SESSION[CSRF_TOKEN_NAME];
-}
-
-/**
- * Verify CSRF Token
- */
-function verifyCSRFToken($token)
-{
-    if (empty($_SESSION[CSRF_TOKEN_NAME]) || empty($_SESSION[CSRF_TOKEN_TIME_NAME])) {
-        return false;
-    }
-
-    // Check if token is expired
-    if ((time() - $_SESSION[CSRF_TOKEN_TIME_NAME]) > CSRF_TOKEN_EXPIRE) {
-        return false;
-    }
-
-    // Verify token
-    return hash_equals($_SESSION[CSRF_TOKEN_NAME], $token);
 }
 
 /**

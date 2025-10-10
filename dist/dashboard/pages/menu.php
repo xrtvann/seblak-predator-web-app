@@ -1,4 +1,3 @@
-
 <!-- [ breadcrumb ] start -->
 <div class="page-header">
     <div class="page-block">
@@ -400,16 +399,66 @@
     function updateImagePreview() {
         const imageUrl = document.getElementById('menuImage').value;
         const previewImage = document.getElementById('previewImage');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
 
-        if (imageUrl && isValidUrl(imageUrl)) {
-            previewImage.src = imageUrl;
+        if (imageUrl && imageUrl !== '0' && imageUrl !== 'null' && imageUrl.trim() !== '') {
+            // Convert database filename to proper URL
+            const fullImageUrl = getImageUrl(imageUrl, 'large');
+
+            previewImage.src = fullImageUrl;
+            previewImage.style.display = 'block';
+            previewPlaceholder.style.display = 'none';
+
             previewImage.onerror = function () {
-                this.src = 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=250&fit=crop';
+                // If image fails to load, show placeholder
+                previewImage.style.display = 'none';
+                previewPlaceholder.style.display = 'block';
             };
         } else {
-            previewImage.src = 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=250&fit=crop';
+            // No image URL, show placeholder
+            previewImage.style.display = 'none';
+            previewPlaceholder.style.display = 'block';
         }
         updatePreview();
+    }
+
+    // Update image preview for edit mode (when we have an existing image URL)
+    function updateImagePreviewForEdit(imageUrl) {
+        console.log('updateImagePreviewForEdit called with:', imageUrl);
+
+        const previewImage = document.getElementById('previewImage');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+
+        console.log('Preview elements found:', {
+            previewImage: !!previewImage,
+            previewPlaceholder: !!previewPlaceholder
+        });
+
+        if (imageUrl && imageUrl !== '0' && imageUrl !== 'null' && imageUrl.trim() !== '') {
+            // Convert database filename to proper URL
+            const fullImageUrl = getImageUrl(imageUrl, 'large');
+            console.log('Setting preview image to:', fullImageUrl);
+
+            previewImage.src = fullImageUrl;
+            previewImage.style.display = 'block';
+            previewPlaceholder.style.display = 'none';
+
+            previewImage.onload = function () {
+                console.log('Preview image loaded successfully');
+            };
+
+            previewImage.onerror = function () {
+                console.log('Preview image failed to load');
+                // If image fails to load, show placeholder
+                previewImage.style.display = 'none';
+                previewPlaceholder.style.display = 'block';
+            };
+        } else {
+            console.log('No valid image URL, showing placeholder');
+            // No image URL, show placeholder
+            previewImage.style.display = 'none';
+            previewPlaceholder.style.display = 'block';
+        }
     }
 
     // Format price preview
@@ -603,11 +652,23 @@
 
     // Show form edit menu
     async function editMenu(id) {
+        console.log('Editing menu with ID:', id);
         currentEditId = id;
 
         try {
-            const response = await fetch(`/seblak-predator/api/menu/products.php?id=${id}`);
+            const apiUrl = `api/menu/products.php?id=${id}`;
+            console.log('Fetching from URL:', apiUrl);
+
+            const response = await fetch(apiUrl);
+            console.log('Fetch response status:', response.status);
+            console.log('Response headers:', [...response.headers.entries()]);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const result = await response.json();
+            console.log('Edit data received:', result);
 
             if (result.success) {
                 showForm('Edit Menu', 'Form Edit Menu', result.data);
@@ -615,8 +676,18 @@
                 showNotification('Error loading menu data: ' + result.message, 'error');
             }
         } catch (error) {
-            console.error('Error:', error);
-            showNotification('Error connecting to server', 'error');
+            console.error('Detailed error:', error);
+            console.error('Error name:', error.name);
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+
+            if (error.message.includes('fetch')) {
+                showNotification('Network error: Cannot connect to server. Please check if the server is running.', 'error');
+            } else if (error.message.includes('JSON')) {
+                showNotification('Server response error: Invalid data format received.', 'error');
+            } else {
+                showNotification('Error connecting to server: ' + error.message, 'error');
+            }
         }
     }
 
@@ -644,13 +715,13 @@
             formTitle.textContent = data ? 'Edit Menu' : 'Tambah Menu Baru';
         }
 
-        // Populate form if editing
+        // Initialize form first (this loads categories)
+        initForm();
+
+        // Populate form if editing (this should come after initForm)
         if (data) {
             populateForm(data);
         }
-
-        // Initialize form
-        initForm();
     }
 
     // Get data menu HTML
@@ -1043,19 +1114,7 @@
                 <td>${actualIndex}</td>
                 <td>
                     <div class="menu-image-container position-relative" style="width: 60px; height: 40px;">
-                        <img src="${getImageUrl(item.image_url, 'small')}" 
-                             alt="${item.name}" 
-                             class="img-fluid menu-image" 
-                             style="width: 60px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid #e9ecef;"
-                             onerror="this.src='https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=100&h=60&fit=crop'; this.onerror=null;"
-                             loading="lazy"
-                             onload="handleImageLoad(this)"
-                             onerror="handleImageError(this)">
-                        <!-- Loading placeholder -->
-                        <div class="image-loading position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light border rounded" 
-                             style="display: none !important;">
-                            <div class="spinner-border spinner-border-sm text-muted" style="width: 16px; height: 16px;"></div>
-                        </div>
+                        ${getImageHTML(item.image_url, item.name, 'small')}
                     </div>
                 </td>
                 <td>
@@ -1078,7 +1137,7 @@
                         <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editMenu('${item.id}')" title="Edit">
                             <i class="ti ti-edit"></i>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name}')" title="Delete">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Delete">
                             <i class="ti ti-trash"></i>
                         </button>
                     </div>
@@ -1110,24 +1169,12 @@
             cardCol.innerHTML = `
                 <div class="card h-100 menu-card">
                     <div class="card-image-container position-relative" style="height: 150px; overflow: hidden;">
-                        <img src="${getImageUrl(item.image_url, 'medium')}" 
-                             alt="${item.name}" 
-                             class="card-img-top menu-card-image" 
-                             style="height: 150px; object-fit: cover; transition: transform 0.3s ease;"
-                             onerror="this.src='https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop'; this.onerror=null;"
-                             loading="lazy"
-                             onload="handleImageLoad(this)"
-                             onerror="handleImageError(this)">
+                        ${getImageHTML(item.image_url, item.name, 'medium')}
                         <!-- Image overlay for better text readability -->
                         <div class="image-overlay position-absolute top-0 end-0 p-2">
                             <span class="badge bg-${item.is_active ? 'success' : 'danger'}">
                                 ${item.is_active ? 'Active' : 'Inactive'}
                             </span>
-                        </div>
-                        <!-- Loading placeholder -->
-                        <div class="image-loading position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light" 
-                             style="display: none !important;">
-                            <div class="spinner-border text-muted"></div>
                         </div>
                     </div>
                     <div class="card-body d-flex flex-column">
@@ -1145,7 +1192,7 @@
                                 <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editMenu('${item.id}')" title="Edit">
                                     <i class="ti ti-edit"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name}')" title="Delete">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Delete">
                                     <i class="ti ti-trash"></i>
                                 </button>
                             </div>
@@ -1175,16 +1222,52 @@
 
     // Populate form for editing
     function populateForm(data) {
+        console.log('Populating form with data:', data);
+
+        // Basic form fields
         document.getElementById('menuName').value = data.name || '';
-        document.getElementById('menuCategory').value = data.category_id || '';
         document.getElementById('menuPrice').value = data.price || '';
-        document.getElementById('menuImage').value = data.image_url || '';
         document.getElementById('menuDescription').value = data.description || '';
         document.getElementById('isTopping').checked = data.is_topping || false;
-        document.getElementById('submitText').textContent = 'Update';
-    }
+        document.getElementById('isActive').checked = data.is_active !== undefined ? data.is_active : true;
+        document.getElementById('submitText').textContent = 'Update Menu';
 
-    // Initialize form
+        // Handle category selection - need to ensure categories are loaded first
+        setTimeout(() => {
+            const categorySelect = document.getElementById('menuCategory');
+            if (categorySelect && data.category_id) {
+                categorySelect.value = data.category_id;
+                console.log('Set category to:', data.category_id);
+
+                // Trigger change event to ensure any listeners are notified
+                categorySelect.dispatchEvent(new Event('change'));
+            }
+        }, 100);
+
+        // Handle image data for edit mode
+        const fileInput = document.getElementById('menuImageFile');
+        if (fileInput) {
+            // Clear any previous data
+            fileInput.removeAttribute('data-existing-image');
+            fileInput.removeAttribute('data-uploaded-url');
+            fileInput.removeAttribute('data-has-file');
+
+            if (data.image_url && data.image_url !== '0' && data.image_url !== 'null') {
+                // Store the existing image URL as a data attribute
+                fileInput.setAttribute('data-existing-image', data.image_url);
+                console.log('Stored existing image:', data.image_url);
+
+                // Show current image in preview
+                updateImagePreviewForEdit(data.image_url);
+            } else {
+                // No existing image, show placeholder
+                resetImagePreview();
+            }
+        }
+
+        // Update preview with the loaded data
+        updatePreview();
+    }    // Initialize form
     function initForm() {
         populateCategorySelect();
 
@@ -1224,17 +1307,20 @@
             const fileInput = document.getElementById('menuImageFile');
             const hasFile = fileInput.getAttribute('data-has-file') === 'true';
             const existingUrl = fileInput.getAttribute('data-uploaded-url');
+            const existingImage = fileInput.getAttribute('data-existing-image');
             const actualFileExists = fileInput.files && fileInput.files[0];
 
             console.log('File detection:', {
                 hasFile: hasFile,
                 existingUrl: existingUrl,
+                existingImage: existingImage,
                 actualFileExists: actualFileExists,
-                filesLength: fileInput.files ? fileInput.files.length : 0
+                filesLength: fileInput.files ? fileInput.files.length : 0,
+                isEditMode: !!currentEditId
             });
 
             if (actualFileExists) {
-                console.log('Uploading file:', fileInput.files[0].name);
+                console.log('Uploading new file:', fileInput.files[0].name);
 
                 // Upload the file now
                 const uploadFormData = new FormData();
@@ -1258,8 +1344,12 @@
                 // Use existing uploaded URL (for edit mode)
                 data.image_url = existingUrl;
                 console.log('Using existing URL:', existingUrl);
+            } else if (currentEditId && existingImage) {
+                // Edit mode with existing image - keep the current image
+                data.image_url = existingImage;
+                console.log('Keeping existing image:', existingImage);
             } else {
-                // No file uploaded - set to empty string (not null to avoid database issues)
+                // No file uploaded and no existing image - set to empty string
                 data.image_url = '';
                 console.log('No image file, setting image_url to empty string');
             }
@@ -1345,16 +1435,141 @@
         });
     }
 
+    // SweetAlert helper functions
+    function showDeleteConfirmation(itemName, onConfirm) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Konfirmasi Hapus',
+                text: `Apakah Anda yakin ingin menghapus "${itemName}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    onConfirm();
+                }
+            });
+        } else {
+            // Fallback to native confirm if SweetAlert is not available
+            if (confirm(`Apakah Anda yakin ingin menghapus "${itemName}"?`)) {
+                onConfirm();
+            }
+        }
+    }
+
+    function showLoading(title, text) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title,
+                text: text,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        } else {
+            console.log('Loading:', title, text);
+        }
+    }
+
+    function showSuccess(title, text, callback) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: 'success',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                if (callback) callback();
+            });
+        } else {
+            alert(`${title}: ${text}`);
+            if (callback) callback();
+        }
+    }
+
+    function showError(title, text) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            alert(`${title}: ${text}`);
+        }
+    }
+
+    function showWarning(title, text) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            alert(`${title}: ${text}`);
+        }
+    }
+
+    function showInfo(title, text) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: 'info',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            alert(`${title}: ${text}`);
+        }
+    }
+
+    function hideAlert() {
+        if (typeof Swal !== 'undefined') {
+            Swal.close();
+        }
+    }
+
+    function showToast(type, message) {
+        if (typeof Swal !== 'undefined') {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            Toast.fire({
+                icon: type,
+                title: message
+            });
+        } else {
+            console.log(`Toast (${type}):`, message);
+        }
+    }
+
     // Utility functions
     function formatPrice(price) {
         return new Intl.NumberFormat('id-ID').format(price);
     }
 
-    // Enhanced image URL handling
+    // Simple image URL handling - converts database filename to proper path
     function getImageUrl(imageUrl, size = 'medium') {
         // Handle invalid values: null, undefined, empty string, '0', 'null'
         if (!imageUrl || imageUrl === '0' || imageUrl === 'null' || imageUrl === 'undefined' || imageUrl.trim() === '') {
-            console.log('Using fallback image for invalid value:', imageUrl);
             // Return default placeholder based on size
             switch (size) {
                 case 'small':
@@ -1376,13 +1591,144 @@
             return imageUrl;
         }
 
-        // If it's just a filename, prepend the upload path
-        if (!imageUrl.includes('/') && !imageUrl.includes('://')) {
-            return 'uploads/menu-images/' + imageUrl;
+        // If it's just a filename (current format), prepend the upload path
+        return 'uploads/menu-images/' + imageUrl;
+    }
+
+    // Generate image HTML with placeholder fallback
+    function getImageHTML(imageUrl, altText, size = 'medium') {
+        // Check if image URL is valid
+        const hasValidImage = imageUrl && imageUrl !== '0' && imageUrl !== 'null' && imageUrl !== 'undefined' && imageUrl.trim() !== '';
+
+        if (!hasValidImage) {
+            // Return placeholder HTML based on size
+            return getPlaceholderHTML(size);
         }
 
-        // Default fallback
-        return 'uploads/menu-images/' + imageUrl;
+        // Return image HTML with fallback to placeholder
+        const imagePath = getImageUrl(imageUrl, size);
+        const imageId = 'img_' + Math.random().toString(36).substr(2, 9);
+        const placeholderId = 'placeholder_' + Math.random().toString(36).substr(2, 9);
+
+        const { width, height, iconSize, textSize } = getImageDimensions(size);
+
+        return `
+            <img id="${imageId}" 
+                 src="${imagePath}" 
+                 alt="${altText}" 
+                 class="img-fluid menu-image" 
+                 style="width: ${width}; height: ${height}; object-fit: cover; border-radius: 6px; border: 1px solid #e9ecef;"
+                 loading="lazy"
+                 onerror="document.getElementById('${imageId}').style.display='none'; document.getElementById('${placeholderId}').style.display='flex';">
+            <div id="${placeholderId}" 
+                 class="image-placeholder text-center" 
+                 style="display: none; width: ${width}; height: ${height}; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; align-items: center; justify-content: center; flex-direction: column;">
+                <i class="ti ti-photo text-muted" style="font-size: ${iconSize};"></i>
+                <p class="text-muted mt-1 mb-0" style="font-size: ${textSize};">No Image</p>
+            </div>
+        `;
+    }
+
+    // Get placeholder HTML for when no image URL exists
+    function getPlaceholderHTML(size = 'medium') {
+        const { width, height, iconSize, textSize } = getImageDimensions(size);
+
+        return `
+            <div class="image-placeholder text-center" 
+                 style="width: ${width}; height: ${height}; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                <i class="ti ti-photo text-muted" style="font-size: ${iconSize};"></i>
+                <p class="text-muted mt-1 mb-0" style="font-size: ${textSize};">No Image</p>
+            </div>
+        `;
+    }
+
+    // Get dimensions based on size
+    function getImageDimensions(size) {
+        switch (size) {
+            case 'small':
+                return {
+                    width: '60px',
+                    height: '40px',
+                    iconSize: '1.2rem',
+                    textSize: '0.6rem'
+                };
+            case 'large':
+                return {
+                    width: '100%',
+                    height: '200px',
+                    iconSize: '3rem',
+                    textSize: '0.9rem'
+                };
+            default: // medium
+                return {
+                    width: '100%',
+                    height: '150px',
+                    iconSize: '2.5rem',
+                    textSize: '0.8rem'
+                };
+        }
+    }    // Get fallback image URL based on size
+    function getFallbackImageUrl(size = 'medium') {
+        switch (size) {
+            case 'small':
+                return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=100&h=60&fit=crop';
+            case 'large':
+                return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=250&fit=crop';
+            default:
+                return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=300&h=200&fit=crop';
+        }
+    }
+
+    // Verify if image exists on server (async)
+    async function verifyImageExists(filename) {
+        try {
+            const response = await fetch(`api/check-image.php?filename=${encodeURIComponent(filename)}`);
+            const result = await response.json();
+            return result.success && result.exists;
+        } catch (error) {
+            console.error('Error checking image existence:', error);
+            return false;
+        }
+    }
+
+    // Smart image loading with fallback
+    function loadImageWithFallback(imgElement, imageUrl, size = 'medium') {
+        console.log('Loading image with fallback:', { imageUrl, size });
+
+        // Show loading state
+        const loadingDiv = imgElement.parentElement.querySelector('.image-loading');
+        if (loadingDiv) {
+            loadingDiv.style.display = 'flex';
+        }
+
+        // Set the primary image URL
+        const primaryUrl = getImageUrl(imageUrl, size);
+
+        // Set up the image with proper error handling
+        imgElement.onload = function () {
+            console.log('Image loaded successfully:', this.src);
+            if (loadingDiv) {
+                loadingDiv.style.display = 'none';
+            }
+            imgElement.style.opacity = '1';
+            imgElement.classList.add('image-loaded');
+        };
+
+        imgElement.onerror = function () {
+            console.log('Primary image failed, using fallback:', this.src);
+            if (loadingDiv) {
+                loadingDiv.style.display = 'none';
+            }
+
+            // Use fallback image
+            this.src = getFallbackImageUrl(size);
+            this.style.opacity = '1';
+            this.classList.add('image-error');
+            this.onerror = null; // Prevent infinite loop
+        };
+
+        // Set the src to start loading
+        imgElement.src = primaryUrl;
     }
 
     // Handle file selection and preview (upload happens on form submit)
@@ -1642,6 +1988,23 @@
             img.onload = () => resolve(img);
             img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
             img.src = src;
+        });
+    }
+
+    // Initialize all images in the current view
+    function initializeImages() {
+        console.log('Initializing images...');
+        const images = document.querySelectorAll('img[data-image-url]');
+        console.log('Found images to initialize:', images.length);
+
+        images.forEach((img, index) => {
+            const imageUrl = img.getAttribute('data-image-url');
+            const size = img.getAttribute('data-size') || 'medium';
+
+            console.log(`Initializing image ${index + 1}:`, { imageUrl, size });
+
+            // Load image with smart fallback
+            loadImageWithFallback(img, imageUrl, size);
         });
     }
 

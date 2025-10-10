@@ -1,23 +1,22 @@
 <?php
 /**
- * Database Connection with Prepared Statements Support
+ * Database Connection with Environment Variables
+ * Secure database connection using .env configuration
  */
 
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/database.php';
 
-// Create connection
-$koneksi = mysqli_connect(DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME);
+// Use the new secure database connection
+$koneksi = DatabaseConnection::getInstance();
 
-// Check connection
-if (!$koneksi) {
-    logSecurityEvent('DATABASE_CONNECTION_FAILED', [
-        'error' => mysqli_connect_error()
-    ]);
-    die("Koneksi gagal: " . mysqli_connect_error());
+// Verify connection is working
+if (!DatabaseConnection::testConnection()) {
+    if (!EnvLoader::isProduction()) {
+        die("Database connection test failed. Please check your .env configuration.");
+    } else {
+        die("Database connection failed.");
+    }
 }
-
-// Set charset to utf8mb4 for better security and emoji support
-mysqli_set_charset($koneksi, "utf8mb4");
 
 /**
  * Execute prepared statement with parameters

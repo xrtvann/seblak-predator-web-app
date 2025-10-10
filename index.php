@@ -1,5 +1,26 @@
 <?php
-session_start();
+// Initialize secure session and authentication
+require_once 'config/session.php';
+require_once 'services/WebAuthService.php';
+require_once 'services/SessionEncryption.php';
+
+// Initialize authentication service
+$auth_service = new WebAuthService($koneksi);
+
+// Check remember me cookie for auto-login
+$auth_service->checkRememberMe();
+
+// Check if user is logged in for protected pages
+$protected_pages = ['dashboard', 'menu', 'kategori', 'transaksi', 'user'];
+$current_page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
+
+if (in_array($current_page, $protected_pages) && !isLoggedIn()) {
+  header('Location: pages/auth/login.php');
+  exit();
+}
+
+// Get current user data
+$current_user = getCurrentSessionUser();
 
 $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 $PageTitle = [
@@ -10,6 +31,12 @@ $PageTitle = [
   'user' => 'User'
 ];
 $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
+
+// Validate page to prevent unauthorized access
+$allowed_pages = ['dashboard', 'menu', 'kategori', 'transaksi', 'user'];
+if (!in_array($page, $allowed_pages)) {
+  $page = 'dashboard';
+}
 ?>
 
 <!doctype html>
@@ -190,7 +217,7 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
               <div class="dropdown-header px-0 text-wrap header-notification-scroll position-relative"
                 style="max-height: calc(100vh - 215px)">
                 <div class="list-group list-group-flush w-100">
-                  <div class="list-group-item list-group-item-action">
+                  <dv class="list-group-item list-group-item-action">
                     <div class="d-flex">
                       <div class="flex-shrink-0">
                         <div class="user-avtar bg-light-success"><i class="ti ti-building-store"></i></div>
@@ -202,7 +229,7 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
                         <div class="badge rounded-pill bg-light-danger">Unread</div>
                       </div>
                     </div>
-                  </div>
+                  </dv>
                   <div class="list-group-item list-group-item-action">
                     <div class="d-flex">
                       <div class="flex-shrink-0">
@@ -227,7 +254,6 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
           <li class="dropdown pc-h-item header-user-profile">
             <a class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#"
               role="button" aria-haspopup="false" aria-expanded="false">
-              <img src="dist/assets/images/user/avatar-2.jpg" alt="user-image" class="user-avtar" />
               <span>
                 <i class="ti ti-settings"></i>
               </span>
@@ -236,17 +262,18 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
               <div class="dropdown-header">
                 <h4>
                   Selamat datang,
-                  <span class="small text-muted"><?= htmlspecialchars($_SESSION['user_name']) ?></span>
+                  <span class="small text-muted"><?= htmlspecialchars($current_user['name'] ?? 'User') ?></span>
                 </h4>
-                <p class="text-muted">@<?= htmlspecialchars($_SESSION['username']) ?> •
-                  <?= ucfirst($_SESSION['role']) ?>
+                <p class="text-muted">@<?= htmlspecialchars($current_user['username'] ?? 'unknown') ?> •
+                  <?= htmlspecialchars($current_user['role_name'] ?? 'Customer') ?>
                 </p>
                 <hr />
                 <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
                   <div class="upgradeplan-block bg-light-primary rounded">
                     <h5><i class="ti ti-crown me-2"></i>Seblak Predator</h5>
                     <p class="text-muted">Sistem Manajemen Restoran</p>
-                    <small class="text-muted">Login: <?= date('H:i, d M Y', $_SESSION['login_time']) ?></small>
+                    <small class="text-muted">Login:
+                      <?= date('H:i, d M Y', $_SESSION['login_time'] ?? time()) ?></small>
                   </div>
                   <hr />
                   <a href="index.php?page=user" class="dropdown-item">
@@ -348,7 +375,20 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
         'Apakah Anda yakin ingin keluar dari sistem?',
         () => {
           showLoading('Logging out...', 'Sedang memproses logout...');
-          window.location.href = 'handler/logout.php';
+
+          // Create a form with CSRF token for secure logout
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = 'handler/logout.php';
+
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'csrf_token';
+          csrfInput.value = '<?php echo generateCSRFToken(); ?>';
+
+          form.appendChild(csrfInput);
+          document.body.appendChild(form);
+          form.submit();
         },
         null,
         'Ya, Logout',

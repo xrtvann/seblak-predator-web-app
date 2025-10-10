@@ -3,13 +3,22 @@
         'name' => 'seblak-predator/restaurant-management',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '0c4abe0159519565f870bd38ca033a7618ed5988',
+        'reference' => '55648b1c4ac4008f375c84bc1657f996f0344e44',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
         'dev' => true,
     ),
     'versions' => array(
+        'firebase/php-jwt' => array(
+            'pretty_version' => 'v6.11.1',
+            'version' => '6.11.1.0',
+            'reference' => 'd1e91ecf8c598d073d0995afa8cd5c75c6e19e66',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../firebase/php-jwt',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'phpmailer/phpmailer' => array(
             'pretty_version' => 'v6.11.1',
             'version' => '6.11.1.0',
@@ -22,7 +31,7 @@
         'seblak-predator/restaurant-management' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '0c4abe0159519565f870bd38ca033a7618ed5988',
+            'reference' => '55648b1c4ac4008f375c84bc1657f996f0344e44',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

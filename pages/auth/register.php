@@ -1,3 +1,7 @@
+<?php
+// Initialize secure session for CSRF protection
+require_once '../../config/session.php';
+?>
 <!doctype html>
 <html lang="en">
 <!-- [Head] start -->
@@ -68,6 +72,7 @@
 
               <div class="form-floating mb-3">
                 <input type="hidden" name="action" value="register">
+                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <input type="text" class="form-control" id="floatingInput" name="field_name" required />
                 <label for="floatingInput">Name</label>
               </div>

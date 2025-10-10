@@ -1,3 +1,17 @@
+<?php
+// Initialize secure session
+require_once '../../config/session.php';
+require_once '../../services/WebAuthService.php';
+
+// If already logged in, redirect to dashboard
+if (isLoggedIn()) {
+  header('Location: ../../index.php?page=dashboard');
+  exit();
+}
+
+// Get flash messages
+$flash_messages = getFlashMessages();
+?>
 <!doctype html>
 <html lang="en">
 <!-- [Head] start -->
@@ -46,106 +60,121 @@
   </div>
   <!-- [ Pre-loader ] End -->
 
-  <form action="../../handler/auth.php" method="POST">
-    <div class="auth-main">
-      <div class="auth-wrapper v3">
-        <div class="auth-form">
-          <div class="card my-5">
-            <div class="card-body">
-              <a href="#" class="d-flex justify-content-center">
-                <img src="../../dist/assets/images/logo-150.png" alt="image" class="" />
-              </a>
-              <div class="row">
-                <div class="d-flex justify-content-center">
-                  <div class="auth-header">
-                    <h2 class="text-red-500 mt-5"><b>Hi, Welcome Back</b></h2>
-                    <p class="f-16 mt-2">Enter your credentials to continue</p>
-                  </div>
+  <!-- Flash Messages -->
+  <?php if (!empty($flash_messages)): ?>
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
+      <?php foreach ($flash_messages as $message): ?>
+        <div
+          class="alert alert-<?php echo $message['type'] === 'error' ? 'danger' : $message['type']; ?> alert-dismissible fade show"
+          role="alert">
+          <?php echo htmlspecialchars($message['message']); ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+
+  <form action="../../handler/auth.php" method="POST" id="loginForm">
+    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+    <div class="auth-main"">
+      <div class=" auth-wrapper v3">
+      <div class="auth-form">
+        <div class="card my-5">
+          <div class="card-body">
+            <a href="#" class="d-flex justify-content-center">
+              <img src="../../dist/assets/images/logo-150.png" alt="image" class="" />
+            </a>
+            <div class="row">
+              <div class="d-flex justify-content-center">
+                <div class="auth-header">
+                  <h2 class="text-red-500 mt-5"><b>Hi, Welcome Back</b></h2>
+                  <p class="f-16 mt-2">Enter your credentials to continue</p>
                 </div>
               </div>
-
-              <!-- Error Messages -->
-              <?php if (isset($_GET['error'])): ?>
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                  <?php
-                  switch ($_GET['error']) {
-                    case 'empty_fields':
-                      echo '<i class="ti ti-alert-circle me-2"></i>Username dan password harus diisi!';
-                      break;
-                    case 'invalid_credentials':
-                      echo '<i class="ti ti-x-circle me-2"></i>Username atau password salah!';
-                      break;
-                    case 'db_error':
-                      echo '<i class="ti ti-database-off me-2"></i>Terjadi kesalahan sistem. Silakan coba lagi.';
-                      break;
-                    default:
-                      echo '<i class="ti ti-alert-triangle me-2"></i>Terjadi kesalahan. Silakan coba lagi.';
-                  }
-                  ?>
-                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-              <?php endif; ?>
-
-              <!-- Success Messages -->
-              <?php if (isset($_GET['success'])): ?>
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                  <?php
-                  switch ($_GET['success']) {
-                    case '1':
-                      echo '<i class="ti ti-check-circle me-2"></i>Registrasi berhasil! Silakan login dengan akun Anda.';
-                      break;
-                    case 'password_reset':
-                      echo '<i class="ti ti-shield-check me-2"></i>Password berhasil direset! Silakan login dengan password baru Anda.';
-                      break;
-                    default:
-                      echo '<i class="ti ti-check-circle me-2"></i>Operasi berhasil! Silakan login.';
-                  }
-                  ?>
-                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-              <?php endif; ?>
-
-              <!-- Logout Message -->
-              <?php if (isset($_GET['logout']) && $_GET['logout'] == '1'): ?>
-                <div class="alert alert-info alert-dismissible fade show" role="alert">
-                  <i class="ti ti-info-circle me-2"></i>Anda telah berhasil logout. Silakan login kembali.
-                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-              <?php endif; ?>
-
-              <input type="hidden" name="action" value="login">
-
-              <div class="form-floating mb-3">
-                <input type="text" class="form-control" id="floatingInput" name="field_username" placeholder="Username"
-                  required />
-                <label for="floatingInput"> Username</label>
-              </div>
-              <div class="form-floating mb-3">
-                <input type="password" class="form-control" id="floatingInput1" name="field_password"
-                  placeholder="Password" required />
-                <label for="floatingInput1">Password</label>
-              </div>
-              <div class="d-flex mt-1 justify-content-between">
-                <div class="form-check">
-                  <input class="form-check-input input-primary" type="checkbox" name="remember_me" id="customCheckc1" />
-                  <label class="form-check-label text-muted" for="customCheckc1">Remember me</label>
-                </div>
-                <a href="forgot-password.php">
-                  <h5 class="text-primary">Forgot Password?</h5>
-                </a>
-              </div>
-              <div class="d-grid mt-4">
-                <button type="submit" class="btn btn-danger">Sign In</button>
-              </div>
-
-
-              <hr />
-              <h5 class="d-flex justify-content-center">Don't have an account?<a href="register.php" class="ms-2">Sign
-                  Up</a></h5>
             </div>
+
+            <!-- Error Messages -->
+            <?php if (isset($_GET['error'])): ?>
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?php
+                switch ($_GET['error']) {
+                  case 'empty_fields':
+                    echo '<i class="ti ti-alert-circle me-2"></i>Username dan password harus diisi!';
+                    break;
+                  case 'invalid_credentials':
+                    echo '<i class="ti ti-x-circle me-2"></i>Username atau password salah!';
+                    break;
+                  case 'db_error':
+                    echo '<i class="ti ti-database-off me-2"></i>Terjadi kesalahan sistem. Silakan coba lagi.';
+                    break;
+                  default:
+                    echo '<i class="ti ti-alert-triangle me-2"></i>Terjadi kesalahan. Silakan coba lagi.';
+                }
+                ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            <?php endif; ?>
+
+            <!-- Success Messages -->
+            <?php if (isset($_GET['success'])): ?>
+              <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?php
+                switch ($_GET['success']) {
+                  case '1':
+                    echo '<i class="ti ti-check-circle me-2"></i>Registrasi berhasil! Silakan login dengan akun Anda.';
+                    break;
+                  case 'password_reset':
+                    echo '<i class="ti ti-shield-check me-2"></i>Password berhasil direset! Silakan login dengan password baru Anda.';
+                    break;
+                  default:
+                    echo '<i class="ti ti-check-circle me-2"></i>Operasi berhasil! Silakan login.';
+                }
+                ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            <?php endif; ?>
+
+            <!-- Logout Message -->
+            <?php if (isset($_GET['logout']) && $_GET['logout'] == '1'): ?>
+              <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="ti ti-info-circle me-2"></i>Anda telah berhasil logout. Silakan login kembali.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            <?php endif; ?>
+
+            <input type="hidden" name="action" value="login">
+
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control" id="floatingInput" name="field_username" placeholder="Username"
+                required />
+              <label for="floatingInput"> Username</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input type="password" class="form-control" id="floatingInput1" name="field_password"
+                placeholder="Password" required />
+              <label for="floatingInput1">Password</label>
+            </div>
+            <div class="d-flex mt-1 justify-content-between">
+              <div class="form-check">
+                <input class="form-check-input input-primary" type="checkbox" name="remember_me" id="customCheckc1" />
+                <label class="form-check-label text-muted" for="customCheckc1">Remember me</label>
+              </div>
+              <a href="forgot-password.php">
+                <h5 class="text-primary">Forgot Password?</h5>
+              </a>
+            </div>
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-danger">Sign In</button>
+            </div>
+
+
+            <hr />
+            <h5 class="d-flex justify-content-center">Don't have an account?<a href="register.php" class="ms-2">Sign
+                Up</a></h5>
           </div>
         </div>
       </div>
+    </div>
     </div>
   </form>
   <!-- [ Main Content ] end -->
