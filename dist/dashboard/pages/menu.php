@@ -183,6 +183,7 @@
     const itemsPerPage = 10;
     let activeFilters = new Map(); // Modern filter storage
     let currentSort = 'created_at_desc';
+    let currentViewMode = 'active'; // Track if showing active or deleted items
 
     // Filter Dropdown Management
     function toggleFilterDropdown() {
@@ -204,6 +205,8 @@
         const filterValue = checkbox.dataset.value;
         const filterKey = `${filterType}:${filterValue}`;
 
+        console.log('Filter change:', filterType, filterValue, checkbox.checked);
+
         if (checkbox.checked) {
             // Add filter
             const filterLabel = checkbox.parentElement.querySelector('.filter-label').textContent;
@@ -213,13 +216,17 @@
                 label: filterLabel,
                 element: checkbox
             });
+            console.log('Added filter:', filterKey, filterLabel);
         } else {
             // Remove filter
             activeFilters.delete(filterKey);
+            console.log('Removed filter:', filterKey);
         }
 
+        console.log('Active filters:', Array.from(activeFilters.keys()));
         updateFilterBadge();
         updateActiveFiltersDisplay();
+        applyFilters(); // Auto-apply filters when changed
     }
 
     // Update filter badge count
@@ -267,47 +274,64 @@
         if (filter && filter.element) {
             filter.element.checked = false;
         }
+
+        // Special handling for view mode filter
+        if (filterKey === 'view_mode:deleted') {
+            // Switch back to active items view
+            currentViewMode = 'active';
+            loadMenuData(false); // Load active items data
+        }
+
         activeFilters.delete(filterKey);
         updateFilterBadge();
         updateActiveFiltersDisplay();
-        applyFilters();
+
+        // Only apply filters for non-view-mode filters
+        if (filterKey !== 'view_mode:deleted') {
+            applyFilters();
+        }
     }
 
-    // Clear all filters
-    function clearAllFilters() {
-        // Clear all checkboxes
-        document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
-            checkbox.checked = false;
-        });
+    // Handle view mode change (show deleted items)
+    function handleViewModeChange(checkbox) {
+        const isShowingDeleted = checkbox.checked;
 
-        // Clear search
-        document.getElementById('searchInput').value = '';
+        if (isShowingDeleted) {
+            // Switch to deleted items view
+            currentViewMode = 'deleted';
+            loadMenuData(true); // Load deleted items
 
-        // Reset sort
-        document.getElementById('sortBy').value = 'created_at_desc';
-        currentSort = 'created_at_desc';
+            // Add to active filters for visual feedback
+            activeFilters.set('view_mode:deleted', {
+                type: 'view_mode',
+                value: 'deleted',
+                label: 'Show Deleted Items',
+                element: checkbox
+            });
+        } else {
+            // Switch back to active items view
+            currentViewMode = 'active';
+            loadMenuData(false); // Load active items
 
-        // Clear filters
-        activeFilters.clear();
+            // Remove from active filters
+            activeFilters.delete('view_mode:deleted');
+        }
+
         updateFilterBadge();
         updateActiveFiltersDisplay();
-        applyFilters();
-    }
-
-    // Apply filters and close dropdown
-    function applyFiltersAndClose() {
-        applyFilters();
-        toggleFilterDropdown();
     }
 
     // Populate category filter options
     function populateCategoryFilterOptions() {
         const container = document.getElementById('categoryFilterOptions');
 
+        console.log('Populating category filter options:', categories.length, 'categories found');
+
         if (container && categories.length > 0) {
             container.innerHTML = '';
 
             categories.forEach(category => {
+                console.log('Adding category filter:', category.name, category.id);
                 const option = document.createElement('label');
                 option.className = 'filter-option';
                 option.innerHTML = `
@@ -317,6 +341,8 @@
                 `;
                 container.appendChild(option);
             });
+        } else {
+            console.log('No categories to populate or container not found:', container, categories);
         }
     }
 
@@ -359,7 +385,6 @@
     // Reset form
     function resetForm() {
         document.getElementById('menuForm').reset();
-        document.getElementById('isActive').checked = true;
         updatePreview();
     }
 
@@ -370,7 +395,6 @@
         const price = document.getElementById('menuPrice').value;
         const categorySelect = document.getElementById('menuCategory');
         const isTopping = document.getElementById('isTopping').checked;
-        const isActive = document.getElementById('isActive').checked;
 
         // Update preview elements
         document.getElementById('previewName').textContent = name || 'Nama Menu';
@@ -389,10 +413,10 @@
             toppingBadge.classList.add('d-none');
         }
 
-        // Update status badge
+        // Update status badge - always active for new menus
         const statusBadge = document.getElementById('previewStatus');
-        statusBadge.textContent = isActive ? 'Active' : 'Inactive';
-        statusBadge.className = `badge bg-${isActive ? 'success' : 'danger'}`;
+        statusBadge.textContent = 'Active';
+        statusBadge.className = 'badge bg-success';
     }
 
     // Update image preview
@@ -489,7 +513,7 @@
         });
 
         document.addEventListener('change', function (e) {
-            if (e.target.matches('#isTopping, #isActive, #menuCategory')) {
+            if (e.target.matches('#isTopping, #menuCategory')) {
                 updatePreview();
             }
         });
@@ -504,6 +528,7 @@
             if (result.success) {
                 categories = result.data;
                 populateCategorySelect();
+                populateCategoryFilterOptions(); // Also populate filter options
             } else {
                 console.error('Failed to load categories:', result.message);
             }
@@ -513,13 +538,21 @@
     }
 
     // Load menu data from API
-    async function loadMenuData() {
+    async function loadMenuData(showDeleted = false) {
         try {
-            const response = await fetch('api/menu/products.php');
+            // Build URL with is_active parameter
+            let url = 'api/menu/products.php';
+            if (!showDeleted) {
+                url += '?is_active=true';
+            } else {
+                url += '?is_active=false';
+            }
+
+            const response = await fetch(url);
             const result = await response.json();
 
             if (result.success) {
-                displayMenuData(result.data);
+                displayMenuData(result.data, showDeleted);
             } else {
                 console.error('Failed to load menu data:', result.message);
                 showNotification('Error loading menu data: ' + result.message, 'error');
@@ -556,6 +589,7 @@
         // Reload data
         loadMenuData();
     }
+
     function populateFilterOptions() {
         const categoryFilter = document.getElementById('categoryFilter');
         if (categoryFilter && categories.length > 0) {
@@ -579,17 +613,27 @@
         const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
         // Apply active filters
-        activeFilters.forEach(filter => {
-            if (filter.type === 'status') {
-                filteredMenuData = filteredMenuData.filter(item => {
-                    return filter.value === 'active' ? item.is_active : !item.is_active;
-                });
-            } else if (filter.type === 'category') {
-                filteredMenuData = filteredMenuData.filter(item => {
-                    return item.category_id === filter.value;
-                });
-            }
-        });
+        // Collect category filters for OR logic
+        const categoryFilters = Array.from(activeFilters.values()).filter(filter => filter.type === 'category');
+
+        console.log('Applying filters - Category filters found:', categoryFilters.length);
+
+        if (categoryFilters.length > 0) {
+            // OR logic: show items that match ANY selected category
+            const selectedCategoryIds = categoryFilters.map(filter => filter.value);
+            console.log('Selected category IDs:', selectedCategoryIds);
+            console.log('Total items before filtering:', filteredMenuData.length);
+
+            filteredMenuData = filteredMenuData.filter(item => {
+                const matches = selectedCategoryIds.includes(item.category_id);
+                if (matches) {
+                    console.log('Item matches filter:', item.name, item.category_id);
+                }
+                return matches;
+            });
+
+            console.log('Total items after category filtering:', filteredMenuData.length);
+        }
 
         // Apply search filter
         if (searchTerm) {
@@ -623,7 +667,6 @@
         currentPage = 1;
         displayTableView();
         updatePagination();
-        updateFilterInfo();
     }
     function applySorting(triggerFilters = true) {
         const sortBy = document.getElementById('sortBy');
@@ -634,14 +677,6 @@
         }
     }
 
-
-
-    // Update filter info
-    function updateFilterInfo() {
-        const filterInfo = document.getElementById('filterInfo');
-        const totalFiltered = filteredMenuData.length;
-        const totalAll = allMenuData.length;
-    }
 
 
     // Show form tambah menu
@@ -741,7 +776,8 @@
                                 <div class="search-input-wrapper">
                                     <i class="ti ti-search search-icon"></i>
                                     <input type="text" class="form-control search-input" id="searchInput" 
-                                           placeholder="Search products..." onkeyup="applyFilters()">
+                                           placeholder="Search products..." onkeyup="applyFilters()"
+                                           onchange="applyFilters()">
                                 </div>
                             </div>
                             
@@ -764,19 +800,14 @@
                                         </div>
                                         
                                         <div class="filter-dropdown-body">
-                                            <!-- Status Filters -->
+                                            <!-- View Mode Filter -->
                                             <div class="filter-group">
-                                                <label class="filter-group-label">Status</label>
+                                                <label class="filter-group-label">View Mode</label>
                                                 <div class="filter-options">
                                                     <label class="filter-option">
-                                                        <input type="checkbox" class="filter-checkbox" data-filter="status" data-value="active" onchange="handleFilterChange(this)">
-                                                        <span class="filter-icon">🟢</span>
-                                                        <span class="filter-label">Active</span>
-                                                    </label>
-                                                    <label class="filter-option">
-                                                        <input type="checkbox" class="filter-checkbox" data-filter="status" data-value="inactive" onchange="handleFilterChange(this)">
-                                                        <span class="filter-icon">🔴</span>
-                                                        <span class="filter-label">Inactive</span>
+                                                        <input type="checkbox" class="filter-checkbox" data-filter="view_mode" data-value="deleted" onchange="handleViewModeChange(this)">
+                                                        <span class="filter-icon">🗑️</span>
+                                                        <span class="filter-label">Show Deleted Items</span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -788,15 +819,6 @@
                                                     <!-- Category options will be populated dynamically -->
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div class="filter-dropdown-footer">
-                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearAllFilters()">
-                                                Clear All
-                                            </button>
-                                            <button type="button" class="btn btn-primary btn-sm" onclick="applyFiltersAndClose()">
-                                                Apply
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -977,15 +999,6 @@
                                             <div class="form-text">Centang jika menu ini dapat dijadikan topping untuk menu lain</div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="isActive" name="is_active" checked>
-                                            <label class="form-check-label" for="isActive">
-                                                <strong>Menu Aktif</strong>
-                                            </label>
-                                            <div class="form-text">Menu aktif akan tampil di aplikasi pelanggan</div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1075,10 +1088,11 @@
     }
 
     // Display menu data
-    function displayMenuData(menuData) {
+    function displayMenuData(menuData, showDeleted = false) {
         allMenuData = menuData; // Store all data
         filteredMenuData = [...allMenuData]; // Initialize filtered data
         currentPage = 1; // Reset to first page
+        currentViewMode = showDeleted ? 'deleted' : 'active'; // Store current view mode
         applyFilters(); // Apply current filters and sorting
         displayCardView(menuData);
     }
@@ -1134,12 +1148,23 @@
                 </td>
                 <td>
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editMenu('${item.id}')" title="Edit">
-                            <i class="ti ti-edit"></i>
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Delete">
-                            <i class="ti ti-trash"></i>
-                        </button>
+                        ${currentViewMode === 'active' ? `
+                            <!-- Active Items: Edit + Delete -->
+                            <button type="button" class="btn btn-sm btn-outline-warning me-1" onclick="editMenu('${item.id}')" title="Edit Menu">
+                                <i class="ti ti-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Soft Delete">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                        ` : `
+                            <!-- Deleted Items: Restore + Permanent Delete -->
+                            <button type="button" class="btn btn-sm btn-outline-success me-1" onclick="restoreMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Restore Item">
+                                <i class="ti ti-refresh"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Permanent Delete">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                        `}
                     </div>
                 </td>
             `;
@@ -1189,12 +1214,23 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 text-success">Rp ${formatPrice(item.price)}</h5>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editMenu('${item.id}')" title="Edit">
-                                    <i class="ti ti-edit"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Delete">
-                                    <i class="ti ti-trash"></i>
-                                </button>
+                                ${currentViewMode === 'active' ? `
+                                    <!-- Active Items: Edit + Delete -->
+                                    <button type="button" class="btn btn-sm btn-outline-warning me-1" onclick="editMenu('${item.id}')" title="Edit Menu">
+                                        <i class="ti ti-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Soft Delete">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                ` : `
+                                    <!-- Deleted Items: Restore + Permanent Delete -->
+                                    <button type="button" class="btn btn-sm btn-outline-success me-1" onclick="restoreMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Restore Item">
+                                        <i class="ti ti-refresh"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Permanent Delete">
+                                        <i class="ti ti-trash-x"></i>
+                                    </button>
+                                `}
                             </div>
                         </div>
                     </div>
@@ -1362,7 +1398,7 @@
 
             // Convert checkbox to boolean
             data.is_topping = formData.has('is_topping');
-            data.is_active = formData.has('is_active');
+            data.is_active = true; // Default to active for new menus
 
             // Convert price to number
             data.price = parseFloat(data.price);
@@ -1435,6 +1471,70 @@
         });
     }
 
+    // Restore menu item
+    function restoreMenu(id, name) {
+        showRestoreConfirmation(name, async () => {
+            // Show loading
+            showLoading('Memulihkan...', 'Sedang memulihkan menu, tunggu sebentar...');
+
+            try {
+                const response = await fetch(`api/menu/products.php?id=${id}&action=restore`, {
+                    method: 'PATCH'
+                });
+
+                const result = await response.json();
+
+                // Hide loading
+                hideAlert();
+
+                if (result.success) {
+                    showSuccess('Berhasil!', result.message, () => {
+                        loadMenuData(true); // Reload deleted items view after user closes success alert
+                    });
+                } else {
+                    showError('Gagal!', result.message);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                hideAlert();
+                showError('Kesalahan!', 'Terjadi kesalahan saat menghubungi server');
+            }
+        });
+    }
+
+    // Permanently delete menu item
+    function permanentDeleteMenu(id, name) {
+        showPermanentDeleteConfirmation(name, async () => {
+            // Show loading
+            showLoading('Menghapus Permanen...', 'Sedang menghapus menu secara permanen, tunggu sebentar...');
+
+            try {
+                const response = await fetch(`api/menu/products.php?id=${id}&action=permanent_delete`, {
+                    method: 'PATCH'
+                });
+
+                const result = await response.json();
+
+                // Hide loading
+                hideAlert();
+
+                if (result.success) {
+                    showSuccess('Berhasil!', result.message, () => {
+                        loadMenuData(true); // Reload deleted items view after user closes success alert
+                    });
+                } else {
+                    showError('Gagal!', result.message);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                hideAlert();
+                showError('Kesalahan!', 'Terjadi kesalahan saat menghubungi server');
+            }
+        });
+    }
+
     // SweetAlert helper functions
     function showDeleteConfirmation(itemName, onConfirm) {
         if (typeof Swal !== 'undefined') {
@@ -1455,6 +1555,67 @@
         } else {
             // Fallback to native confirm if SweetAlert is not available
             if (confirm(`Apakah Anda yakin ingin menghapus "${itemName}"?`)) {
+                onConfirm();
+            }
+        }
+    }
+
+    function showRestoreConfirmation(itemName, onConfirm) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Konfirmasi Pulihkan',
+                text: `Apakah Anda yakin ingin memulihkan "${itemName}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Pulihkan!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    onConfirm();
+                }
+            });
+        } else {
+            // Fallback to native confirm if SweetAlert is not available
+            if (confirm(`Apakah Anda yakin ingin memulihkan "${itemName}"?`)) {
+                onConfirm();
+            }
+        }
+    }
+
+    function showPermanentDeleteConfirmation(itemName, onConfirm) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Peringatan!',
+                html: `<div style="text-align: left;">
+                    <p><strong>Anda akan menghapus PERMANEN:</strong></p>
+                    <p style="color: #dc3545; font-weight: bold;">"${itemName}"</p>
+                    <br>
+                    <p style="color: #dc3545;"><i class="ti ti-alert-triangle"></i> <strong>PERHATIAN:</strong></p>
+                    <ul style="text-align: left; color: #dc3545;">
+                        <li>Data akan hilang SELAMANYA</li>
+                        <li>Tidak dapat dikembalikan</li>
+                        <li>Semua riwayat akan terhapus</li>
+                    </ul>
+                    <p style="margin-top: 15px;"><strong>Apakah Anda yakin?</strong></p>
+                </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="ti ti-trash-x"></i> Ya, Hapus Permanen!',
+                cancelButtonText: '<i class="ti ti-x"></i> Batal',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    onConfirm();
+                }
+            });
+        } else {
+            // Fallback to native confirm if SweetAlert is not available
+            if (confirm(`PERINGATAN: Anda akan menghapus PERMANEN "${itemName}". Data tidak dapat dikembalikan. Apakah Anda yakin?`)) {
                 onConfirm();
             }
         }

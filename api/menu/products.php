@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 require_once '../../config/koneksi.php';
@@ -29,6 +29,17 @@ switch ($method) {
         break;
     case 'DELETE':
         deleteProduct();
+        break;
+    case 'PATCH':
+        // Handle restore action
+        if (isset($_GET['action']) && $_GET['action'] === 'restore') {
+            restoreProduct();
+        } elseif (isset($_GET['action']) && $_GET['action'] === 'permanent_delete') {
+            permanentDeleteProduct();
+        } else {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid action']);
+        }
         break;
     default:
         http_response_code(405);
@@ -538,6 +549,132 @@ function deleteProduct()
             }
         } else {
             throw new Exception('Failed to delete product: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function restoreProduct()
+{
+    global $koneksi;
+
+    $product_id = $_GET['id'] ?? '';
+    if (empty($product_id)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Product ID is required']);
+        return;
+    }
+
+    try {
+        // Check if product exists and is inactive
+        $checkQuery = "SELECT id, is_active FROM products WHERE id = ?";
+        $checkStmt = mysqli_prepare($koneksi, $checkQuery);
+        mysqli_stmt_bind_param($checkStmt, "s", $product_id);
+        mysqli_stmt_execute($checkStmt);
+        $checkResult = mysqli_stmt_get_result($checkStmt);
+
+        if (mysqli_num_rows($checkResult) === 0) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Produk tidak ditemukan']);
+            return;
+        }
+
+        $product = mysqli_fetch_assoc($checkResult);
+        if ($product['is_active']) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Produk sudah aktif']);
+            return;
+        }
+
+        // Restore product (set is_active = TRUE)
+        $restoreQuery = "UPDATE products SET is_active = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        $restoreStmt = mysqli_prepare($koneksi, $restoreQuery);
+        mysqli_stmt_bind_param($restoreStmt, "s", $product_id);
+
+        if (mysqli_stmt_execute($restoreStmt)) {
+            if (mysqli_affected_rows($koneksi) > 0) {
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Produk berhasil dipulihkan'
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Produk tidak ditemukan']);
+            }
+        } else {
+            throw new Exception('Failed to restore product: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function permanentDeleteProduct()
+{
+    global $koneksi;
+
+    $product_id = $_GET['id'] ?? '';
+    if (empty($product_id)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Product ID is required']);
+        return;
+    }
+
+    try {
+        // Check if product exists and is already soft-deleted
+        $checkQuery = "SELECT id, name, is_active FROM products WHERE id = ?";
+        $checkStmt = mysqli_prepare($koneksi, $checkQuery);
+        mysqli_stmt_bind_param($checkStmt, "s", $product_id);
+        mysqli_stmt_execute($checkStmt);
+        $result = mysqli_stmt_get_result($checkStmt);
+        $product = mysqli_fetch_assoc($result);
+
+        if (!$product) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Produk tidak ditemukan']);
+            return;
+        }
+
+        // Only allow permanent deletion of soft-deleted items
+        if ($product['is_active']) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Hanya produk yang sudah dihapus (soft delete) yang dapat dihapus permanen'
+            ]);
+            return;
+        }
+
+        // Permanently delete product from database
+        $deleteQuery = "DELETE FROM products WHERE id = ?";
+        $deleteStmt = mysqli_prepare($koneksi, $deleteQuery);
+        mysqli_stmt_bind_param($deleteStmt, "s", $product_id);
+
+        if (mysqli_stmt_execute($deleteStmt)) {
+            if (mysqli_affected_rows($koneksi) > 0) {
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Produk berhasil dihapus permanen'
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Produk tidak ditemukan']);
+            }
+        } else {
+            throw new Exception('Failed to permanently delete product: ' . mysqli_error($koneksi));
         }
 
     } catch (Exception $e) {
