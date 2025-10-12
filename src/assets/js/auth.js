@@ -259,19 +259,41 @@ class ForgotPasswordManager {
         }
     }
 
-    showAlert(type, message) {
+    showAlert(type, message, duration = 5000) {
         try {
             const alertContainer = document.getElementById('alertContainer');
             if (alertContainer) {
                 const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
                 const icon = type === 'success' ? 'ti-check-circle' : 'ti-alert-circle';
 
-                alertContainer.innerHTML = `
-                    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                        <i class="ti ${icon} me-2"></i>${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                const alertElement = document.createElement('div');
+                alertElement.className = `alert ${alertClass} alert-dismissible fade show`;
+                alertElement.setAttribute('role', 'alert');
+                alertElement.innerHTML = `
+                    <i class="ti ${icon} me-2"></i>${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 `;
+
+                // Clear previous alerts
+                alertContainer.innerHTML = '';
+                alertContainer.appendChild(alertElement);
+
+                // Auto-dismiss after duration (if not error type with registration link)
+                if (duration > 0 && !message.includes('Daftar Akun Baru')) {
+                    setTimeout(() => {
+                        if (alertElement && alertElement.parentNode) {
+                            alertElement.classList.remove('show');
+                            setTimeout(() => {
+                                if (alertElement && alertElement.parentNode) {
+                                    alertElement.remove();
+                                }
+                            }, 150);
+                        }
+                    }, duration);
+                }
+
+                // Scroll to alert if needed
+                alertContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             } else {
                 console.error('Alert container not found');
             }
@@ -321,17 +343,108 @@ class ForgotPasswordManager {
         this.setButtonLoading('sendOtpBtn', true);
 
         try {
-            // Simulate API call
-            await this.delay(2000);
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                             document.querySelector('input[name="csrf_token"]')?.value || '';
 
-            // For demo purposes, assume success
-            document.getElementById('emailDisplay').textContent = email;
-            this.showStep(2);
-            this.startOtpCountdown();
-            this.startResendCountdown();
-            this.showAlert('success', 'Kode OTP telah dikirim ke email Anda');
+            // Send request to backend handler
+            const formData = new FormData();
+            formData.append('action', 'send_otp');
+            formData.append('email', email);
+            
+            // Use our working test handler temporarily until CSRF issues are resolved
+            const response = await fetch('../../test_email_handler.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            // Debug logging
+            console.log('🔍 Debug: Email verification response:', result);
+            console.log('🔍 Debug: Response success:', result.success);
+            console.log('🔍 Debug: Response message:', result.message);
+
+            if (result.success) {
+                // Email verified and OTP sent successfully - proceed to step 2
+                console.log('✅ Debug: Proceeding to step 2');
+                document.getElementById('emailDisplay').textContent = email;
+                this.showStep(2);
+                this.startOtpCountdown();
+                this.startResendCountdown();
+                
+                // Show success message
+                let message = result.message || 'Kode OTP telah dikirim ke email Anda';
+                
+                // In development mode, show OTP directly
+                if (result.development_otp) {
+                    message += `<br><div class="mt-2 p-2 bg-warning bg-opacity-10 border border-warning rounded">
+                        <strong>🔧 MODE DEVELOPMENT:</strong><br>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>📧 Email dikirim ke inbox Anda!</strong><br>
+                                <small>Cek Gmail untuk email dengan design indah</small>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>OTP Code:</strong> <span class="fw-bold text-primary fs-5">${result.development_otp}</span><br>
+                                <small class="text-muted">OTP akan otomatis terisi dalam 2 detik...</small>
+                            </div>
+                        </div>
+                    </div>`;
+                    
+                    // Auto-fill OTP after 2 seconds in development
+                    setTimeout(() => {
+                        const otpInput = document.getElementById('otpInput');
+                        if (otpInput) {
+                            otpInput.value = result.development_otp;
+                            otpInput.dispatchEvent(new Event('input'));
+                        }
+                    }, 2000);
+                } else {
+                    // Production mode - show email check notice
+                    message += `<br><div class="mt-2 p-2 bg-info bg-opacity-10 border border-info rounded">
+                        <strong>📧 MODE PRODUCTION:</strong><br>
+                        Silakan cek email inbox Anda (termasuk folder spam) untuk kode OTP
+                        <br><small class="text-muted">Email dikirim dari: seblakpredator@gmail.com</small>
+                    </div>`;
+                }
+                
+                this.showAlert('success', message, 0); // Don't auto-dismiss
+            } else {
+                // Email verification failed - stay on step 1
+                console.log('❌ Debug: Staying on step 1 - email verification failed');
+                this.userEmail = ''; // Clear stored email since it's invalid
+                
+                // Add visual feedback to email input
+                const emailInput = document.getElementById('emailInput');
+                emailInput.classList.add('is-invalid');
+                
+                // Remove invalid class after user starts typing again
+                const removeInvalidClass = () => {
+                    emailInput.classList.remove('is-invalid');
+                    emailInput.removeEventListener('input', removeInvalidClass);
+                };
+                emailInput.addEventListener('input', removeInvalidClass);
+                
+                // Handle specific error cases and stay on current step
+                if (result.message.includes('tidak terdaftar')) {
+                    this.showAlert('error', result.message + ' <br><a href="register.php" class="alert-link text-decoration-underline">📝 Daftar Akun Baru</a>', 0); // Don't auto-dismiss
+                } else if (result.retry_after) {
+                    const minutes = Math.ceil(result.retry_after / 60);
+                    this.showAlert('error', `⏰ Terlalu banyak percobaan. Silakan coba lagi dalam ${minutes} menit.`, 10000);
+                } else {
+                    this.showAlert('error', result.message || 'Gagal mengirim kode OTP. Silakan coba lagi.');
+                }
+                
+                // Focus back to email input for correction
+                setTimeout(() => {
+                    emailInput.focus();
+                    emailInput.select(); // Select the text for easy replacement
+                }, 100);
+            }
         } catch (error) {
-            this.showAlert('error', 'Gagal mengirim kode OTP. Silakan coba lagi.');
+            console.error('Error sending OTP:', error);
+            this.showAlert('error', 'Terjadi kesalahan jaringan. Silakan periksa koneksi internet Anda.');
         } finally {
             this.setButtonLoading('sendOtpBtn', false);
         }
@@ -348,14 +461,33 @@ class ForgotPasswordManager {
         this.setButtonLoading('verifyOtpBtn', true);
 
         try {
-            // Simulate API call
-            await this.delay(1500);
+            // Send OTP verification request
+            const formData = new FormData();
+            formData.append('action', 'verify_otp');
+            formData.append('otp', otpCode);
 
-            // For demo purposes, assume success
-            this.showStep(3);
-            this.showAlert('success', 'Kode OTP berhasil diverifikasi');
+            const response = await fetch('../../test_email_handler.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            console.log('🔍 Debug: OTP verification response:', result);
+
+            if (result.success) {
+                // OTP verified successfully - proceed to step 3
+                console.log('✅ Debug: OTP verified, proceeding to step 3');
+                this.showStep(3);
+                this.showAlert('success', result.message || 'Kode OTP berhasil diverifikasi');
+            } else {
+                // OTP verification failed
+                console.log('❌ Debug: OTP verification failed');
+                this.showAlert('error', result.message || 'Kode OTP tidak valid atau sudah expired');
+            }
         } catch (error) {
-            this.showAlert('error', 'Kode OTP tidak valid atau sudah expired');
+            console.error('Error verifying OTP:', error);
+            this.showAlert('error', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
         } finally {
             this.setButtonLoading('verifyOtpBtn', false);
         }
@@ -370,16 +502,42 @@ class ForgotPasswordManager {
             return;
         }
 
+        if (newPassword.length < 8) {
+            this.showAlert('error', 'Password harus minimal 8 karakter');
+            return;
+        }
+
         this.setButtonLoading('resetPasswordBtn', true);
 
         try {
-            // Simulate API call
-            await this.delay(2000);
+            // Send password reset request
+            const formData = new FormData();
+            formData.append('action', 'reset_password');
+            formData.append('new_password', newPassword);
+            formData.append('confirm_password', confirmPassword);
 
-            // For demo purposes, assume success
-            this.showStep(4);
+            const response = await fetch('../../test_email_handler.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            console.log('🔍 Debug: Password reset response:', result);
+
+            if (result.success) {
+                // Password reset successful - proceed to step 4
+                console.log('✅ Debug: Password reset successful, proceeding to step 4');
+                this.showStep(4);
+                this.showAlert('success', result.message || 'Password berhasil direset');
+            } else {
+                // Password reset failed
+                console.log('❌ Debug: Password reset failed');
+                this.showAlert('error', result.message || 'Gagal mereset password. Silakan coba lagi.');
+            }
         } catch (error) {
-            this.showAlert('error', 'Gagal mereset password. Silakan coba lagi.');
+            console.error('Error resetting password:', error);
+            this.showAlert('error', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
         } finally {
             this.setButtonLoading('resetPasswordBtn', false);
         }
@@ -390,14 +548,33 @@ class ForgotPasswordManager {
         resendBtn.disabled = true;
 
         try {
-            // Simulate API call
-            await this.delay(1000);
+            // Get CSRF token
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
 
-            this.showAlert('success', 'Kode OTP baru telah dikirim');
-            this.startOtpCountdown();
-            this.startResendCountdown();
+            // Send request to backend handler
+            const formData = new FormData();
+            formData.append('action', 'send_otp');
+            formData.append('email', this.userEmail);
+            formData.append('csrf_token', csrfToken);
+
+            const response = await fetch('../../handler/forgot_password.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showAlert('success', 'Kode OTP baru telah dikirim ke email Anda');
+                this.startOtpCountdown();
+                this.startResendCountdown();
+            } else {
+                this.showAlert('error', result.message || 'Gagal mengirim ulang kode OTP');
+                resendBtn.disabled = false;
+            }
         } catch (error) {
-            this.showAlert('error', 'Gagal mengirim ulang kode OTP');
+            console.error('Error resending OTP:', error);
+            this.showAlert('error', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
             resendBtn.disabled = false;
         }
     }

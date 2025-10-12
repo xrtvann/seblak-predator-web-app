@@ -45,11 +45,14 @@ class JWTMiddleware
             $user_data = $validation['user_data'];
 
             // Check role authorization if required
-            if (!empty($required_roles) && isset($user_data['role_id'])) {
-                if (!in_array($user_data['role_id'], $required_roles)) {
-                    self::respondWithError(403, 'Insufficient permissions');
+            if (!empty($required_roles) && isset($user_data['role_name'])) {
+                if (!in_array($user_data['role_name'], $required_roles)) {
+                    self::respondWithError(403, 'Insufficient permissions - Role: ' . $user_data['role_name']);
                     return false;
                 }
+            } elseif (!empty($required_roles)) {
+                self::respondWithError(403, 'User role not found in token');
+                return false;
             }
 
             // Store user data globally for use in protected endpoints

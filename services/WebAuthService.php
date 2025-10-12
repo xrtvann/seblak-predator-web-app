@@ -28,11 +28,14 @@ class WebAuthService
     {
         try {
             // Check for rate limiting
-            if ($this->isRateLimited($username)) {
+            $rate_limit_check = $this->getRateLimitStatus($username);
+            if ($rate_limit_check['is_limited']) {
                 return [
                     'success' => false,
-                    'message' => 'Too many failed login attempts. Please try again in 15 minutes.',
-                    'code' => 'RATE_LIMITED'
+                    'message' => 'Too many failed login attempts. Please try again in ' . $rate_limit_check['remaining_time_text'] . '.',
+                    'code' => 'RATE_LIMITED',
+                    'remaining_seconds' => $rate_limit_check['remaining_seconds'],
+                    'remaining_time_text' => $rate_limit_check['remaining_time_text']
                 ];
             }
 
@@ -299,23 +302,25 @@ class WebAuthService
     }
 
     /**
-     * Check if user is rate limited
+     * Check rate limit status and get remaining time
      * @param string $username Username
-     * @return bool True if rate limited
+     * @return array Rate limit status with remaining time
      */
-    private function isRateLimited($username)
+    private function getRateLimitStatus($username)
     {
         $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
-        $query = "SELECT COUNT(*) as attempt_count 
+        // Get failed attempts in last 5 minutes
+        $query = "SELECT COUNT(*) as attempt_count, 
+                         MAX(attempted_at) as last_attempt
                   FROM login_attempts 
                   WHERE (username = ? OR ip_address = ?) 
                   AND success = FALSE 
-                  AND attempted_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE)";
+                  AND attempted_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)";
 
         $stmt = mysqli_prepare($this->connection, $query);
         if (!$stmt) {
-            return false;
+            return ['is_limited' => false, 'remaining_seconds' => 0, 'remaining_time_text' => ''];
         }
 
         mysqli_stmt_bind_param($stmt, "ss", $username, $ip_address);
@@ -324,10 +329,43 @@ class WebAuthService
 
         if ($result) {
             $row = mysqli_fetch_assoc($result);
-            return $row['attempt_count'] >= 5; // Max 5 attempts in 15 minutes
+            $attempt_count = (int) $row['attempt_count'];
+
+            if ($attempt_count >= 5) { // Max 5 attempts in 5 minutes
+                // Calculate remaining lockout time
+                $last_attempt = new DateTime($row['last_attempt']);
+                $lockout_end = clone $last_attempt;
+                $lockout_end->add(new DateInterval('PT5M')); // Add 5 minutes
+                $now = new DateTime();
+
+                if ($now < $lockout_end) {
+                    $remaining_seconds = $lockout_end->getTimestamp() - $now->getTimestamp();
+                    $minutes = floor($remaining_seconds / 60);
+                    $seconds = $remaining_seconds % 60;
+                    $remaining_time_text = sprintf('%d:%02d', $minutes, $seconds);
+
+                    return [
+                        'is_limited' => true,
+                        'remaining_seconds' => $remaining_seconds,
+                        'remaining_time_text' => $remaining_time_text,
+                        'attempt_count' => $attempt_count
+                    ];
+                }
+            }
         }
 
-        return false;
+        return ['is_limited' => false, 'remaining_seconds' => 0, 'remaining_time_text' => '', 'attempt_count' => $attempt_count ?? 0];
+    }
+
+    /**
+     * Check if user is rate limited (legacy method for backward compatibility)
+     * @param string $username Username
+     * @return bool True if rate limited
+     */
+    private function isRateLimited($username)
+    {
+        $status = $this->getRateLimitStatus($username);
+        return $status['is_limited'];
     }
 
     /**
@@ -447,6 +485,16 @@ class WebAuthService
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
         }
+    }
+
+    /**
+     * Get current rate limit status for display (public method)
+     * @param string $username Username
+     * @return array Rate limit status
+     */
+    public function getLoginRateLimit($username = '')
+    {
+        return $this->getRateLimitStatus($username);
     }
 }
 ?>

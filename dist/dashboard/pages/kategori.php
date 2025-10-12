@@ -19,6 +19,71 @@
 </div>
 <!-- [ breadcrumb ] end -->
 
+<!-- [ Information Cards ] start -->
+<div class="row mb-4" id="informationCards">
+    <div class="col-xl-3 col-md-6">
+        <div class="info-card info-card-primary">
+            <div class="info-card-body">
+                <div class="info-content">
+                    <div class="info-icon">
+                        <i class="ti ti-category"></i>
+                    </div>
+                    <div class="info-text">
+                        <h3 id="totalCategoriesCount">0</h3>
+                        <span>Total Kategori</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="info-card info-card-success">
+            <div class="info-card-body">
+                <div class="info-content">
+                    <div class="info-icon">
+                        <i class="ti ti-check"></i>
+                    </div>
+                    <div class="info-text">
+                        <h3 id="activeCategoriesCount">0</h3>
+                        <span>Kategori Aktif</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="info-card info-card-warning">
+            <div class="info-card-body">
+                <div class="info-content">
+                    <div class="info-icon">
+                        <i class="ti ti-archive"></i>
+                    </div>
+                    <div class="info-text">
+                        <h3 id="deletedCategoriesCount">0</h3>
+                        <span>Tidak Aktif</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="info-card info-card-info">
+            <div class="info-card-body">
+                <div class="info-content">
+                    <div class="info-icon">
+                        <i class="ti ti-plus-circle"></i>
+                    </div>
+                    <div class="info-text">
+                        <h3 id="toppingCategoriesCount">0</h3>
+                        <span>Kategori Topping</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ Information Cards ] end -->
+
 <!-- [ Main Content ] start -->
 <div class="row">
     <!-- [ Data Kategori ] start -->
@@ -273,56 +338,69 @@
     /* Search section */
     .search-section {
         flex: 1;
-        min-width: 200px;
-        max-width: 300px;
+        min-width: 250px;
+        max-width: 400px;
     }
 
     .search-input-wrapper {
         position: relative;
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #6c757d;
-        z-index: 5;
+        display: flex;
+        align-items: center;
     }
 
     .search-input {
-        padding-left: 2.5rem;
-        border: 1px solid #dee2e6;
-        border-radius: 0.375rem;
-        transition: all 0.15s ease-in-out;
+        background: white;
+        border: 2px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 8px 12px 8px 35px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        width: 100%;
     }
 
     .search-input:focus {
         border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        color: #6c757d;
+        font-size: 16px;
+        z-index: 1;
     }
 
     /* Filter section */
     .filter-section {
-        flex: 0 0 auto;
+        flex-shrink: 0;
+    }
+
+    .filter-dropdown {
+        position: relative;
     }
 
     .filter-btn {
         background: white;
-        border: 1px solid #dee2e6;
+        border: 2px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 8px 16px;
         color: #495057;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
+        font-weight: 500;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 6px;
+        transition: all 0.3s ease;
         position: relative;
-        transition: all 0.15s ease-in-out;
+        min-width: 90px;
+        font-size: 14px;
     }
 
     .filter-btn:hover {
-        background: #f8f9fa;
         border-color: #667eea;
+        background: #f8f9fa;
         color: #667eea;
     }
 
@@ -335,68 +413,84 @@
     .filter-badge {
         background: #dc3545;
         color: white;
-        border-radius: 50%;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-        min-width: 1.5rem;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 5px;
+        border-radius: 8px;
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        min-width: 16px;
         text-align: center;
-        margin-left: 0.25rem;
+        line-height: 1;
     }
 
-    /* Filter Dropdown Styling */
+    /* Filter Dropdown */
     .filter-dropdown-menu {
         position: absolute;
-        top: calc(100% + 0.5rem);
+        top: calc(100% + 5px);
         left: 0;
-        min-width: 300px;
         background: white;
-        border: 1px solid #dee2e6;
-        border-radius: 0.5rem;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        min-width: 280px;
         z-index: 1050;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-10px);
-        transition: all 0.3s ease;
+        display: none;
+        animation: dropdownSlide 0.2s ease;
     }
 
     .filter-dropdown-menu.show {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
+        display: block;
+    }
+
+    @keyframes dropdownSlide {
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .filter-dropdown-header {
-        padding: 1rem;
-        border-bottom: 1px solid #e9ecef;
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid #e9ecef;
+        background: #f8f9fa;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .filter-dropdown-header h6 {
+        color: #495057;
+        font-weight: 600;
+        font-size: 14px;
+        margin: 0;
     }
 
     .btn-close-filter {
         background: none;
         border: none;
         color: #6c757d;
-        font-size: 1.2rem;
+        font-size: 14px;
         cursor: pointer;
-        padding: 0;
-        width: 24px;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 0.25rem;
-        transition: all 0.15s ease;
+        padding: 2px;
+        border-radius: 3px;
+        transition: all 0.2s ease;
     }
 
     .btn-close-filter:hover {
-        background: #f8f9fa;
+        background: #e9ecef;
         color: #495057;
     }
 
     .filter-dropdown-body {
-        padding: 1rem;
+        padding: 16px;
         max-height: 300px;
         overflow-y: auto;
     }
@@ -459,8 +553,7 @@
 
     /* Sort section */
     .sort-section {
-        flex: 0 0 auto;
-        min-width: 150px;
+        flex-shrink: 0;
     }
 
     .sort-wrapper {
@@ -471,96 +564,89 @@
 
     .sort-icon {
         position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
+        left: 8px;
         color: #6c757d;
-        z-index: 5;
-        pointer-events: none;
+        font-size: 14px;
+        z-index: 1;
     }
 
     .sort-select {
-        padding-left: 2.5rem;
-        border: 1px solid #dee2e6;
-        border-radius: 0.375rem;
         background: white;
-        font-size: 0.875rem;
-        transition: all 0.15s ease-in-out;
+        border: 2px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 8px 12px 8px 30px;
+        font-size: 13px;
+        min-width: 120px;
+        transition: all 0.3s ease;
+        appearance: none;
+        background-image: url('data:image/svg+xml;utf8,<svg fill="%23666" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
     }
 
     .sort-select:focus {
         border-color: #667eea;
-        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
     }
 
-    /* Active filters */
+    /* Active Filters */
     .active-filters-container {
-        margin-top: 1rem;
-        padding-top: 1rem;
+        margin-top: 12px;
+        padding-top: 12px;
         border-top: 1px solid #e9ecef;
     }
 
     .active-filters-wrapper {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 8px;
         flex-wrap: wrap;
     }
 
     .active-filters-label {
-        font-size: 0.875rem;
+        font-size: 13px;
         color: #6c757d;
         font-weight: 500;
     }
 
     .active-filters-tags {
         display: flex;
-        gap: 0.5rem;
+        gap: 6px;
         flex-wrap: wrap;
     }
 
     .active-filter-tag {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 500;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        background: #667eea;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 1rem;
-        font-size: 0.8rem;
-        animation: filterTagIn 0.3s ease;
-    }
-
-    @keyframes filterTagIn {
-        from {
-            opacity: 0;
-            transform: scale(0.8);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
+        gap: 4px;
+        animation: tagFadeIn 0.2s ease;
     }
 
     .remove-filter {
-        background: none;
+        background: rgba(255, 255, 255, 0.3);
         border: none;
         color: white;
-        font-size: 1.2rem;
-        cursor: pointer;
-        padding: 0;
-        width: 16px;
-        height: 16px;
+        border-radius: 50%;
+        width: 12px;
+        height: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 50%;
-        transition: all 0.15s ease;
+        font-size: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
     }
 
     .remove-filter:hover {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.5);
     }
 
     /* Enhanced table styling */
@@ -873,16 +959,30 @@
         showDataKategori();
     });
 
+    // Update information cards
+    function updateInformationCards() {
+        const totalCategories = allCategoriesData.length;
+        const activeCategories = allCategoriesData.filter(cat => cat.is_active).length;
+        const deletedCategories = allCategoriesData.filter(cat => !cat.is_active).length;
+        const toppingCategories = allCategoriesData.filter(cat => cat.type === 'topping').length;
+
+        // Update the card values
+        const totalElement = document.getElementById('totalCategoriesCount');
+        const activeElement = document.getElementById('activeCategoriesCount');
+        const deletedElement = document.getElementById('deletedCategoriesCount');
+        const toppingElement = document.getElementById('toppingCategoriesCount');
+
+        if (totalElement) totalElement.textContent = totalCategories;
+        if (activeElement) activeElement.textContent = activeCategories;
+        if (deletedElement) deletedElement.textContent = deletedCategories;
+        if (toppingElement) toppingElement.textContent = toppingCategories;
+    }
+
     // Load category data from API
     async function loadCategoryData(showDeleted = false) {
         try {
-            // Build URL with is_active parameter
+            // Always load all categories for accurate counts
             let url = 'api/menu/categories.php';
-            if (!showDeleted) {
-                url += '?is_active=true';
-            } else {
-                url += '?is_active=false';
-            }
 
             console.log('Loading category data from:', url);
             const response = await fetch(url);
@@ -890,10 +990,17 @@
 
             if (result.success) {
                 allCategoriesData = result.data || [];
-                filteredCategoriesData = [...allCategoriesData];
+
+                // Filter based on view mode
+                if (showDeleted) {
+                    filteredCategoriesData = allCategoriesData.filter(cat => !cat.is_active);
+                } else {
+                    filteredCategoriesData = allCategoriesData.filter(cat => cat.is_active);
+                }
                 currentPage = 1;
                 currentViewMode = showDeleted ? 'deleted' : 'active';
                 console.log('Category data loaded:', allCategoriesData.length, 'items');
+                updateInformationCards();
                 applyFilters();
             } else {
                 throw new Error(result.message || 'Failed to load data');
@@ -912,6 +1019,8 @@
                 <!-- Table View -->
                 <div class="tab-pane fade show active" id="pills-table" role="tabpanel"
                     aria-labelledby="pills-table-tab" tabindex="0">
+                    
+                    <!-- Table Controls Section -->
                     
                     <!-- Controls Section Outside Table -->
                     <div class="table-controls-section table-light p-3 mb-0 border rounded-top">
@@ -1215,35 +1324,31 @@
             const globalIndex = startIndex + index + 1;
 
             row.innerHTML = `
-                <td class="text-center">
-                    <span class="badge bg-light text-dark rounded-pill" style="min-width: 30px;">${globalIndex}</span>
+                <td>${globalIndex}</td>
+                <td>
+                    <h6 class="mb-1">${category.name}</h6>
                 </td>
                 <td>
-                    <div class="d-flex flex-column">
-                        <span class="fw-medium text-dark">${category.name}</span>
-                        <small class="text-muted">ID: ${category.id.substring(0, 8)}...</small>
-                    </div>
-                </td>
-                <td>
-                    <span class="badge ${category.type === 'product' ? 'bg-primary' : 'bg-info'} text-white">
-                        <i class="ti ${category.type === 'product' ? 'ti-category' : 'ti-plus'} me-1"></i>
+                    <span class="badge bg-light-${category.type === 'product' ? 'primary' : 'info'} text-${category.type === 'product' ? 'primary' : 'info'}">
                         ${category.type === 'product' ? 'Produk' : 'Topping'}
                     </span>
                 </td>
                 <td>
-                    <span class="badge ${category.is_active ? 'bg-success' : 'bg-danger'} text-white">
-                        <i class="ti ${category.is_active ? 'ti-check' : 'ti-x'} me-1"></i>
+                    <span class="badge bg-light-${category.is_active ? 'success' : 'danger'} text-${category.is_active ? 'success' : 'danger'}">
                         ${category.is_active ? 'Aktif' : 'Nonaktif'}
                     </span>
                 </td>
                 <td>
-                    <div class="d-flex flex-column">
-                        <span class="text-dark">${new Date(category.created_at).toLocaleDateString('id-ID')}</span>
-                        <small class="text-muted">${new Date(category.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</small>
-                    </div>
+                    <span class="text-dark f-12">${new Date(category.created_at).toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            })}</span>
                 </td>
-                <td class="text-center">
-                    ${renderActionButtons(category)}
+                <td>
+                    <div class="btn-group" role="group">
+                        ${renderActionButtons(category)}
+                    </div>
                 </td>
             `;
 
@@ -1257,29 +1362,21 @@
 
         if (isActive) {
             return `
-                <div class="btn-group btn-group-sm" role="group">
-                    <button class="btn btn-outline-warning" onclick="editCategory('${category.id}')" 
-                            title="Edit Kategori" data-bs-toggle="tooltip">
-                        <i class="ti ti-edit f-16"></i>
-                    </button>
-                    <button class="btn btn-outline-danger" onclick="deleteCategory('${category.id}', '${category.name}')" 
-                            title="Hapus Kategori" data-bs-toggle="tooltip">
-                        <i class="ti ti-trash f-16"></i>
-                    </button>
-                </div>
+                <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editCategory('${category.id}')" title="Edit Kategori">
+                    <i class="ti ti-edit"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${category.id}', '${category.name.replace(/'/g, "&apos;")}')" title="Hapus Kategori">
+                    <i class="ti ti-trash"></i>
+                </button>
             `;
         } else {
             return `
-                <div class="btn-group btn-group-sm" role="group">
-                    <button class="btn btn-outline-success" onclick="restoreCategory('${category.id}', '${category.name}')" 
-                            title="Pulihkan Kategori" data-bs-toggle="tooltip">
-                        <i class="ti ti-refresh f-16"></i>
-                    </button>
-                    <button class="btn btn-outline-danger" onclick="permanentDeleteCategory('${category.id}', '${category.name}')" 
-                            title="Hapus Permanen" data-bs-toggle="tooltip">
-                        <i class="ti ti-trash-x f-16"></i>
-                    </button>
-                </div>
+                <button type="button" class="btn btn-sm btn-outline-success me-2" onclick="restoreCategory('${category.id}', '${category.name.replace(/'/g, "&apos;")}')" title="Pulihkan Kategori">
+                    <i class="ti ti-refresh"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteCategory('${category.id}', '${category.name.replace(/'/g, "&apos;")}')" title="Hapus Permanen">
+                    <i class="ti ti-trash"></i>
+                </button>
             `;
         }
     }
@@ -1428,12 +1525,10 @@
                         </div>
                         
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-${category.type === 'product' ? 'primary' : 'info'} text-uppercase">
-                                <i class="ti ti-${category.type === 'product' ? 'category' : 'plus'} me-1"></i>
+                            <span class="badge bg-light-${category.type === 'product' ? 'primary' : 'info'} text-${category.type === 'product' ? 'primary' : 'info'}">
                                 ${category.type === 'product' ? 'Produk' : 'Topping'}
                             </span>
-                            <span class="badge bg-${category.is_active ? 'success' : 'danger'}">
-                                <i class="ti ti-${category.is_active ? 'check' : 'x'} me-1"></i>
+                            <span class="badge bg-light-${category.is_active ? 'success' : 'danger'} text-${category.is_active ? 'success' : 'danger'}">
                                 ${category.is_active ? 'Aktif' : 'Dihapus'}
                             </span>
                         </div>
@@ -1441,12 +1536,8 @@
                         <div class="text-muted mb-3">
                             <small class="d-block">Dibuat: ${new Date(category.created_at).toLocaleDateString('id-ID', {
                 day: '2-digit',
-                month: 'short',
+                month: 'long',
                 year: 'numeric'
-            })}</small>
-                            <small class="text-muted">${new Date(category.created_at).toLocaleTimeString('id-ID', {
-                hour: '2-digit',
-                minute: '2-digit'
             })}</small>
                         </div>
                         

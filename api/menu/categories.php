@@ -5,6 +5,7 @@ header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 require_once '../../config/koneksi.php';
+require_once '../auth/middleware.php';
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -15,18 +16,28 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
+        // Allow owner and admin to view categories
+        JWTMiddleware::authenticate(['owner', 'admin']);
         getAllCategories();
         break;
     case 'POST':
+        // Allow owner and admin to create categories
+        JWTMiddleware::authenticate(['owner', 'admin']);
         createCategory();
         break;
     case 'PUT':
+        // Allow owner and admin to update categories
+        JWTMiddleware::authenticate(['owner', 'admin']);
         updateCategory();
         break;
     case 'DELETE':
+        // Allow owner and admin to delete categories
+        JWTMiddleware::authenticate(['owner', 'admin']);
         deleteCategory();
         break;
     case 'PATCH':
+        // Allow owner and admin to restore/permanent delete categories
+        JWTMiddleware::authenticate(['owner', 'admin']);
         handlePatchRequest();
         break;
     default:

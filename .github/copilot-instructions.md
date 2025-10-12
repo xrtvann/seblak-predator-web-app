@@ -793,3 +793,171 @@ api/
 4. **Performance Testing**: Verify response times and database query optimization
 5. **Security Testing**: Validate input sanitization and authorization
 6. **Mobile Integration**: Test synchronization with mobile app requirements
+
+## Environment Configuration & Security
+
+**Authentication Systems:**
+- **Web Interface**: Uses `WebAuthService` class with secure sessions, remember-me cookies, and CSRF protection
+- **API Endpoints**: JWT-based authentication via `api/auth/JWTHelper.php` with refresh tokens
+- **Rate Limiting**: Login attempt tracking in `login_attempts` table prevents brute force attacks
+- **Session Security**: Encrypted sessions using `SessionEncryption` service
+
+**Required Environment Variables** (configure in `config/env.php`):
+```php
+// Database Configuration
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=seblak_app
+DB_PORT=3306
+
+// JWT Security (CRITICAL - never use default in production)
+JWT_SECRET_KEY=your_secure_jwt_secret_key_here
+
+// Email Configuration (PHPMailer)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+
+// Application Settings
+APP_NAME=Seblak Predator
+APP_URL=http://localhost/seblak-predator
+APP_ENV=development
+APP_DEBUG=true
+```
+
+**Security Implementation Notes:**
+- JWT secrets are loaded from environment variables, never hardcoded
+- All SQL queries use prepared statements via `mysqli_prepare()` pattern
+- CSRF tokens protect all web forms: `generateCSRFToken()` and `validateCSRFToken()`
+- API responses use standardized format from `api/helpers.php` → `sendJsonResponse()`
+- Soft delete patterns: Always use `is_active = FALSE` instead of hard deletes
+
+## Development Setup & Testing
+
+**Quick Start Commands:**
+```bash
+# Install frontend dependencies
+npm install
+
+# Start asset compilation (watches for SCSS changes)
+gulp
+
+# Start PHP development server
+php -S localhost:8000
+
+# Test database connection
+php test_database.php
+
+# Check table structure
+php check_tables.php
+
+# Generate secure JWT keys
+php generate_keys.php
+```
+
+**Testing Resources:**
+- **API Testing**: Use `api/Seblak_Predator_API.postman_collection.json` with Postman
+- **Environment File**: `api/Seblak_Predator_Environment.postman_environment.json`
+- **Quick API Tests**: Open `api_tester.html` in browser for individual endpoint testing
+- **Database Tests**: Multiple test files (`test_*.php`) for different components
+
+**Current API Endpoints (Implemented):**
+```
+# Categories Management
+GET    /api/menu/categories.php          # List all categories
+POST   /api/menu/categories.php          # Create new category
+PUT    /api/menu/categories.php?id={id}  # Update category
+DELETE /api/menu/categories.php?id={id}  # Soft delete category
+PATCH  /api/menu/categories.php?id={id}&action=restore  # Restore deleted
+
+# Products Management  
+GET    /api/menu/products.php            # List products (with filtering)
+GET    /api/menu/products.php?id={id}    # Get specific product
+POST   /api/menu/products.php            # Create new product
+PUT    /api/menu/products.php?id={id}    # Update product
+DELETE /api/menu/products.php?id={id}    # Soft delete product
+
+# Mobile Synchronization
+GET    /api/sync/categories.php?since={timestamp}  # Incremental category sync
+GET    /api/sync/products.php?since={timestamp}    # Incremental product sync
+
+# Authentication (JWT)
+POST   /api/auth/login.php               # Authenticate and get JWT token
+POST   /api/auth/refresh.php             # Refresh expired token
+GET    /api/auth/profile.php             # Get current user profile
+POST   /api/auth/logout.php              # Invalidate token
+```
+
+**Common Development Patterns:**
+
+*Page Creation Template:*
+```php
+// 1. Add to index.php allowed pages
+$allowed_pages = ['dashboard', 'menu', 'kategori', 'transaksi', 'user', 'new_page'];
+
+// 2. Create dist/dashboard/pages/new_page.php with this structure:
+<!-- [ breadcrumb ] start -->
+<div class="page-header">
+    <div class="page-block">
+        <div class="row align-items-center">
+            <div class="col">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Page Title</h5>
+                </div>
+            </div>
+            <div class="col-auto">
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="index.php">Home</a></li>
+                    <li class="breadcrumb-item" aria-current="page">Current Page</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ breadcrumb ] end -->
+```
+
+*Database Query Template:*
+```php
+// ALWAYS use prepared statements
+$query = "SELECT * FROM products WHERE category_id = ? AND is_active = ?";
+$stmt = mysqli_prepare($koneksi, $query);
+mysqli_stmt_bind_param($stmt, "si", $category_id, $is_active);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+$products = mysqli_fetch_all($result, MYSQLI_ASSOC);
+```
+
+*API Endpoint Template:*
+```php
+<?php
+header('Content-Type: application/json');
+require_once '../../config/koneksi.php';
+require_once '../helpers.php';
+
+$method = $_SERVER['REQUEST_METHOD'];
+
+switch ($method) {
+    case 'GET':
+        handleGet();
+        break;
+    default:
+        sendJsonResponse(false, 'Method not allowed', null, null, 405);
+}
+
+function handleGet() {
+    global $koneksi;
+    
+    $query = "SELECT * FROM table WHERE is_active = ?";
+    $stmt = mysqli_prepare($koneksi, $query);
+    mysqli_stmt_bind_param($stmt, "i", $is_active);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $data = mysqli_fetch_all($result, MYSQLI_ASSOC);
+    
+    sendJsonResponse(true, 'Data retrieved successfully', $data);
+}
+?>
+```

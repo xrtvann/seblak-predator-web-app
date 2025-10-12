@@ -9,6 +9,24 @@ if (isLoggedIn()) {
   exit();
 }
 
+// Initialize auth service and check rate limiting
+$auth_service = new WebAuthService($koneksi);
+$rate_limit_status = ['is_limited' => false, 'remaining_seconds' => 0];
+
+// Check rate limiting - priority order: URL params > POST data > GET data
+if (isset($_GET['rate_limited']) && $_GET['rate_limited'] == '1') {
+  // Rate limiting info from form submission redirect
+  $rate_limit_status = [
+    'is_limited' => true,
+    'remaining_seconds' => (int) ($_GET['remaining_seconds'] ?? 0),
+    'remaining_time_text' => $_GET['remaining_time'] ?? '0:00'
+  ];
+} elseif (isset($_POST['field_username']) || isset($_GET['check_user'])) {
+  // Check rate limiting based on username
+  $username = $_POST['field_username'] ?? $_GET['check_user'] ?? '';
+  $rate_limit_status = $auth_service->getLoginRateLimit($username);
+}
+
 // Get flash messages
 $flash_messages = getFlashMessages();
 ?>
@@ -142,21 +160,38 @@ $flash_messages = getFlashMessages();
               </div>
             <?php endif; ?>
 
+            <!-- Rate Limiting Alert -->
+            <?php if ($rate_limit_status['is_limited']): ?>
+              <div class="alert alert-warning alert-dismissible fade show" role="alert" id="rateLimitAlert">
+                <i class="ti ti-clock me-2"></i>
+                <strong>Terlalu banyak percobaan login gagal!</strong><br>
+                Akun telah diblokir untuk keamanan. Silakan coba lagi dalam:
+                <strong id="countdownTimer"><?= $rate_limit_status['remaining_time_text'] ?></strong>
+                <div class="mt-2">
+                  <small class="text-muted">
+                    <i class="ti ti-shield-check me-1"></i>
+                    Sistem keamanan akan membuka akses otomatis setelah waktu habis.
+                  </small>
+                </div>
+              </div>
+            <?php endif; ?>
+
             <input type="hidden" name="action" value="login">
 
             <div class="form-floating mb-3">
               <input type="text" class="form-control" id="floatingInput" name="field_username" placeholder="Username"
-                required />
+                required <?= $rate_limit_status['is_limited'] ? 'disabled' : '' ?> />
               <label for="floatingInput"> Username</label>
             </div>
             <div class="form-floating mb-3">
               <input type="password" class="form-control" id="floatingInput1" name="field_password"
-                placeholder="Password" required />
+                placeholder="Password" required <?= $rate_limit_status['is_limited'] ? 'disabled' : '' ?> />
               <label for="floatingInput1">Password</label>
             </div>
             <div class="d-flex mt-1 justify-content-between">
               <div class="form-check">
-                <input class="form-check-input input-primary" type="checkbox" name="remember_me" id="customCheckc1" />
+                <input class="form-check-input input-primary" type="checkbox" name="remember_me" id="customCheckc1"
+                  <?= $rate_limit_status['is_limited'] ? 'disabled' : '' ?> />
                 <label class="form-check-label text-muted" for="customCheckc1">Remember me</label>
               </div>
               <a href="forgot-password.php">
@@ -164,7 +199,9 @@ $flash_messages = getFlashMessages();
               </a>
             </div>
             <div class="d-grid mt-4">
-              <button type="submit" class="btn btn-danger">Sign In</button>
+              <button type="submit" class="btn btn-danger" id="loginButton" <?= $rate_limit_status['is_limited'] ? 'disabled' : '' ?>>
+                <?= $rate_limit_status['is_limited'] ? 'Sedang Diblokir...' : 'Sign In' ?>
+              </button>
             </div>
 
 
@@ -210,6 +247,73 @@ $flash_messages = getFlashMessages();
 
   <script>
     preset_change('preset-1');
+  </script>
+
+  <!-- Rate Limiting Countdown Script -->
+  <script>
+    <?php if ($rate_limit_status['is_limited']): ?>
+      // Initialize countdown timer
+      let remainingSeconds = <?= $rate_limit_status['remaining_seconds'] ?>;
+
+      function updateCountdown() {
+        if (remainingSeconds <= 0) {
+          // Time's up - refresh the page to enable the form
+          location.reload();
+          return;
+        }
+
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+        const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        const timerElement = document.getElementById('countdownTimer');
+        if (timerElement) {
+          timerElement.textContent = timeText;
+        }
+
+        remainingSeconds--;
+      }
+
+      // Update countdown every second
+      updateCountdown(); // Initial update
+      const countdownInterval = setInterval(updateCountdown, 1000);
+
+      // Add visual countdown effect
+      const alertElement = document.getElementById('rateLimitAlert');
+      if (alertElement) {
+        alertElement.style.animation = 'pulse 2s infinite';
+      }
+    <?php endif; ?>
+
+    // Add CSS for pulse animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+      }
+      
+      .form-control:disabled,
+      .form-check-input:disabled,
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      #rateLimitAlert {
+        border-left: 4px solid #ff6b35;
+        background: linear-gradient(45deg, #fff3cd, #fef7e0);
+      }
+      
+      #countdownTimer {
+        font-family: 'Courier New', monospace;
+        font-size: 1.1em;
+        color: #d63384;
+        font-weight: bold;
+      }
+    `;
+    document.head.appendChild(style);
   </script>
 
   <script>

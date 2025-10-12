@@ -1150,7 +1150,7 @@
                     <div class="btn-group" role="group">
                         ${currentViewMode === 'active' ? `
                             <!-- Active Items: Edit + Delete -->
-                            <button type="button" class="btn btn-sm btn-outline-warning me-1" onclick="editMenu('${item.id}')" title="Edit Menu">
+                            <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editMenu('${item.id}')" title="Edit Menu">
                                 <i class="ti ti-edit"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Soft Delete">
@@ -1158,7 +1158,7 @@
                             </button>
                         ` : `
                             <!-- Deleted Items: Restore + Permanent Delete -->
-                            <button type="button" class="btn btn-sm btn-outline-success me-1" onclick="restoreMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Restore Item">
+                            <button type="button" class="btn btn-sm btn-outline-success me-2" onclick="restoreMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Restore Item">
                                 <i class="ti ti-refresh"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Permanent Delete">

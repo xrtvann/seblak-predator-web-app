@@ -4,6 +4,7 @@
  * Secure password reset with OTP verification
  */
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../config/session.php';
 
 // Generate CSRF token for security
 $csrf_token = generateCSRFToken();
@@ -207,7 +208,7 @@ $csrf_token = generateCSRFToken();
     <div class="auth-main">
         <div class="auth-wrapper v3">
             <div class="auth-form">
-                <div class="card my-5">
+                <div class="card mt-2">
                     <div class="card-body">
                         <!-- Logo -->
                         <div class="text-center mb-4">
@@ -257,6 +258,9 @@ $csrf_token = generateCSRFToken();
                         <!-- Step 1: Email Input -->
                         <div id="emailStep" class="form-container fade-transition show">
                             <form id="emailForm">
+                                <!-- CSRF Token for security -->
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>" />
+
                                 <div class="text-center mb-4">
                                     <div class="mb-3">
                                         <div class="bg-light-primary rounded-circle d-inline-flex align-items-center justify-content-center"

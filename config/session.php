@@ -4,19 +4,7 @@
  * Enhanced session security with encryption and secure cookie settings
  */
 
-// Session security configuration
-ini_set('session.cookie_httponly', 1);  // Prevent JavaScript access to session cookies
-ini_set('session.cookie_secure', 0);    // Set to 1 in production with HTTPS
-ini_set('session.cookie_samesite', 'Strict'); // CSRF protection
-ini_set('session.use_strict_mode', 1);  // Reject uninitialized session IDs
-ini_set('session.use_cookies', 1);      // Use cookies for session ID
-ini_set('session.use_only_cookies', 1); // Only use cookies, not URL parameters
-ini_set('session.use_trans_sid', 0);    // Don't use transparent session ID
-
-// Set session name (avoid default PHPSESSID)
-session_name('SEBLAK_SESSION');
-
-// Enhanced session configuration
+// Define session configuration (used throughout the file)
 $session_config = [
     'lifetime' => 3600,          // 1 hour session lifetime
     'path' => '/',
@@ -26,11 +14,27 @@ $session_config = [
     'samesite' => 'Strict'
 ];
 
-session_set_cookie_params($session_config);
-
-// Start session with security checks
+// Only configure session settings if no session is active
 if (session_status() === PHP_SESSION_NONE) {
+    // Session security configuration
+    ini_set('session.cookie_httponly', 1);  // Prevent JavaScript access to session cookies
+    ini_set('session.cookie_secure', 0);    // Set to 1 in production with HTTPS
+    ini_set('session.cookie_samesite', 'Strict'); // CSRF protection
+    ini_set('session.use_strict_mode', 1);  // Reject uninitialized session IDs
+    ini_set('session.use_cookies', 1);      // Use cookies for session ID
+    ini_set('session.use_only_cookies', 1); // Only use cookies, not URL parameters
+    ini_set('session.use_trans_sid', 0);    // Don't use transparent session ID
+
+    // Set session name (avoid default PHPSESSID)
+    session_name('SEBLAK_SESSION');
+
+    // Apply session configuration
+    session_set_cookie_params($session_config);
+
+    // Start session with security checks
     session_start();
+} elseif (session_status() === PHP_SESSION_ACTIVE) {
+    // Session already active, just continue with security checks
 }
 
 // Session security checks
@@ -127,6 +131,87 @@ function requireRole($allowed_roles, $error_message = 'Access denied')
         http_response_code(403);
         die($error_message);
     }
+}
+
+/**
+ * Check if user has access to specific page
+ * @param string $page Page name
+ * @param array $user User data
+ * @return bool True if user has access
+ */
+function hasPageAccess($page, $user = null)
+{
+    if (!$user) {
+        $user = getCurrentSessionUser();
+    }
+
+    if (!$user) {
+        return false;
+    }
+
+    $role_name = $user['role_name'] ?? '';
+
+    // Define page access permissions
+    $page_permissions = [
+        'dashboard' => ['owner', 'admin'],          // Only owner and admin can access dashboard
+        'menu' => ['owner', 'admin'],               // Only owner and admin can manage menu
+        'kategori' => ['owner', 'admin'],           // Only owner and admin can manage categories
+        'transaksi' => ['owner', 'admin'],          // Only owner and admin can view transactions
+        'user' => ['owner']                         // Only owner can manage users
+    ];
+
+    // Check if page has defined permissions
+    if (!isset($page_permissions[$page])) {
+        return false; // Page not found
+    }
+
+    return in_array($role_name, $page_permissions[$page]);
+}
+
+/**
+ * Check if current user has access to specific page
+ * @param string $page Page name
+ * @return bool True if user has access
+ */
+function canAccessPage($page)
+{
+    $user = getCurrentSessionUser();
+    return hasPageAccess($page, $user);
+}
+
+/**
+ * Get accessible pages for current user
+ * @return array Array of page names user can access
+ */
+function getAccessiblePages($user = null)
+{
+    if (!$user) {
+        $user = getCurrentSessionUser();
+    }
+
+    if (!$user) {
+        return [];
+    }
+
+    $role_name = $user['role_name'] ?? '';
+    $accessible_pages = [];
+
+    // Define page access permissions
+    $page_permissions = [
+        'dashboard' => ['owner', 'admin'],
+        'menu' => ['owner', 'admin'],
+        'kategori' => ['owner', 'admin'],
+        'transaksi' => ['owner', 'admin'],
+        'user' => ['owner']
+    ];
+
+    foreach ($page_permissions as $page => $allowed_roles) {
+        if (in_array($role_name, $allowed_roles)) {
+            $accessible_pages[] = $page;
+        }
+    }
+
+    return $accessible_pages;
 }
 
 /**

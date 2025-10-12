@@ -10,17 +10,25 @@ $auth_service = new WebAuthService($koneksi);
 // Check remember me cookie for auto-login
 $auth_service->checkRememberMe();
 
+// Get current user data first
+$current_user = getCurrentSessionUser();
+
 // Check if user is logged in for protected pages
 $protected_pages = ['dashboard', 'menu', 'kategori', 'transaksi', 'user'];
 $current_page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 
+// If user is not logged in and trying to access protected page, redirect to login
 if (in_array($current_page, $protected_pages) && !isLoggedIn()) {
   header('Location: pages/auth/login.php');
   exit();
 }
 
-// Get current user data
-$current_user = getCurrentSessionUser();
+// If user is logged in but is a customer, redirect to access denied page
+if (isLoggedIn() && $current_user && $current_user['role_name'] === 'customer') {
+  // Redirect to dedicated customer access denied page
+  include 'pages/auth/access-denied-customer.php';
+  exit();
+}
 
 $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 $PageTitle = [
@@ -36,6 +44,20 @@ $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
 $allowed_pages = ['dashboard', 'menu', 'kategori', 'transaksi', 'user'];
 if (!in_array($page, $allowed_pages)) {
   $page = 'dashboard';
+}
+
+// Check role-based page access
+if (isLoggedIn() && !canAccessPage($page)) {
+  // Redirect to first accessible page or show access denied
+  $accessible_pages = getAccessiblePages();
+  if (!empty($accessible_pages)) {
+    header('Location: index.php?page=' . $accessible_pages[0]);
+    exit();
+  } else {
+    http_response_code(403);
+    include 'pages/auth/access-denied-permissions.php';
+    exit();
+  }
 }
 ?>
 
@@ -112,46 +134,65 @@ if (!in_array($page, $allowed_pages)) {
       </div>
       <div class="navbar-content">
         <ul class="pc-navbar">
-          <li class="pc-item <?php echo ($page === 'dashboard') ? 'active' : ''; ?>">
-            <a href="index.php?page=dashboard" class="pc-link"><span class="pc-micon"><i
-                  class="ti ti-dashboard"></i></span><span class="pc-mtext">Dashboard</span></a>
-          </li>
+          <?php
+          // Get accessible pages for current user
+          $accessible_pages = getAccessiblePages();
+          ?>
 
-          <li class="pc-item pc-caption">
-            <label>Produk</label>
+          <?php if (in_array('dashboard', $accessible_pages)): ?>
+            <li class="pc-item <?php echo ($page === 'dashboard') ? 'active' : ''; ?>">
+              <a href="index.php?page=dashboard" class="pc-link"><span class="pc-micon"><i
+                    class="ti ti-dashboard"></i></span><span class="pc-mtext">Dashboard</span></a>
+            </li>
+          <?php endif; ?>
 
-          </li>
-          <li class="pc-item <?php echo ($page === 'menu') ? 'active' : ''; ?>">
-            <a href="index.php?page=menu" class="pc-link">
-              <span class="pc-micon"><i class="ti ti-soup"></i></span>
-              <span class="pc-mtext">Menu</span>
-            </a>
-          </li>
-          <li class="pc-item <?php echo ($page === 'kategori') ? 'active' : ''; ?>">
-            <a href="index.php?page=kategori" class="pc-link">
-              <span class="pc-micon"><i class="ti ti-stack"></i></span>
-              <span class="pc-mtext">Kategori</span>
-            </a>
-          </li>
+          <?php if (in_array('menu', $accessible_pages) || in_array('kategori', $accessible_pages)): ?>
+            <li class="pc-item pc-caption">
+              <label>Produk</label>
+            </li>
+          <?php endif; ?>
 
-          <li class="pc-item pc-caption">
-            <label>Transaksi</label>
-          </li>
-          <li class="pc-item <?php echo ($page === 'transaksi') ? 'active' : ''; ?>">
-            <a href="?page=transaksi" class="pc-link">
-              <span class="pc-micon"><i class="ti ti-receipt"></i></span>
-              <span class="pc-mtext">Transaksi</span>
-            </a>
-          </li>
-          <li class="pc-item pc-caption">
-            <label>Manajemen User</label>
-          </li>
-          <li class="pc-item <?php echo ($page === 'user') ? 'active' : ''; ?>">
-            <a href="?page=user" class="pc-link">
-              <span class="pc-micon"><i class="ti ti-users"></i></span>
-              <span class="pc-mtext">User</span>
-            </a>
-          </li>
+          <?php if (in_array('menu', $accessible_pages)): ?>
+            <li class="pc-item <?php echo ($page === 'menu') ? 'active' : ''; ?>">
+              <a href="index.php?page=menu" class="pc-link">
+                <span class="pc-micon"><i class="ti ti-soup"></i></span>
+                <span class="pc-mtext">Menu</span>
+              </a>
+            </li>
+          <?php endif; ?>
+
+          <?php if (in_array('kategori', $accessible_pages)): ?>
+            <li class="pc-item <?php echo ($page === 'kategori') ? 'active' : ''; ?>">
+              <a href="index.php?page=kategori" class="pc-link">
+                <span class="pc-micon"><i class="ti ti-stack"></i></span>
+                <span class="pc-mtext">Kategori</span>
+              </a>
+            </li>
+          <?php endif; ?>
+
+          <?php if (in_array('transaksi', $accessible_pages)): ?>
+            <li class="pc-item pc-caption">
+              <label>Transaksi</label>
+            </li>
+            <li class="pc-item <?php echo ($page === 'transaksi') ? 'active' : ''; ?>">
+              <a href="?page=transaksi" class="pc-link">
+                <span class="pc-micon"><i class="ti ti-receipt"></i></span>
+                <span class="pc-mtext">Transaksi</span>
+              </a>
+            </li>
+          <?php endif; ?>
+
+          <?php if (in_array('user', $accessible_pages)): ?>
+            <li class="pc-item pc-caption">
+              <label>Manajemen User</label>
+            </li>
+            <li class="pc-item <?php echo ($page === 'user') ? 'active' : ''; ?>">
+              <a href="?page=user" class="pc-link">
+                <span class="pc-micon"><i class="ti ti-users"></i></span>
+                <span class="pc-mtext">User</span>
+              </a>
+            </li>
+          <?php endif; ?>
         </ul>
         <div class="w-100 text-center">
           <div class="badge theme-version badge rounded-pill bg-light text-dark f-12"></div>

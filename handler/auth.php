@@ -58,7 +58,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             switch ($result['code'] ?? '') {
                 case 'RATE_LIMITED':
                     setFlashMessage('error', $result['message']);
-                    break;
+                    // Add rate limiting parameters to URL for immediate display
+                    $url_params = http_build_query([
+                        'rate_limited' => '1',
+                        'remaining_seconds' => $result['remaining_seconds'] ?? 0,
+                        'remaining_time' => $result['remaining_time_text'] ?? '0:00'
+                    ]);
+                    header('Location: ../pages/auth/login.php?' . $url_params);
+                    exit();
                 case 'INVALID_CREDENTIALS':
                     setFlashMessage('error', 'Invalid username or password.');
                     break;
