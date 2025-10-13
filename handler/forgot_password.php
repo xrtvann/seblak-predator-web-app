@@ -76,7 +76,7 @@ function handleSendOTP($koneksi, $user_ip)
 
     // Email is verified and registered, proceed with OTP generation
 
-    // Generate OTP and hash it
+    // Generate OTP and hash it for secure storage
     $otp = generateOTP();
     $otp_hash = hashOTP($otp);
     $expires_at = date('Y-m-d H:i:s', time() + 600); // 10 minutes
@@ -84,13 +84,13 @@ function handleSendOTP($koneksi, $user_ip)
     // Create unique ID for password reset record
     $reset_id = uniqid('pwd_reset_', true);
 
-    // Delete any existing reset records for this user
+    // Delete any existing password reset requests for this user
     $delete_query = "DELETE FROM password_resets WHERE user_id = ?";
     $stmt = mysqli_prepare($koneksi, $delete_query);
     mysqli_stmt_bind_param($stmt, 's', $user_id);
     mysqli_stmt_execute($stmt);
 
-    // Insert new reset record
+    // Insert new reset record (storing hashed OTP for security)
     $insert_query = "INSERT INTO password_resets (id, user_id, otp_code, expires_at) VALUES (?, ?, ?, ?)";
     $stmt = mysqli_prepare($koneksi, $insert_query);
     mysqli_stmt_bind_param($stmt, 'ssss', $reset_id, $user_id, $otp_hash, $expires_at);
@@ -278,18 +278,11 @@ function handleResetPassword($koneksi, $user_ip)
     sendJSONResponse(true, 'Password berhasil diubah. Silakan login dengan password baru.');
 }
 
-// Email service functions - specific to this handler
+// Email service functions - Use real EmailService for testing beautiful design
 function getEmailService()
 {
-    require_once '../config/env.php';
-
-    if (APP_ENV === 'development') {
-        require_once '../services/DevelopmentEmailService.php';
-        return new DevelopmentEmailService();
-    } else {
-        require_once '../services/EmailService.php';
-        return new EmailService();
-    }
+    require_once '../services/EmailService.php';
+    return new EmailService();
 }
 
 ?>

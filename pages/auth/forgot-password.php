@@ -466,7 +466,7 @@ $csrf_token = generateCSRFToken();
     </script>
 
     <!-- Authentication Module -->
-    <script src="../../src/assets/js/auth.js"></script>
+    <script src="../../src/assets/js/auth.js?v=<?php echo time(); ?>"></script>
 </body>
 
 </html>

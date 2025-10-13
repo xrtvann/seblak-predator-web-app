@@ -46,6 +46,7 @@ class ForgotPasswordManager {
     constructor() {
         this.currentStep = 1;
         this.userEmail = '';
+        this.userOtp = '';
         this.otpCountdown = null;
         this.resendCountdown = null;
         this.init();
@@ -343,22 +344,51 @@ class ForgotPasswordManager {
         this.setButtonLoading('sendOtpBtn', true);
 
         try {
-            // Get CSRF token
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                             document.querySelector('input[name="csrf_token"]')?.value || '';
+            // Get CSRF token from the form
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || 
+                             document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            // Debug CSRF token
+            console.log('🔍 Debug: CSRF Token found:', csrfToken ? 'Yes' : 'No');
+            console.log('🔍 Debug: CSRF Token length:', csrfToken.length);
+            console.log('🔍 Debug: Email:', email);
 
             // Send request to backend handler
             const formData = new FormData();
             formData.append('action', 'send_otp');
             formData.append('email', email);
-            
-            // Use our working test handler temporarily until CSRF issues are resolved
-            const response = await fetch('../../test_email_handler.php', {
+            formData.append('csrf_token', csrfToken);
+
+            const endpoint = '../../handler/forgot_password.php';
+            const fullUrl = new URL(endpoint, window.location.href).href;
+            console.log('🔍 Debug: Resolved URL:', fullUrl);
+            console.log('🔍 Debug: Current page:', window.location.href);
+            console.log('🔍 Debug: Calling endpoint:', endpoint);
+
+            // Use the correct forgot password handler with relative path
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData
-            });
+            });            // Check if response is OK and is JSON
+            console.log('🔍 Debug: Response status:', response.status);
+            console.log('🔍 Debug: Response OK:', response.ok);
+            console.log('🔍 Debug: Response headers:', Object.fromEntries(response.headers.entries()));
 
-            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const responseText = await response.text();
+            console.log('🔍 Debug: Raw response (first 500 chars):', responseText.substring(0, 500));
+
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (jsonError) {
+                console.error('🔍 Debug: Failed to parse JSON:', jsonError);
+                console.error('🔍 Debug: Full response was:', responseText);
+                throw new Error('Server returned invalid response format');
+            }
 
             // Debug logging
             console.log('🔍 Debug: Email verification response:', result);
@@ -444,7 +474,14 @@ class ForgotPasswordManager {
             }
         } catch (error) {
             console.error('Error sending OTP:', error);
-            this.showAlert('error', 'Terjadi kesalahan jaringan. Silakan periksa koneksi internet Anda.');
+            
+            // Check if the error is due to invalid JSON response
+            if (error.message.includes('JSON') || error.message.includes('DOCTYPE')) {
+                this.showAlert('error', 'Terjadi kesalahan server. Halaman mungkin perlu di-refresh.');
+                console.error('🔍 Debug: Received HTML instead of JSON - possible PHP error');
+            } else {
+                this.showAlert('error', 'Terjadi kesalahan jaringan. Silakan periksa koneksi internet Anda.');
+            }
         } finally {
             this.setButtonLoading('sendOtpBtn', false);
         }
@@ -461,28 +498,33 @@ class ForgotPasswordManager {
         this.setButtonLoading('verifyOtpBtn', true);
 
         try {
+            // Get CSRF token
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || 
+                             document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
             // Send OTP verification request
             const formData = new FormData();
             formData.append('action', 'verify_otp');
+            formData.append('email', this.userEmail);
             formData.append('otp', otpCode);
+            formData.append('csrf_token', csrfToken);
 
-            const response = await fetch('../../test_email_handler.php', {
+            const response = await fetch('../../handler/forgot_password.php', {
                 method: 'POST',
                 body: formData
             });
 
             const result = await response.json();
 
-            console.log('🔍 Debug: OTP verification response:', result);
 
             if (result.success) {
-                // OTP verified successfully - proceed to step 3
-                console.log('✅ Debug: OTP verified, proceeding to step 3');
+                // OTP verified successfully - store it and proceed to step 3
+               
+                this.userOtp = otpCode; // Store the verified OTP for password reset
                 this.showStep(3);
                 this.showAlert('success', result.message || 'Kode OTP berhasil diverifikasi');
             } else {
                 // OTP verification failed
-                console.log('❌ Debug: OTP verification failed');
                 this.showAlert('error', result.message || 'Kode OTP tidak valid atau sudah expired');
             }
         } catch (error) {
@@ -510,29 +552,34 @@ class ForgotPasswordManager {
         this.setButtonLoading('resetPasswordBtn', true);
 
         try {
+            // Get CSRF token
+            const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || 
+                             document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
             // Send password reset request
             const formData = new FormData();
             formData.append('action', 'reset_password');
+            formData.append('email', this.userEmail);
+            formData.append('otp', this.userOtp);
             formData.append('new_password', newPassword);
             formData.append('confirm_password', confirmPassword);
+            formData.append('csrf_token', csrfToken);
 
-            const response = await fetch('../../test_email_handler.php', {
+            const response = await fetch('../../handler/forgot_password.php', {
                 method: 'POST',
                 body: formData
             });
 
             const result = await response.json();
 
-            console.log('🔍 Debug: Password reset response:', result);
+        
 
             if (result.success) {
                 // Password reset successful - proceed to step 4
-                console.log('✅ Debug: Password reset successful, proceeding to step 4');
                 this.showStep(4);
                 this.showAlert('success', result.message || 'Password berhasil direset');
             } else {
                 // Password reset failed
-                console.log('❌ Debug: Password reset failed');
                 this.showAlert('error', result.message || 'Gagal mereset password. Silakan coba lagi.');
             }
         } catch (error) {
