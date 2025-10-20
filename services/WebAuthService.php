@@ -35,7 +35,8 @@ class WebAuthService
                     'message' => 'Too many failed login attempts. Please try again in ' . $rate_limit_check['remaining_time_text'] . '.',
                     'code' => 'RATE_LIMITED',
                     'remaining_seconds' => $rate_limit_check['remaining_seconds'],
-                    'remaining_time_text' => $rate_limit_check['remaining_time_text']
+                    'remaining_time_text' => $rate_limit_check['remaining_time_text'],
+                    'lockout_until_timestamp' => $rate_limit_check['lockout_until_timestamp'] // ✅ FIX: Add timestamp!
                 ];
             }
 
@@ -310,13 +311,13 @@ class WebAuthService
     {
         $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
-        // Get failed attempts in last 5 minutes
+        // Get failed attempts in last 1 minute
         $query = "SELECT COUNT(*) as attempt_count, 
                          MAX(attempted_at) as last_attempt
                   FROM login_attempts 
                   WHERE (username = ? OR ip_address = ?) 
                   AND success = FALSE 
-                  AND attempted_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)";
+                  AND attempted_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE)";
 
         $stmt = mysqli_prepare($this->connection, $query);
         if (!$stmt) {
@@ -331,11 +332,11 @@ class WebAuthService
             $row = mysqli_fetch_assoc($result);
             $attempt_count = (int) $row['attempt_count'];
 
-            if ($attempt_count >= 5) { // Max 5 attempts in 5 minutes
+            if ($attempt_count >= 5) { // Max 5 attempts in 1 minute
                 // Calculate remaining lockout time
                 $last_attempt = new DateTime($row['last_attempt']);
                 $lockout_end = clone $last_attempt;
-                $lockout_end->add(new DateInterval('PT5M')); // Add 5 minutes
+                $lockout_end->add(new DateInterval('PT1M')); // Add 1 minute
                 $now = new DateTime();
 
                 if ($now < $lockout_end) {
@@ -348,13 +349,22 @@ class WebAuthService
                         'is_limited' => true,
                         'remaining_seconds' => $remaining_seconds,
                         'remaining_time_text' => $remaining_time_text,
+                        'lockout_until' => $lockout_end->format('Y-m-d H:i:s'),
+                        'lockout_until_timestamp' => $lockout_end->getTimestamp(),
                         'attempt_count' => $attempt_count
                     ];
                 }
             }
         }
 
-        return ['is_limited' => false, 'remaining_seconds' => 0, 'remaining_time_text' => '', 'attempt_count' => $attempt_count ?? 0];
+        return [
+            'is_limited' => false,
+            'remaining_seconds' => 0,
+            'remaining_time_text' => '',
+            'lockout_until' => null,
+            'lockout_until_timestamp' => null,
+            'attempt_count' => $attempt_count ?? 0
+        ];
     }
 
     /**
@@ -375,8 +385,10 @@ class WebAuthService
      */
     private function logLoginAttempt($username, $success)
     {
-        $query = "INSERT INTO login_attempts (username, success, ip_address, user_agent, attempted_at) 
-                  VALUES (?, ?, ?, ?, NOW())";
+        $attempt_id = 'attempt_' . uniqid() . '_' . mt_rand(1000, 9999);
+
+        $query = "INSERT INTO login_attempts (id, username, success, ip_address, user_agent, attempted_at) 
+                  VALUES (?, ?, ?, ?, ?, NOW())";
 
         $stmt = mysqli_prepare($this->connection, $query);
         if ($stmt) {
@@ -384,8 +396,13 @@ class WebAuthService
             $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
             $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
 
-            mysqli_stmt_bind_param($stmt, "siss", $username, $success_int, $ip_address, $user_agent);
-            mysqli_stmt_execute($stmt);
+            mysqli_stmt_bind_param($stmt, "ssiss", $attempt_id, $username, $success_int, $ip_address, $user_agent);
+            $execute_result = mysqli_stmt_execute($stmt);
+
+            if (!$execute_result) {
+                error_log("Failed to log login attempt: " . mysqli_error($this->connection));
+            }
+
             mysqli_stmt_close($stmt);
         }
     }

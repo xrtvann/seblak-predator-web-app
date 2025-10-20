@@ -72,14 +72,49 @@ class EmailService
     {
         try {
             $this->mailer->clearAddresses();
+            $this->mailer->clearAttachments();
             $this->mailer->addAddress($email, $name);
 
+            // Attach logo as inline image with CID for Gmail compatibility
+            $logo_path = __DIR__ . '/../dist/assets/images/logo-150.png';
+            if (file_exists($logo_path)) {
+                $this->mailer->addEmbeddedImage($logo_path, 'logo_seblak', 'logo-150.png', 'base64', 'image/png');
+            }
+
             $this->mailer->isHTML(true);
-            $this->mailer->Subject = 'Kode OTP Reset Password - ' . APP_NAME;
+            $this->mailer->Subject = '🔐 Kode Verifikasi Reset Password - ' . APP_NAME;
 
             $body = $this->getPasswordResetEmailTemplate($name, $otp);
             $this->mailer->Body = $body;
-            $this->mailer->AltBody = strip_tags($body);
+
+            // Set informative plain text alternative for email clients that don't support HTML
+            $expire_minutes = OTP_EXPIRE_MINUTES;
+            $this->mailer->AltBody = "
+Halo, {$name}!
+
+Kami menerima permintaan untuk mereset password akun Anda.
+
+KODE VERIFIKASI OTP:
+>>> {$otp} <<<
+
+Kode ini akan kadaluarsa dalam {$expire_minutes} menit.
+
+CARA MENGGUNAKAN:
+1. Kembali ke halaman reset password
+2. Masukkan kode OTP di atas
+3. Buat password baru Anda
+4. Selesai!
+
+KEAMANAN:
+- Jangan bagikan kode ini kepada siapapun
+- Jika Anda tidak melakukan permintaan ini, abaikan email ini
+- Password Anda tidak akan berubah tanpa kode OTP ini
+
+==============================================
+© " . date('Y') . " " . APP_NAME . " - All Rights Reserved
+Email otomatis, mohon tidak membalas email ini.
+==============================================
+";
 
             $result = $this->mailer->send();
 
@@ -110,8 +145,13 @@ class EmailService
     private function getPasswordResetEmailTemplate($name, $otp)
     {
         $app_name = APP_NAME;
+        $app_url = APP_URL;
         $expire_minutes = OTP_EXPIRE_MINUTES;
         $current_year = date('Y');
+
+        // Use CID (Content-ID) reference for embedded image
+        // This is more reliable than Base64 for Gmail and other email clients
+        $logo_src = 'cid:logo_seblak';
 
         return <<<HTML
 <!DOCTYPE html>
@@ -119,7 +159,15 @@ class EmailService
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password - {$app_name}</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>🔐 Kode Verifikasi Reset Password - {$app_name}</title>
+    <!--[if mso]>
+    <style type="text/css">
+        body, table, td {font-family: Arial, sans-serif !important;}
+    </style>
+    <![endif]-->
     <style>
         * {
             margin: 0;
@@ -132,6 +180,8 @@ class EmailService
             min-height: 100vh;
             padding: 20px;
             line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         .email-container {
             max-width: 600px;
@@ -159,16 +209,22 @@ class EmailService
             pointer-events: none;
         }
         .logo-container {
-            background: rgba(255,255,255,0.1);
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 16px;
+            width: 150px;
+            height: auto;
             margin: 0 auto 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 36px;
+            padding: 15px;
             backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .logo-container img {
+            width: 100%;
+            height: auto;
+            display: block;
         }
         .email-header h1 {
             margin: 0;
@@ -381,25 +437,139 @@ class EmailService
             margin: 30px 0;
         }
         
-        /* Mobile Responsiveness */
-        @media (max-width: 600px) {
+        /* Tablet & Mobile Responsiveness */
+        @media (max-width: 768px) {
+            /* Tablet adjustments */
             .email-container {
-                margin: 10px;
+                margin: 15px;
+                border-radius: 14px;
+            }
+            .email-header {
+                padding: 35px 25px;
+            }
+            .logo-container {
+                width: 130px;
+                padding: 12px;
+            }
+            .email-header h1 {
+                font-size: 24px;
+            }
+            .email-body {
+                padding: 40px 30px;
+            }
+            .greeting {
+                font-size: 22px;
+            }
+            .otp-code {
+                font-size: 42px;
+                letter-spacing: 10px;
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            /* Mobile phone adjustments */
+            body {
+                padding: 10px;
+            }
+            .email-container {
+                margin: 5px;
                 border-radius: 12px;
             }
             .email-body {
                 padding: 30px 20px;
             }
             .email-header {
+                padding: 25px 15px;
+            }
+            .logo-container {
+                width: 110px;
+                padding: 10px;
+                margin: 0 auto 15px;
+            }
+            .email-header h1 {
+                font-size: 20px;
+                margin-bottom: 5px;
+            }
+            .email-header p {
+                font-size: 14px;
+            }
+            .greeting {
+                font-size: 20px;
+            }
+            .subtitle {
+                font-size: 14px;
+            }
+            .intro-text {
+                font-size: 14px;
+            }
+            .otp-container {
                 padding: 30px 20px;
+                margin: 30px 0;
             }
             .otp-code {
                 font-size: 36px;
                 letter-spacing: 8px;
                 padding: 15px;
             }
+            .otp-label {
+                font-size: 12px;
+            }
+            .expiry-info {
+                font-size: 13px;
+            }
             .instruction-box, .warning-box, .security-tips {
-                padding: 20px;
+                padding: 20px 15px;
+                margin: 20px 0;
+            }
+            .instruction-box h3, .warning-box h3, .security-tips h3 {
+                font-size: 16px;
+            }
+            .instruction-box li, .warning-box p, .security-tips li {
+                font-size: 13px;
+            }
+            .email-footer {
+                padding: 25px 15px;
+                font-size: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            /* Small mobile phones */
+            .email-header h1 {
+                font-size: 18px;
+            }
+            .logo-container {
+                width: 100px;
+                padding: 8px;
+            }
+            .greeting {
+                font-size: 18px;
+            }
+            .otp-code {
+                font-size: 32px;
+                letter-spacing: 6px;
+                padding: 12px;
+            }
+            .otp-container {
+                padding: 25px 15px;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            /* Very small screens */
+            .logo-container {
+                width: 90px;
+            }
+            .email-header h1 {
+                font-size: 16px;
+            }
+            .greeting {
+                font-size: 16px;
+            }
+            .otp-code {
+                font-size: 28px;
+                letter-spacing: 4px;
             }
         }
     </style>
@@ -408,7 +578,7 @@ class EmailService
     <div class="email-container">
         <div class="email-header">
             <div class="logo-container">
-                🌶️
+                <img src="{$logo_src}" alt="Seblak Predator Logo" style="width:100%;height:auto;display:block;" />
             </div>
             <h1>Hi, Welcome Back</h1>
             <p>Reset your password to continue</p>

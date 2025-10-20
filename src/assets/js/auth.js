@@ -506,7 +506,7 @@ class ForgotPasswordManager {
             const formData = new FormData();
             formData.append('action', 'verify_otp');
             formData.append('email', this.userEmail);
-            formData.append('otp', otpCode);
+            formData.append('otp', otp);
             formData.append('csrf_token', csrfToken);
 
             const response = await fetch('../../handler/forgot_password.php', {
@@ -516,16 +516,21 @@ class ForgotPasswordManager {
 
             const result = await response.json();
 
-
             if (result.success) {
                 // OTP verified successfully - store it and proceed to step 3
-               
-                this.userOtp = otpCode; // Store the verified OTP for password reset
+                this.userOtp = otp; // Store the verified OTP for password reset
                 this.showStep(3);
                 this.showAlert('success', result.message || 'Kode OTP berhasil diverifikasi');
             } else {
                 // OTP verification failed
                 this.showAlert('error', result.message || 'Kode OTP tidak valid atau sudah expired');
+                
+                // Clear OTP input for retry
+                const otpInput = document.getElementById('otpInput');
+                if (otpInput) {
+                    otpInput.value = '';
+                    otpInput.focus();
+                }
             }
         } catch (error) {
             console.error('Error verifying OTP:', error);

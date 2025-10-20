@@ -61,8 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Add rate limiting parameters to URL for immediate display
                     $url_params = http_build_query([
                         'rate_limited' => '1',
+                        'username' => $username ?? '', // Add username for sessionStorage
                         'remaining_seconds' => $result['remaining_seconds'] ?? 0,
-                        'remaining_time' => $result['remaining_time_text'] ?? '0:00'
+                        'remaining_time' => $result['remaining_time_text'] ?? '0:00',
+                        'lockout_until_timestamp' => $result['lockout_until_timestamp'] ?? 0 // ✅ FIX: Add timestamp!
                     ]);
                     header('Location: ../pages/auth/login.php?' . $url_params);
                     exit();

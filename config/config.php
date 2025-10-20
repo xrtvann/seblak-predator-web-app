@@ -40,7 +40,7 @@ define('CSRF_TOKEN_EXPIRE', EnvLoader::get('CSRF_TOKEN_EXPIRY', 3600));
 
 // Rate Limiting Configuration - Load from environment
 define('RATE_LIMIT_REQUESTS', EnvLoader::get('MAX_LOGIN_ATTEMPTS', 5));
-define('RATE_LIMIT_PERIOD', EnvLoader::get('LOGIN_ATTEMPT_WINDOW', 900));
+define('RATE_LIMIT_PERIOD', EnvLoader::get('LOGIN_ATTEMPT_WINDOW', 300)); // 5 minutes (300 seconds)
 
 // OTP Configuration
 define('OTP_LENGTH', 6);

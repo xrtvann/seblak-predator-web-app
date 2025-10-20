@@ -12,14 +12,17 @@ if (isLoggedIn()) {
 // Initialize auth service and check rate limiting
 $auth_service = new WebAuthService($koneksi);
 $rate_limit_status = ['is_limited' => false, 'remaining_seconds' => 0];
+$username = ''; // Initialize username variable
 
 // Check rate limiting - priority order: URL params > POST data > GET data
 if (isset($_GET['rate_limited']) && $_GET['rate_limited'] == '1') {
   // Rate limiting info from form submission redirect
+  $username = $_GET['username'] ?? ''; // Get username from redirect
   $rate_limit_status = [
     'is_limited' => true,
     'remaining_seconds' => (int) ($_GET['remaining_seconds'] ?? 0),
-    'remaining_time_text' => $_GET['remaining_time'] ?? '0:00'
+    'remaining_time_text' => $_GET['remaining_time'] ?? '0:00',
+    'lockout_until_timestamp' => (int) ($_GET['lockout_until_timestamp'] ?? 0) // ✅ FIX: Get timestamp from URL!
   ];
 } elseif (isset($_POST['field_username']) || isset($_GET['check_user'])) {
   // Check rate limiting based on username
@@ -162,7 +165,8 @@ $flash_messages = getFlashMessages();
 
             <!-- Rate Limiting Alert -->
             <?php if ($rate_limit_status['is_limited']): ?>
-              <div class="alert alert-warning alert-dismissible fade show" role="alert" id="rateLimitAlert">
+              <div class="alert alert-warning alert-dismissible fade show" role="alert" id="rateLimitAlert"
+                data-no-auto-dismiss="true">
                 <i class="ti ti-clock me-2"></i>
                 <strong>Terlalu banyak percobaan login gagal!</strong><br>
                 Akun telah diblokir untuk keamanan. Silakan coba lagi dalam:
@@ -173,7 +177,11 @@ $flash_messages = getFlashMessages();
                     Sistem keamanan akan membuka akses otomatis setelah waktu habis.
                   </small>
                 </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
               </div>
+              <!-- Hidden input to store lockout end time -->
+              <input type="hidden" id="lockoutUntilTimestamp"
+                value="<?= $rate_limit_status['lockout_until_timestamp'] ?? 0 ?>">
             <?php endif; ?>
 
             <input type="hidden" name="action" value="login">
@@ -252,13 +260,53 @@ $flash_messages = getFlashMessages();
   <!-- Rate Limiting Countdown Script -->
   <script>
     <?php if ($rate_limit_status['is_limited']): ?>
-      // Initialize countdown timer
-      let remainingSeconds = <?= $rate_limit_status['remaining_seconds'] ?>;
+      // Get lockout end timestamp from server
+      const lockoutUntilTimestamp = <?= $rate_limit_status['lockout_until_timestamp'] ?? 0 ?>;
+      let countdownInterval = null;
+
+      function enableForm() {
+        // Enable all form inputs
+        const usernameInput = document.querySelector('input[name="field_username"]');
+        const passwordInput = document.querySelector('input[name="field_password"]');
+        const rememberCheckbox = document.querySelector('input[name="remember_me"]');
+        const loginButton = document.getElementById('loginButton');
+
+        if (usernameInput) usernameInput.disabled = false;
+        if (passwordInput) passwordInput.disabled = false;
+        if (rememberCheckbox) rememberCheckbox.disabled = false;
+        if (loginButton) {
+          loginButton.disabled = false;
+          loginButton.textContent = 'Sign In';
+        }
+
+        // Hide alert
+        const alertElement = document.getElementById('rateLimitAlert');
+        if (alertElement) {
+          alertElement.style.display = 'none';
+        }
+
+        console.log('[Rate Limit] Form enabled, lockout expired');
+      }
 
       function updateCountdown() {
+        // Calculate remaining time based on server timestamp
+        const now = Math.floor(Date.now() / 1000); // Current time in seconds
+        const remainingSeconds = lockoutUntilTimestamp - now;
+
         if (remainingSeconds <= 0) {
-          // Time's up - refresh the page to enable the form
-          location.reload();
+          // Time's up - enable form and clear storage
+          clearInterval(countdownInterval);
+
+          // Clear ALL rate limit storage
+          sessionStorage.removeItem('rate_limit_lockout_until');
+          sessionStorage.removeItem('rate_limit_username');
+          sessionStorage.removeItem('reload_in_progress');
+
+          // Enable form immediately
+          enableForm();
+
+          console.log('[Rate Limit] Lockout has ended, form enabled');
+
           return;
         }
 
@@ -270,18 +318,55 @@ $flash_messages = getFlashMessages();
         if (timerElement) {
           timerElement.textContent = timeText;
         }
-
-        remainingSeconds--;
       }
 
       // Update countdown every second
       updateCountdown(); // Initial update
-      const countdownInterval = setInterval(updateCountdown, 1000);
+      countdownInterval = setInterval(updateCountdown, 1000);
+
+      // Store lockout info in sessionStorage for persistence across refresh
+      sessionStorage.setItem('rate_limit_lockout_until', lockoutUntilTimestamp);
+      sessionStorage.setItem('rate_limit_username', '<?= htmlspecialchars($username ?? '', ENT_QUOTES) ?>');
 
       // Add visual countdown effect
       const alertElement = document.getElementById('rateLimitAlert');
       if (alertElement) {
         alertElement.style.animation = 'pulse 2s infinite';
+      }
+    <?php else: ?>
+      // Check if we had a previous lockout
+      // BUT only if we're NOT currently showing a rate limit alert from server
+      const currentAlert = document.getElementById('rateLimitAlert');
+
+      if (!currentAlert) {
+        const storedLockoutUntil = sessionStorage.getItem('rate_limit_lockout_until');
+        const storedUsername = sessionStorage.getItem('rate_limit_username');
+
+        if (storedLockoutUntil && storedUsername) {
+          const now = Math.floor(Date.now() / 1000);
+          const lockoutTimestamp = parseInt(storedLockoutUntil);
+
+          if (now < lockoutTimestamp) {
+            // Still locked out - redirect with username parameter to show the alert
+            const currentUrl = new URL(window.location.href);
+
+            // Only reload if we don't already have the check_user parameter
+            if (!currentUrl.searchParams.has('check_user')) {
+              currentUrl.searchParams.set('check_user', storedUsername);
+              window.location.href = currentUrl.toString();
+            }
+            // If we already have check_user but no alert showing, means PHP didn't detect rate limit
+            // This can happen if lockout expired on server but not cleared in sessionStorage yet
+            else {
+              sessionStorage.removeItem('rate_limit_lockout_until');
+              sessionStorage.removeItem('rate_limit_username');
+            }
+          } else {
+            // Lockout expired - clear storage
+            sessionStorage.removeItem('rate_limit_lockout_until');
+            sessionStorage.removeItem('rate_limit_username');
+          }
+        }
       }
     <?php endif; ?>
 
@@ -317,10 +402,15 @@ $flash_messages = getFlashMessages();
   </script>
 
   <script>
-    // Auto dismiss alerts after 5 seconds
+    // Auto dismiss alerts after 5 seconds (except rate limit alert)
     document.addEventListener('DOMContentLoaded', function () {
       const alerts = document.querySelectorAll('.alert');
       alerts.forEach(function (alert) {
+        // Skip auto-dismiss for rate limit alert
+        if (alert.getAttribute('data-no-auto-dismiss') === 'true') {
+          return;
+        }
+
         setTimeout(function () {
           if (alert && alert.parentNode) {
             alert.style.transition = 'opacity 0.5s';
@@ -334,9 +424,9 @@ $flash_messages = getFlashMessages();
         }, 5000);
       });
 
-      // Focus on username input
+      // Focus on username input (if not rate limited)
       const usernameInput = document.getElementById('floatingInput');
-      if (usernameInput) {
+      if (usernameInput && !usernameInput.disabled) {
         usernameInput.focus();
       }
     });
