@@ -1936,7 +1936,7 @@
             if (result.success) {
                 // Reset edit ID after successful operation
                 currentEditId = null;
-                
+
                 showSuccess('Berhasil!', result.message, () => {
                     showDataKategori();
                 });
@@ -1954,10 +1954,10 @@
     async function editCategory(id) {
         try {
             showLoading('Memuat...', 'Sedang memuat data kategori...');
-            
+
             // Get single category by filtering from all data
             const category = allCategoriesData.find(cat => cat.id === id);
-            
+
             if (category) {
                 currentEditId = id;
                 hideAlert();
