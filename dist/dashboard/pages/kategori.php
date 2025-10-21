@@ -21,61 +21,69 @@
 
 <!-- [ Information Cards ] start -->
 <div class="row mb-4" id="informationCards">
-    <div class="col-xl-3 col-md-6">
-        <div class="info-card info-card-primary">
-            <div class="info-card-body">
-                <div class="info-content">
-                    <div class="info-icon">
-                        <i class="ti ti-category"></i>
+    <div class="col-md-6 col-xxl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avtar avtar-s bg-light-primary">
+                            <i class="fas fa-list"></i>
+                        </div>
                     </div>
-                    <div class="info-text">
-                        <h3 id="totalCategoriesCount">0</h3>
-                        <span>Total Kategori</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="info-card info-card-success">
-            <div class="info-card-body">
-                <div class="info-content">
-                    <div class="info-icon">
-                        <i class="ti ti-check"></i>
-                    </div>
-                    <div class="info-text">
-                        <h3 id="activeCategoriesCount">0</h3>
-                        <span>Kategori Aktif</span>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-0">Total Kategori</h6>
+                        <b class="text-primary" id="totalCategoriesCount">0</b>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="info-card info-card-warning">
-            <div class="info-card-body">
-                <div class="info-content">
-                    <div class="info-icon">
-                        <i class="ti ti-archive"></i>
+    <div class="col-md-6 col-xxl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avtar avtar-s bg-light-success">
+                            <i class="ti ti-check f-20"></i>
+                        </div>
                     </div>
-                    <div class="info-text">
-                        <h3 id="deletedCategoriesCount">0</h3>
-                        <span>Tidak Aktif</span>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-0">Kategori Aktif</h6>
+                        <b class="text-success" id="activeCategoriesCount">0</b>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="info-card info-card-info">
-            <div class="info-card-body">
-                <div class="info-content">
-                    <div class="info-icon">
-                        <i class="ti ti-plus-circle"></i>
+    <div class="col-md-6 col-xxl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avtar avtar-s bg-light-warning">
+                            <i class="ti ti-archive f-20"></i>
+                        </div>
                     </div>
-                    <div class="info-text">
-                        <h3 id="toppingCategoriesCount">0</h3>
-                        <span>Kategori Topping</span>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-0">Tidak Aktif</h6>
+                        <b class="text-warning" id="deletedCategoriesCount">0</b>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xxl-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="avtar avtar-s bg-light-info">
+                            <i class="ti ti-meat f-20"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-0">Kategori Topping</h6>
+                        <b class="text-info" id="toppingCategoriesCount">0</b>
                     </div>
                 </div>
             </div>
@@ -127,188 +135,6 @@
 
 <!-- Enhanced Image Display Styles -->
 <style>
-    /* Information Cards Styling - Inspired by Countdown Alert Design */
-    .info-card {
-        border-radius: 0.75rem;
-        border: none;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        position: relative;
-    }
-
-    .info-card::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 5px;
-        transition: width 0.3s ease;
-    }
-
-    .info-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .info-card:hover::before {
-        width: 8px;
-    }
-
-    /* Primary Card (Total Kategori) - Purple Theme */
-    .info-card-primary {
-        background: linear-gradient(135deg, #f8f4ff 0%, #efe9ff 100%);
-        border: 1px solid #e5d9ff;
-    }
-
-    .info-card-primary::before {
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    }
-
-    .info-card-primary .info-icon {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .info-card-primary .info-text h3 {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    /* Success Card (Kategori Aktif) - Green Theme */
-    .info-card-success {
-        background: linear-gradient(135deg, #e8fff4 0%, #d4f8e8 100%);
-        border: 1px solid #b8f0d6;
-    }
-
-    .info-card-success::before {
-        background: linear-gradient(180deg, #11998e 0%, #38ef7d 100%);
-    }
-
-    .info-card-success .info-icon {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        color: white;
-    }
-
-    .info-card-success .info-text h3 {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    /* Warning Card (Tidak Aktif) - Pink/Red Theme */
-    .info-card-warning {
-        background: linear-gradient(135deg, #fff0f6 0%, #ffe8f2 100%);
-        border: 1px solid #ffd4e8;
-    }
-
-    .info-card-warning::before {
-        background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
-    }
-
-    .info-card-warning .info-icon {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-    }
-
-    .info-card-warning .info-text h3 {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    /* Info Card (Kategori Topping) - Blue Theme */
-    .info-card-info {
-        background: linear-gradient(135deg, #e8f7ff 0%, #d4f0ff 100%);
-        border: 1px solid #b8e4ff;
-    }
-
-    .info-card-info::before {
-        background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-    }
-
-    .info-card-info .info-icon {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        color: white;
-    }
-
-    .info-card-info .info-text h3 {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .info-card-body {
-        padding: 1.75rem 1.5rem;
-        position: relative;
-    }
-
-    .info-content {
-        display: flex;
-        align-items: center;
-        gap: 1.25rem;
-    }
-
-    .info-icon {
-        font-size: 2.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 70px;
-        height: 70px;
-        border-radius: 1rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s ease;
-    }
-
-    .info-card:hover .info-icon {
-        transform: scale(1.1) rotate(5deg);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-    }
-
-    .info-text {
-        flex: 1;
-    }
-
-    .info-text h3 {
-        font-size: 2.5rem;
-        font-weight: 800;
-        margin: 0 0 0.25rem 0;
-        font-family: 'Courier New', monospace;
-        letter-spacing: -1px;
-    }
-
-    .info-text span {
-        font-size: 0.875rem;
-        color: #6c757d;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Pulse animation for cards */
-    @keyframes cardPulse {
-
-        0%,
-        100% {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        50% {
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        }
-    }
-
-    .info-card:hover {
-        animation: cardPulse 2s ease-in-out infinite;
-    }
-
     /* Table View Image Enhancements */
     .category-image-container {
         border-radius: 6px;
@@ -389,24 +215,6 @@
 
         .category-card-image {
             height: 120px !important;
-        }
-
-        .info-card-body {
-            padding: 1.25rem 1rem;
-        }
-
-        .info-icon {
-            width: 60px;
-            height: 60px;
-            font-size: 2rem;
-        }
-
-        .info-text h3 {
-            font-size: 2rem;
-        }
-
-        .info-text span {
-            font-size: 0.75rem;
         }
     }
 
@@ -1522,7 +1330,7 @@
     // Load category data from API
     async function loadCategoryData(showDeleted = false) {
         try {
-            let url = 'api/menu/categories.php?per_page=1000';
+            let url = 'api/menu/categories.php?per_page=1000&status=all';
 
             console.log('Loading category data from:', url);
             const response = await fetch(url);
@@ -1541,6 +1349,11 @@
                 currentViewMode = showDeleted ? 'deleted' : 'active';
 
                 console.log('Category data loaded:', allCategoriesData.length, 'items');
+                console.log('Current view mode:', currentViewMode);
+
+                // Restore checkbox state after reload
+                restoreViewModeCheckbox();
+
                 updateInformationCards();
                 applyFilters();
             } else {
@@ -1549,6 +1362,15 @@
         } catch (error) {
             console.error('Error:', error);
             showError('Gagal memuat data kategori: ' + error.message);
+        }
+    }
+
+    // Restore view mode checkbox state
+    function restoreViewModeCheckbox() {
+        const checkbox = document.querySelector('input[data-filter="view_mode"][data-value="deleted"]');
+        if (checkbox) {
+            checkbox.checked = currentViewMode === 'deleted';
+            console.log('Checkbox state restored:', checkbox.checked, 'Current view mode:', currentViewMode);
         }
     }
 
@@ -1996,7 +1818,9 @@
 
                 if (result.success) {
                     showSuccess('Berhasil!', result.message, () => {
-                        loadCategoryData(); // Reload data after delete
+                        // Maintain current view mode after delete
+                        const isShowingDeleted = currentViewMode === 'deleted';
+                        loadCategoryData(isShowingDeleted);
                     });
                 } else {
                     showError('Gagal!', result.message);
