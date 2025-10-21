@@ -1,4 +1,4 @@
-lea<!-- [ breadcrumb ] start -->
+<!-- [ breadcrumb ] start -->
 <div class="page-header">
     <div class="page-block">
         <div class="row align-items-center">
@@ -1657,6 +1657,9 @@ lea<!-- [ breadcrumb ] start -->
 
         if (data) {
             populateForm(data);
+        } else {
+            // Reset form for new category
+            document.getElementById('submitText').textContent = 'Simpan Kategori';
         }
     }
 
@@ -1931,6 +1934,9 @@ lea<!-- [ breadcrumb ] start -->
             hideAlert();
 
             if (result.success) {
+                // Reset edit ID after successful operation
+                currentEditId = null;
+                
                 showSuccess('Berhasil!', result.message, () => {
                     showDataKategori();
                 });
@@ -1947,29 +1953,35 @@ lea<!-- [ breadcrumb ] start -->
     // Edit category
     async function editCategory(id) {
         try {
-            const response = await fetch(`api/menu/categories.php?id=${id}`);
-            const result = await response.json();
-
-            if (result.success) {
+            showLoading('Memuat...', 'Sedang memuat data kategori...');
+            
+            // Get single category by filtering from all data
+            const category = allCategoriesData.find(cat => cat.id === id);
+            
+            if (category) {
                 currentEditId = id;
-                showForm('Edit Kategori', 'Form Edit Kategori', result.data);
+                hideAlert();
+                showForm('Edit Kategori', 'Form Edit Kategori', category);
             } else {
-                showError('Gagal memuat data kategori: ' + result.message);
+                hideAlert();
+                showError('Gagal!', 'Data kategori tidak ditemukan');
             }
         } catch (error) {
             console.error('Error:', error);
-            showError('Terjadi kesalahan saat memuat data');
+            hideAlert();
+            showError('Kesalahan!', 'Terjadi kesalahan saat memuat data');
         }
     }
 
     // Populate form for editing
     function populateForm(data) {
+        console.log('Populating form with data:', data);
         document.getElementById('categoryName').value = data.name || '';
         document.getElementById('categoryType').value = data.type || '';
         document.getElementById('submitText').textContent = 'Update Kategori';
     }
 
-    // Delete category
+    // Delete category (soft delete)
     function deleteCategory(id, name) {
         showDeleteConfirmation(name, async () => {
             showLoading('Menghapus...', 'Sedang menghapus kategori...');
@@ -1984,7 +1996,7 @@ lea<!-- [ breadcrumb ] start -->
 
                 if (result.success) {
                     showSuccess('Berhasil!', result.message, () => {
-                        loadCategoryData();
+                        loadCategoryData(); // Reload data after delete
                     });
                 } else {
                     showError('Gagal!', result.message);
