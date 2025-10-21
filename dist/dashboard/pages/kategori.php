@@ -99,24 +99,6 @@ lea<!-- [ breadcrumb ] start -->
                     </div>
                     <div class="col-auto">
                         <div class="d-flex align-items-center" id="headerActions">
-                            <!-- View Toggle Tabs -->
-                            <ul class="nav nav-pills me-3" id="viewToggleTabs">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="pills-table-tab" data-bs-toggle="pill"
-                                        data-bs-target="#pills-table" type="button" role="tab"
-                                        aria-controls="pills-table" aria-selected="true">
-                                        <i class="ti ti-table"></i> Table View
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="pills-card-tab" data-bs-toggle="pill"
-                                        data-bs-target="#pills-card" type="button" role="tab" aria-controls="pills-card"
-                                        aria-selected="false">
-                                        <i class="ti ti-layout-grid"></i> Card View
-                                    </button>
-                                </li>
-                            </ul>
-
                             <!-- Action Buttons -->
                             <button type="button" class="btn btn-primary d-flex" id="btnTambahKategori"
                                 onclick="showFormTambah()">
@@ -1583,7 +1565,6 @@ lea<!-- [ breadcrumb ] start -->
 
         document.getElementById('btnTambahKategori').classList.remove('d-none');
         document.getElementById('btnKembali').classList.add('d-none');
-        document.getElementById('viewToggleTabs').classList.remove('d-none');
 
         mainContent.innerHTML = getDataKategoriHTML();
 
@@ -1653,7 +1634,6 @@ lea<!-- [ breadcrumb ] start -->
 
         currentPage = 1;
         displayTableView();
-        displayCardView();
         updatePagination();
     }
 
@@ -1669,7 +1649,6 @@ lea<!-- [ breadcrumb ] start -->
 
         document.getElementById('btnTambahKategori').classList.add('d-none');
         document.getElementById('btnKembali').classList.remove('d-none');
-        document.getElementById('viewToggleTabs').classList.add('d-none');
 
         mainContent.innerHTML = getFormHTML();
 
@@ -1684,136 +1663,123 @@ lea<!-- [ breadcrumb ] start -->
     // Get data kategori HTML
     function getDataKategoriHTML() {
         return `
-            <div class="tab-content" id="pills-tabContent">
-                <div class="tab-pane fade show active" id="pills-table" role="tabpanel" aria-labelledby="pills-table-tab" tabindex="0">
+            <!-- Table Controls Section -->
+            <div class="table-controls-section table-light p-3 mb-0 border rounded-top">
+                <div class="table-header-controls">
+                    <div class="search-section">
+                        <div class="search-input-wrapper">
+                            <i class="ti ti-search search-icon"></i>
+                            <input type="text" class="form-control search-input" id="searchInput" 
+                                   placeholder="Cari kategori..." onkeyup="applyFilters()" onchange="applyFilters()">
+                        </div>
+                    </div>
                     
-                    <div class="table-controls-section table-light p-3 mb-0 border rounded-top">
-                        <div class="table-header-controls">
-                            <div class="search-section">
-                                <div class="search-input-wrapper">
-                                    <i class="ti ti-search search-icon"></i>
-                                    <input type="text" class="form-control search-input" id="searchInput" 
-                                           placeholder="Cari kategori..." onkeyup="applyFilters()" onchange="applyFilters()">
-                                </div>
-                            </div>
+                    <div class="filter-section">
+                        <div class="filter-dropdown position-relative">
+                            <button type="button" class="btn filter-btn" id="filterButton" onclick="toggleFilterDropdown()">
+                                <i class="ti ti-filter"></i>
+                                <span class="filter-text">Filters</span>
+                                <span class="filter-badge" id="filterBadge" style="display: none;">0</span>
+                            </button>
                             
-                            <div class="filter-section">
-                                <div class="filter-dropdown position-relative">
-                                    <button type="button" class="btn filter-btn" id="filterButton" onclick="toggleFilterDropdown()">
-                                        <i class="ti ti-filter"></i>
-                                        <span class="filter-text">Filters</span>
-                                        <span class="filter-badge" id="filterBadge" style="display: none;">0</span>
+                            <div class="filter-dropdown-menu" id="filterDropdown">
+                                <div class="filter-dropdown-header">
+                                    <h6 class="mb-0">Filter Options</h6>
+                                    <button type="button" class="btn-close-filter" onclick="toggleFilterDropdown()">
+                                        <i class="ti ti-x"></i>
                                     </button>
-                                    
-                                    <div class="filter-dropdown-menu" id="filterDropdown">
-                                        <div class="filter-dropdown-header">
-                                            <h6 class="mb-0">Filter Options</h6>
-                                            <button type="button" class="btn-close-filter" onclick="toggleFilterDropdown()">
-                                                <i class="ti ti-x"></i>
-                                            </button>
+                                </div>
+                                
+                                <div class="filter-dropdown-body">
+                                    <div class="filter-group">
+                                        <label class="filter-group-label">View Mode</label>
+                                        <div class="filter-options">
+                                            <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="view_mode" data-value="deleted" onchange="handleViewModeChange(this)">
+                                                <span class="filter-icon">🗑️</span>
+                                                <span class="filter-label">Show Deleted Items</span>
+                                            </label>
                                         </div>
-                                        
-                                        <div class="filter-dropdown-body">
-                                            <div class="filter-group">
-                                                <label class="filter-group-label">View Mode</label>
-                                                <div class="filter-options">
-                                                    <label class="filter-option">
-                                                        <input type="checkbox" class="filter-checkbox" data-filter="view_mode" data-value="deleted" onchange="handleViewModeChange(this)">
-                                                        <span class="filter-icon">🗑️</span>
-                                                        <span class="filter-label">Show Deleted Items</span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="filter-group">
-                                                <label class="filter-group-label">Type</label>
-                                                <div class="filter-options">
-                                                    <label class="filter-option">
-                                                        <input type="checkbox" class="filter-checkbox" data-filter="type" data-value="product" onchange="handleFilterChange(this)">
-                                                        <span class="filter-icon">🍽️</span>
-                                                        <span class="filter-label">Product</span>
-                                                    </label>
-                                                    <label class="filter-option">
-                                                        <input type="checkbox" class="filter-checkbox" data-filter="type" data-value="topping" onchange="handleFilterChange(this)">
-                                                        <span class="filter-icon">🧂</span>
-                                                        <span class="filter-label">Topping</span>
-                                                    </label>
-                                                </div>
-                                            </div>
+                                    </div>
+                                    
+                                    <div class="filter-group">
+                                        <label class="filter-group-label">Type</label>
+                                        <div class="filter-options">
+                                            <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="type" data-value="product" onchange="handleFilterChange(this)">
+                                                <span class="filter-icon">🍽️</span>
+                                                <span class="filter-label">Product</span>
+                                            </label>
+                                            <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="type" data-value="topping" onchange="handleFilterChange(this)">
+                                                <span class="filter-icon">🧂</span>
+                                                <span class="filter-label">Topping</span>
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="sort-section">
-                                <div class="sort-wrapper">
-                                    <i class="ti ti-sort-descending sort-icon"></i>
-                                    <select class="form-select sort-select" id="sortBy" onchange="applySorting()">
-                                        <option value="created_at_desc">Terbaru</option>
-                                        <option value="updated_at_desc">Diperbarui</option>
-                                        <option value="name_asc">A-Z</option>
-                                        <option value="name_desc">Z-A</option>
-                                        <option value="type_asc">Type A-Z</option>
-                                        <option value="type_desc">Type Z-A</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="active-filters-container" id="activeFiltersContainer" style="display: none;">
-                            <div class="active-filters-wrapper">
-                                <span class="active-filters-label">🏷️ Active:</span>
-                                <div class="active-filters-tags" id="activeFiltersTags"></div>
-                            </div>
                         </div>
                     </div>
                     
-                    <div class="table-container">
-                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light table-header-sticky">
-                                    <tr class="column-headers">
-                                        <th style="min-width: 50px;">#</th>
-                                        <th style="min-width: 200px;">Nama Kategori</th>
-                                        <th style="min-width: 120px;">Type</th>
-                                        <th style="min-width: 100px;">Status</th>
-                                        <th style="min-width: 120px;">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="kategoriTableBody">
-                                    <tr>
-                                        <td colspan="5" class="text-center">
-                                            <div class="spinner-border spinner-border-sm" role="status">
-                                                <span class="visually-hidden">Loading...</span>
-                                            </div>
-                                            Loading category data...
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div class="d-flex align-items-center">
-                            <small class="text-muted" id="paginationInfo">Showing 0 - 0 of 0 entries</small>
-                        </div>
-                        <nav aria-label="Category pagination">
-                            <ul class="pagination pagination-sm mb-0" id="paginationControls"></ul>
-                        </nav>
-                    </div>
-                </div>
-
-                <div class="tab-pane fade" id="pills-card" role="tabpanel" aria-labelledby="pills-card-tab" tabindex="0">
-                    <div class="row" id="kategoriCardContainer">
-                        <div class="col-12 text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-2">Loading category data...</p>
+                    <div class="sort-section">
+                        <div class="sort-wrapper">
+                            <i class="ti ti-sort-descending sort-icon"></i>
+                            <select class="form-select sort-select" id="sortBy" onchange="applySorting()">
+                                <option value="created_at_desc">Terbaru</option>
+                                <option value="updated_at_desc">Diperbarui</option>
+                                <option value="name_asc">A-Z</option>
+                                <option value="name_desc">Z-A</option>
+                                <option value="type_asc">Type A-Z</option>
+                                <option value="type_desc">Type Z-A</option>
+                            </select>
                         </div>
                     </div>
                 </div>
+                
+                <div class="active-filters-container" id="activeFiltersContainer" style="display: none;">
+                    <div class="active-filters-wrapper">
+                        <span class="active-filters-label">🏷️ Active:</span>
+                        <div class="active-filters-tags" id="activeFiltersTags"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Table Container -->
+            <div class="table-container">
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light table-header-sticky">
+                            <tr class="column-headers">
+                                <th style="min-width: 50px;">#</th>
+                                <th style="min-width: 200px;">Nama Kategori</th>
+                                <th style="min-width: 120px;">Type</th>
+                                <th style="min-width: 100px;">Status</th>
+                                <th style="min-width: 120px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kategoriTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    Loading category data...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex align-items-center">
+                    <small class="text-muted" id="paginationInfo">Showing 0 - 0 of 0 entries</small>
+                </div>
+                <nav aria-label="Category pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationControls"></ul>
+                </nav>
             </div>
         `;
     }
@@ -1921,69 +1887,6 @@ lea<!-- [ breadcrumb ] start -->
                 </td>
             `;
             tableBody.appendChild(row);
-        });
-    }
-
-    // Display card view
-    function displayCardView() {
-        const cardContainer = document.getElementById('kategoriCardContainer');
-        if (!cardContainer) return;
-
-        cardContainer.innerHTML = '';
-
-        if (filteredCategoriesData.length === 0) {
-            cardContainer.innerHTML = `
-                <div class="col-12 text-center">
-                    <p class="mb-0">Tidak ada data kategori</p>
-                </div>
-            `;
-            return;
-        }
-
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const paginatedData = filteredCategoriesData.slice(startIndex, endIndex);
-
-        paginatedData.forEach(item => {
-            const cardCol = document.createElement('div');
-            cardCol.className = 'col-xl-3 col-md-6 col-sm-12 mb-3';
-            cardCol.innerHTML = `
-                <div class="card h-100">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h6 class="card-title mb-0">${escapeHtml(item.name)}</h6>
-                            <span class="badge bg-${item.is_active ? 'success' : 'danger'}">
-                                ${item.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                        </div>
-                        <div class="mb-3">
-                            <span class="badge bg-light-${item.type === 'product' ? 'primary' : 'info'} text-${item.type === 'product' ? 'primary' : 'info'}">
-                                ${item.type}
-                            </span>
-                        </div>
-                        <div class="mt-auto">
-                            <div class="btn-group w-100" role="group">
-                                ${currentViewMode === 'active' ? `
-                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="editCategory('${item.id}')" title="Edit Kategori">
-                                        <i class="ti ti-edit"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${item.id}', '${escapeHtml(item.name)}')" title="Soft Delete">
-                                        <i class="ti ti-trash"></i>
-                                    </button>
-                                ` : `
-                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="restoreCategory('${item.id}', '${escapeHtml(item.name)}')" title="Restore Item">
-                                        <i class="ti ti-refresh"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteCategory('${item.id}', '${escapeHtml(item.name)}')" title="Permanent Delete">
-                                        <i class="ti ti-trash-x"></i>
-                                    </button>
-                                `}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            cardContainer.appendChild(cardCol);
         });
     }
 
@@ -2387,10 +2290,12 @@ lea<!-- [ breadcrumb ] start -->
 
         currentPage = page;
         displayTableView();
-        displayCardView();
         updatePagination();
 
-        document.getElementById('pills-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const tableContainer = document.querySelector('.table-container');
+        if (tableContainer) {
+            tableContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     // Initialize page
