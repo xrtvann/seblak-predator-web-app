@@ -145,6 +145,188 @@
 
 <!-- Enhanced Image Display Styles -->
 <style>
+    /* Information Cards Styling - Inspired by Countdown Alert Design */
+    .info-card {
+        border-radius: 0.75rem;
+        border: none;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        position: relative;
+    }
+
+    .info-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        transition: width 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .info-card:hover::before {
+        width: 8px;
+    }
+
+    /* Primary Card (Total Kategori) - Purple Theme */
+    .info-card-primary {
+        background: linear-gradient(135deg, #f8f4ff 0%, #efe9ff 100%);
+        border: 1px solid #e5d9ff;
+    }
+
+    .info-card-primary::before {
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .info-card-primary .info-icon {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .info-card-primary .info-text h3 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Success Card (Kategori Aktif) - Green Theme */
+    .info-card-success {
+        background: linear-gradient(135deg, #e8fff4 0%, #d4f8e8 100%);
+        border: 1px solid #b8f0d6;
+    }
+
+    .info-card-success::before {
+        background: linear-gradient(180deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    .info-card-success .info-icon {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+    }
+
+    .info-card-success .info-text h3 {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Warning Card (Tidak Aktif) - Pink/Red Theme */
+    .info-card-warning {
+        background: linear-gradient(135deg, #fff0f6 0%, #ffe8f2 100%);
+        border: 1px solid #ffd4e8;
+    }
+
+    .info-card-warning::before {
+        background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .info-card-warning .info-icon {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .info-card-warning .info-text h3 {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Info Card (Kategori Topping) - Blue Theme */
+    .info-card-info {
+        background: linear-gradient(135deg, #e8f7ff 0%, #d4f0ff 100%);
+        border: 1px solid #b8e4ff;
+    }
+
+    .info-card-info::before {
+        background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .info-card-info .info-icon {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    .info-card-info .info-text h3 {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .info-card-body {
+        padding: 1.75rem 1.5rem;
+        position: relative;
+    }
+
+    .info-content {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+    }
+
+    .info-icon {
+        font-size: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 70px;
+        height: 70px;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover .info-icon {
+        transform: scale(1.1) rotate(5deg);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .info-text {
+        flex: 1;
+    }
+
+    .info-text h3 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0 0 0.25rem 0;
+        font-family: 'Courier New', monospace;
+        letter-spacing: -1px;
+    }
+
+    .info-text span {
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Pulse animation for cards */
+    @keyframes cardPulse {
+
+        0%,
+        100% {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        50% {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    .info-card:hover {
+        animation: cardPulse 2s ease-in-out infinite;
+    }
+
     /* Table View Image Enhancements */
     .category-image-container {
         border-radius: 6px;
@@ -225,6 +407,24 @@
 
         .category-card-image {
             height: 120px !important;
+        }
+
+        .info-card-body {
+            padding: 1.25rem 1rem;
+        }
+
+        .info-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 2rem;
+        }
+
+        .info-text h3 {
+            font-size: 2rem;
+        }
+
+        .info-text span {
+            font-size: 0.75rem;
         }
     }
 
@@ -779,829 +979,4 @@
 </style>
 
 <!-- JavaScript untuk CRUD Kategori -->
-<script>
-    let currentEditId = null;
-    let allCategoriesData = []; // Store all categories data
-    let filteredCategoriesData = []; // Store filtered data
-    let currentPage = 1;
-    const itemsPerPage = 10;
-    let activeFilters = new Map(); // Modern filter storage
-    let currentSort = 'created_at_desc';
-    let currentViewMode = 'active'; // Track if showing active or deleted items
-
-    // Filter Dropdown Management
-    function toggleFilterDropdown() {
-        const dropdown = document.getElementById('filterDropdown');
-        const button = document.getElementById('filterButton');
-
-        if (dropdown.classList.contains('show')) {
-            dropdown.classList.remove('show');
-            button.classList.remove('active');
-        } else {
-            dropdown.classList.add('show');
-            button.classList.add('active');
-        }
-    }
-
-    // Handle filter checkbox changes
-    function handleFilterChange(checkbox) {
-        const filterType = checkbox.dataset.filter;
-        const filterValue = checkbox.dataset.value;
-        const filterKey = `${filterType}:${filterValue}`;
-
-        if (checkbox.checked) {
-            const filterLabel = checkbox.parentElement.querySelector('.filter-label').textContent;
-            activeFilters.set(filterKey, {
-                type: filterType,
-                value: filterValue,
-                label: filterLabel,
-                element: checkbox
-            });
-        } else {
-            activeFilters.delete(filterKey);
-        }
-
-        updateFilterBadge();
-        updateActiveFiltersDisplay();
-        applyFilters();
-    }
-
-    // Update filter badge count
-    function updateFilterBadge() {
-        const badge = document.getElementById('filterBadge');
-        const count = activeFilters.size;
-
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'inline-block';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-
-    // Update active filters display
-    function updateActiveFiltersDisplay() {
-        const container = document.getElementById('activeFiltersContainer');
-        const tagsContainer = document.getElementById('activeFiltersTags');
-
-        if (activeFilters.size === 0) {
-            container.style.display = 'none';
-            return;
-        }
-
-        container.style.display = 'block';
-        tagsContainer.innerHTML = '';
-
-        activeFilters.forEach((filter, key) => {
-            const tag = document.createElement('div');
-            tag.className = 'active-filter-tag';
-            tag.innerHTML = `
-                <span>${filter.label}</span>
-                <button type="button" class="remove-filter" onclick="removeFilter('${key}')">
-                    <i class="ti ti-x"></i>
-                </button>
-            `;
-            tagsContainer.appendChild(tag);
-        });
-    }
-
-    // Remove specific filter
-    function removeFilter(filterKey) {
-        const filter = activeFilters.get(filterKey);
-        if (filter && filter.element) {
-            filter.element.checked = false;
-        }
-
-        if (filterKey === 'view_mode:deleted') {
-            currentViewMode = 'active';
-            loadCategoryData(false);
-        }
-
-        activeFilters.delete(filterKey);
-        updateFilterBadge();
-        updateActiveFiltersDisplay();
-
-        if (filterKey !== 'view_mode:deleted') {
-            applyFilters();
-        }
-    }
-
-    // Handle view mode change (show deleted items)
-    function handleViewModeChange(checkbox) {
-        const isShowingDeleted = checkbox.checked;
-
-        if (isShowingDeleted) {
-            currentViewMode = 'deleted';
-            loadCategoryData(true);
-            activeFilters.set('view_mode:deleted', {
-                type: 'view_mode',
-                value: 'deleted',
-                label: 'Tampilkan yang Dihapus',
-                element: checkbox
-            });
-        } else {
-            currentViewMode = 'active';
-            loadCategoryData(false);
-            activeFilters.delete('view_mode:deleted');
-        }
-
-        updateFilterBadge();
-        updateActiveFiltersDisplay();
-    }
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function (e) {
-        const dropdown = document.getElementById('filterDropdown');
-        const button = document.getElementById('filterButton');
-
-        if (dropdown && dropdown.classList.contains('show')) {
-            if (!dropdown.contains(e.target) && !button.contains(e.target)) {
-                dropdown.classList.remove('show');
-                button.classList.remove('active');
-            }
-        }
-    });
-
-    // Show form for adding new category
-    function showFormTambah() {
-        currentEditId = null;
-        showForm('Tambah Kategori', 'Form Tambah Kategori');
-    }
-
-    // Show data category view
-    function showDataKategori() {
-        console.log('showDataKategori called');
-        const mainContent = document.getElementById('mainContentArea');
-        console.log('Main content element:', mainContent);
-
-        // Update header
-        document.getElementById('pageTitleText').textContent = 'Kategori';
-        document.getElementById('breadcrumbText').textContent = 'Kategori';
-        document.getElementById('cardTitleText').textContent = 'Data Kategori';
-        document.getElementById('cardSubtitleText').classList.add('d-none');
-
-        // Toggle buttons
-        document.getElementById('btnTambahKategori').classList.remove('d-none');
-        document.getElementById('btnKembali').classList.add('d-none');
-
-        // Set content
-        if (mainContent) {
-            mainContent.innerHTML = getDataKategoriHTML();
-            console.log('Content set, loading data...');
-            loadCategoryData();
-        } else {
-            console.error('Main content element not found');
-        }
-    }
-
-    // Initialize page
-    document.addEventListener('DOMContentLoaded', function () {
-        showDataKategori();
-    });
-
-    // Update information cards
-    function updateInformationCards() {
-        const totalCategories = allCategoriesData.length;
-        const activeCategories = allCategoriesData.filter(cat => cat.is_active).length;
-        const deletedCategories = allCategoriesData.filter(cat => !cat.is_active).length;
-        const toppingCategories = allCategoriesData.filter(cat => cat.type === 'topping').length;
-
-        // Update the card values
-        const totalElement = document.getElementById('totalCategoriesCount');
-        const activeElement = document.getElementById('activeCategoriesCount');
-        const deletedElement = document.getElementById('deletedCategoriesCount');
-        const toppingElement = document.getElementById('toppingCategoriesCount');
-
-        if (totalElement) totalElement.textContent = totalCategories;
-        if (activeElement) activeElement.textContent = activeCategories;
-        if (deletedElement) deletedElement.textContent = deletedCategories;
-        if (toppingElement) toppingElement.textContent = toppingCategories;
-    }
-
-    // Load category data from API
-    async function loadCategoryData(showDeleted = false) {
-        try {
-            // Always load all categories for accurate counts
-            let url = 'api/menu/categories.php';
-
-            console.log('Loading category data from:', url);
-            const response = await fetch(url);
-            const result = await response.json();
-
-            if (result.success) {
-                allCategoriesData = result.data || [];
-
-                // Filter based on view mode
-                if (showDeleted) {
-                    filteredCategoriesData = allCategoriesData.filter(cat => !cat.is_active);
-                } else {
-                    filteredCategoriesData = allCategoriesData.filter(cat => cat.is_active);
-                }
-                currentPage = 1;
-                currentViewMode = showDeleted ? 'deleted' : 'active';
-                console.log('Category data loaded:', allCategoriesData.length, 'items');
-                updateInformationCards();
-                applyFilters();
-            } else {
-                throw new Error(result.message || 'Failed to load data');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showError('Failed to load category data: ' + error.message);
-        }
-    }
-
-    // Get data category HTML
-    function getDataKategoriHTML() {
-        return `
-            <!-- Tab Content -->
-            <div class="tab-content" id="pills-tabContent">
-                <!-- Table View -->
-                <div class="tab-pane fade show active" id="pills-table" role="tabpanel"
-                    aria-labelledby="pills-table-tab" tabindex="0">
-                    
-                    <!-- Table Controls Section -->
-                    
-                    <!-- Controls Section Outside Table -->
-                    <div class="table-controls-section table-light p-3 mb-0 border rounded-top">
-                                    <div class="table-header-controls">
-                            <!-- Left side: Search -->
-                                        <div class="search-section">
-                                            <div class="search-input-wrapper">
-                                                <i class="ti ti-search search-icon"></i>
-                                    <input type="text" class="form-control search-input" id="searchInput" 
-                                           placeholder="Search categories..." onkeyup="applyFilters()"
-                                           onchange="applyFilters()">
-                                            </div>
-                                        </div>
-
-                            <!-- Center: Filter Button -->
-                                        <div class="filter-section">
-                                <div class="filter-dropdown position-relative">
-                                    <button type="button" class="btn filter-btn" id="filterButton" onclick="toggleFilterDropdown()">
-                                                    <i class="ti ti-filter"></i>
-                                        <span class="filter-text">Filters</span>
-                                                    <span class="filter-badge" id="filterBadge" style="display: none;">0</span>
-                                                </button>
-                                    
-                                    <!-- Filter Dropdown -->
-                                                <div class="filter-dropdown-menu" id="filterDropdown">
-                                                    <div class="filter-dropdown-header">
-                                            <h6 class="mb-0">Filter Options</h6>
-                                                        <button type="button" class="btn-close-filter" onclick="toggleFilterDropdown()">
-                                                            <i class="ti ti-x"></i>
-                                                        </button>
-                                                    </div>
-                                        
-                                                    <div class="filter-dropdown-body">
-                                            <!-- View Mode Filter -->
-                                                        <div class="filter-group">
-                                                <label class="filter-group-label">View Mode</label>
-                                                            <div class="filter-options">
-                                                                <label class="filter-option">
-                                                        <input type="checkbox" class="filter-checkbox" data-filter="view_mode" data-value="deleted" onchange="handleViewModeChange(this)">
-                                                        <span class="filter-icon">🗑️</span>
-                                                        <span class="filter-label">Show Deleted Items</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-
-                                            <!-- Type Filters -->
-                                                        <div class="filter-group">
-                                                <label class="filter-group-label">Category Type</label>
-                                                            <div class="filter-options">
-                                                                <label class="filter-option">
-                                                        <input type="checkbox" class="filter-checkbox" data-filter="type" data-value="product" onchange="handleFilterChange(this)">
-                                                        <span class="filter-icon">📂</span>
-                                                        <span class="filter-label">Product</span>
-                                                    </label>
-                                                    <label class="filter-option">
-                                                        <input type="checkbox" class="filter-checkbox" data-filter="type" data-value="topping" onchange="handleFilterChange(this)">
-                                                        <span class="filter-icon">➕</span>
-                                                        <span class="filter-label">Topping</span>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                            <!-- Right side: Sort -->
-                                        <div class="sort-section">
-                                            <div class="sort-wrapper">
-                                    <i class="ti ti-sort-descending sort-icon"></i>
-                                    <select class="form-select sort-select" id="sortBy" onchange="applySorting()">
-                                                    <option value="created_at_desc">Terbaru</option>
-                                        <option value="updated_at_desc">Diperbarui</option>
-                                        <option value="name_asc">A-Z</option>
-                                        <option value="name_desc">Z-A</option>
-                                                    <option value="type_asc">Tipe A-Z</option>
-                                                    <option value="type_desc">Tipe Z-A</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                        <!-- Active Filters Row -->
-                        <div class="active-filters-container" id="activeFiltersContainer" style="display: none;">
-                                        <div class="active-filters-wrapper">
-                                <span class="active-filters-label">🏷️ Active:</span>
-                                <div class="active-filters-tags" id="activeFiltersTags">
-                                    <!-- Active filter tags will appear here -->
-                                        </div>
-                                    </div>
-                                    </div>
-                    </div>
-                    
-                    <!-- Table with sticky header -->  
-                    <div class="table-container">
-                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light table-header-sticky">
-                                    <tr class="column-headers">
-                                        <th style="min-width: 50px;">#</th>
-                                        <th style="min-width: 200px;">Nama Kategori</th>
-                                        <th style="min-width: 120px;">Tipe</th>
-                                        <th style="min-width: 100px;">Status</th>
-                                        <th style="min-width: 120px;">Tanggal</th>
-                                        <th style="min-width: 120px;">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="categoriesTableBody">
-                                    <tr>
-                                        <td colspan="6" class="text-center">
-                                            <div class="spinner-border spinner-border-sm" role="status">
-                                                <span class="visually-hidden">Loading...</span>
-                                            </div>
-                                            Loading category data...
-                                        </td>
-                                    </tr>
-                        </tbody>
-                    </table>
-                        </div>
-                </div>
-
-                    <!-- Pagination Controls -->
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div class="d-flex align-items-center">
-                            <small class="text-muted" id="paginationInfo">Showing 0 - 0 of 0 entries</small>
-                    </div>
-                        <nav aria-label="Category pagination">
-                            <ul class="pagination pagination-sm mb-0" id="paginationControls">
-                                <!-- Pagination buttons will be generated here -->
-                        </ul>
-                    </nav>
-                    </div>
-                </div>
-
-                <!-- Card View -->
-                <div class="tab-pane fade" id="pills-card" role="tabpanel" aria-labelledby="pills-card-tab"
-                    tabindex="0">
-                    <div class="row" id="categoryCardContainer">
-                        <div class="col-12 text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-2">Loading category data...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    // Show/Hide states
-    function showLoadingState() {
-        const loading = document.getElementById('loadingState');
-        const empty = document.getElementById('emptyState');
-        const dataContainer = document.getElementById('categoriesDataContainer');
-        const pagination = document.getElementById('paginationContainer');
-
-        if (loading) loading.style.display = 'block';
-        if (empty) empty.style.display = 'none';
-        if (dataContainer) dataContainer.style.display = 'none';
-        if (pagination) pagination.style.display = 'none';
-    }
-
-    function hideLoadingState() {
-        const loading = document.getElementById('loadingState');
-        if (loading) loading.style.display = 'none';
-    }
-
-    function showEmptyState() {
-        const empty = document.getElementById('emptyState');
-        const dataContainer = document.getElementById('categoriesDataContainer');
-        const pagination = document.getElementById('paginationContainer');
-
-        if (empty) empty.style.display = 'block';
-        if (dataContainer) dataContainer.style.display = 'none';
-        if (pagination) pagination.style.display = 'none';
-    }
-
-    function showTableView() {
-        const empty = document.getElementById('emptyState');
-        const dataContainer = document.getElementById('categoriesDataContainer');
-
-        if (empty) empty.style.display = 'none';
-        if (dataContainer) dataContainer.style.display = 'block';
-    }
-
-    // Apply filters
-    function applyFilters() {
-        console.log('Applying filters...');
-        filteredCategoriesData = [...allCategoriesData];
-
-        // Get search term
-        const searchInput = document.getElementById('searchInput');
-        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-
-        console.log('Search term:', searchTerm);
-
-        // Apply type filters
-        const typeFilters = Array.from(activeFilters.values()).filter(filter => filter.type === 'type');
-        if (typeFilters.length > 0) {
-            const selectedTypes = typeFilters.map(filter => filter.value);
-            console.log('Type filters:', selectedTypes);
-            filteredCategoriesData = filteredCategoriesData.filter(item =>
-                selectedTypes.includes(item.type)
-            );
-        }
-
-        // Apply search filter
-        if (searchTerm) {
-            filteredCategoriesData = filteredCategoriesData.filter(item =>
-                item.name.toLowerCase().includes(searchTerm) ||
-                item.type.toLowerCase().includes(searchTerm)
-            );
-        }
-
-        console.log('Filtered data:', filteredCategoriesData.length, 'items');
-
-        // Apply sorting
-        applySortingToData();
-
-        // Update display
-        currentPage = 1;
-        displayCategoriesTable();
-        displayCategoriesCards();
-        updatePagination();
-    }
-
-    // Apply sorting to filtered data
-    function applySortingToData() {
-        filteredCategoriesData.sort((a, b) => {
-            switch (currentSort) {
-                case 'name_asc':
-                    return a.name.localeCompare(b.name);
-                case 'name_desc':
-                    return b.name.localeCompare(a.name);
-                case 'type_asc':
-                    return a.type.localeCompare(b.type);
-                case 'type_desc':
-                    return b.type.localeCompare(a.type);
-                case 'created_at_asc':
-                    return new Date(a.created_at) - new Date(b.created_at);
-                case 'created_at_desc':
-                default:
-                    return new Date(b.created_at) - new Date(a.created_at);
-            }
-        });
-    }
-
-    // Handle sorting change
-    function applySorting(triggerFilters = true) {
-        const sortBy = document.getElementById('sortBy');
-        currentSort = sortBy ? sortBy.value : 'created_at_desc';
-
-        if (triggerFilters) {
-            applyFilters();
-        }
-    }
-
-    // Update results info
-    function updateResultsInfo() {
-        const resultsInfo = document.getElementById('resultsInfo');
-        const total = filteredCategoriesData.length;
-
-        if (total === 0) {
-            resultsInfo.textContent = 'Tidak ada kategori yang ditemukan';
-        } else if (total === allCategoriesData.length) {
-            resultsInfo.textContent = `Menampilkan ${total} kategori`;
-        } else {
-            resultsInfo.textContent = `Menampilkan ${total} dari ${allCategoriesData.length} kategori`;
-        }
-    }
-
-    // Display categories table with pagination
-    function displayCategoriesTable() {
-        const tableBody = document.getElementById('categoriesTableBody');
-        if (!tableBody) return;
-
-        tableBody.innerHTML = '';
-
-        if (filteredCategoriesData.length === 0) {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td colspan="6" class="text-center py-4">
-                    <div class="text-muted">
-                        <i class="ti ti-search f-20 mb-2"></i>
-                        <p class="mb-0">Tidak ada kategori yang ditemukan</p>
-                    </div>
-                </td>
-            `;
-            tableBody.appendChild(row);
-            return;
-        }
-
-        // Calculate pagination
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const paginatedData = filteredCategoriesData.slice(startIndex, endIndex);
-
-        paginatedData.forEach((category, index) => {
-            const row = document.createElement('tr');
-            const globalIndex = startIndex + index + 1;
-
-            row.innerHTML = `
-                <td>${globalIndex}</td>
-                <td>
-                    <h6 class="mb-1">${category.name}</h6>
-                </td>
-                <td>
-                    <span class="badge bg-light-${category.type === 'product' ? 'primary' : 'info'} text-${category.type === 'product' ? 'primary' : 'info'}">
-                        ${category.type === 'product' ? 'Produk' : 'Topping'}
-                    </span>
-                </td>
-                <td>
-                    <span class="badge bg-light-${category.is_active ? 'success' : 'danger'} text-${category.is_active ? 'success' : 'danger'}">
-                        ${category.is_active ? 'Aktif' : 'Nonaktif'}
-                    </span>
-                </td>
-                <td>
-                    <span class="text-dark f-12">${new Date(category.created_at).toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            })}</span>
-                </td>
-                <td>
-                    <div class="btn-group" role="group">
-                        ${renderActionButtons(category)}
-                    </div>
-                </td>
-            `;
-
-            tableBody.appendChild(row);
-        });
-    }
-
-    // Render action buttons based on category status
-    function renderActionButtons(category) {
-        const isActive = category.is_active;
-
-        if (isActive) {
-            return `
-                <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editCategory('${category.id}')" title="Edit Kategori">
-                    <i class="ti ti-edit"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCategory('${category.id}', '${category.name.replace(/'/g, "&apos;")}')" title="Hapus Kategori">
-                    <i class="ti ti-trash"></i>
-                </button>
-            `;
-        } else {
-            return `
-                <button type="button" class="btn btn-sm btn-outline-success me-2" onclick="restoreCategory('${category.id}', '${category.name.replace(/'/g, "&apos;")}')" title="Pulihkan Kategori">
-                    <i class="ti ti-refresh"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteCategory('${category.id}', '${category.name.replace(/'/g, "&apos;")}')" title="Hapus Permanen">
-                    <i class="ti ti-trash"></i>
-                </button>
-            `;
-        }
-    }
-
-    // Pagination functions
-    function updatePagination() {
-        const totalItems = filteredCategoriesData.length;
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-        const paginationContainer = document.getElementById('paginationControls');
-        const paginationInfo = document.getElementById('paginationInfo');
-
-        if (totalPages <= 1) {
-            if (paginationContainer) paginationContainer.style.display = 'none';
-            return;
-        }
-
-        if (paginationContainer) paginationContainer.style.display = 'flex';
-
-        // Update pagination info
-        const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
-        const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-
-        if (paginationInfo) {
-            paginationInfo.textContent = `Showing ${startItem} - ${endItem} of ${totalItems} entries`;
-        }
-
-        generatePaginationControls(totalPages);
-    }
-
-    function generatePaginationControls(totalPages) {
-        const paginationList = document.getElementById('paginationControls');
-        if (!paginationList) return;
-
-        paginationList.innerHTML = '';
-
-        // Previous button
-        const prevLi = document.createElement('li');
-        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-        prevLi.innerHTML = `
-            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
-                <i class="ti ti-chevron-left"></i>
-            </a>
-        `;
-        paginationList.appendChild(prevLi);
-
-        // Page numbers
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, currentPage + 2);
-
-        for (let i = startPage; i <= endPage; i++) {
-            const pageLi = document.createElement('li');
-            pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
-            pageLi.innerHTML = `
-                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
-            `;
-            paginationList.appendChild(pageLi);
-        }
-
-        // Next button
-        const nextLi = document.createElement('li');
-        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-        nextLi.innerHTML = `
-            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
-                <i class="ti ti-chevron-right"></i>
-            </a>
-        `;
-        paginationList.appendChild(nextLi);
-    }
-
-    function changePage(page) {
-        const totalPages = Math.ceil(filteredCategoriesData.length / itemsPerPage);
-
-        if (page < 1 || page > totalPages || page === currentPage) {
-            return;
-        }
-
-        currentPage = page;
-        displayCategoriesTable();
-        displayCategoriesCards();
-        updatePagination();
-    }
-
-    // Clear all filters
-    function clearAllFilters() {
-        console.log('Clearing all filters...');
-
-        activeFilters.forEach((filter, key) => {
-            if (filter.element) {
-                filter.element.checked = false;
-            }
-        });
-
-        activeFilters.clear();
-
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.value = '';
-        }
-
-        currentViewMode = 'active';
-        loadCategoryData(false);
-
-        updateFilterBadge();
-        updateActiveFiltersDisplay();
-    }
-
-    // Display categories in card view
-    function displayCategoriesCards() {
-        const cardContainer = document.getElementById('categoryCardContainer');
-        if (!cardContainer) return;
-
-        cardContainer.innerHTML = '';
-
-        if (filteredCategoriesData.length === 0) {
-            cardContainer.innerHTML = `
-                <div class="col-12 text-center py-5">
-                    <div class="text-muted">
-                        <i class="ti ti-search f-20 mb-2"></i>
-                        <p class="mb-0">Tidak ada kategori yang ditemukan</p>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        // Calculate pagination
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const paginatedData = filteredCategoriesData.slice(startIndex, endIndex);
-
-        paginatedData.forEach((category) => {
-            const cardCol = document.createElement('div');
-            cardCol.className = 'col-lg-4 col-md-6 mb-4';
-
-            cardCol.innerHTML = `
-                <div class="card category-card h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="avtar avtar-s bg-light-${category.type === 'product' ? 'primary' : 'info'} me-3">
-                                <i class="ti ti-${category.type === 'product' ? 'category' : 'plus'} f-16"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0 fw-semibold">${category.name}</h6>
-                                <small class="text-muted">ID: ${category.id.substring(0, 8)}...</small>
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="badge bg-light-${category.type === 'product' ? 'primary' : 'info'} text-${category.type === 'product' ? 'primary' : 'info'}">
-                                ${category.type === 'product' ? 'Produk' : 'Topping'}
-                            </span>
-                            <span class="badge bg-light-${category.is_active ? 'success' : 'danger'} text-${category.is_active ? 'success' : 'danger'}">
-                                ${category.is_active ? 'Aktif' : 'Dihapus'}
-                            </span>
-                        </div>
-                        
-                        <div class="text-muted mb-3">
-                            <small class="d-block">Dibuat: ${new Date(category.created_at).toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            })}</small>
-                        </div>
-                        
-                        <div class="d-flex gap-2">
-                            ${renderActionButtons(category)}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            cardContainer.appendChild(cardCol);
-        });
-    }
-
-    // Show form (placeholder - to be implemented)
-    function showForm(pageTitle, cardTitle, data = null) {
-        alert('Form untuk ' + pageTitle + ' akan diimplementasikan');
-    }
-
-    // Delete category (placeholder)
-    function deleteCategory(categoryId, categoryName) {
-        if (confirm('Hapus kategori "' + categoryName + '"?')) {
-            alert('Hapus kategori akan diimplementasikan');
-        }
-    }
-
-    // Restore category (placeholder)
-    function restoreCategory(categoryId, categoryName) {
-        if (confirm('Pulihkan kategori "' + categoryName + '"?')) {
-            alert('Pulihkan kategori akan diimplementasikan');
-        }
-    }
-
-    // Permanent delete category (placeholder)
-    function permanentDeleteCategory(categoryId, categoryName) {
-        if (confirm('HAPUS PERMANEN kategori "' + categoryName + '"? Tindakan ini tidak dapat dibatalkan!')) {
-            alert('Hapus permanen akan diimplementasikan');
-        }
-    }
-
-    // Utility functions
-    function showSuccess(message) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: message,
-                timer: 3000,
-                showConfirmButton: false
-            });
-        } else {
-            alert(message);
-        }
-    }
-
-    function showError(message) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                text: message
-            });
-        } else {
-            alert(message);
-        }
-    }
-</script>
+<script src="assets/js/kategori-api.js"></script>
