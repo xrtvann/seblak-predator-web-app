@@ -155,9 +155,11 @@ function hasPageAccess($page, $user = null)
     $page_permissions = [
         'dashboard' => ['owner', 'admin'],          // Only owner and admin can access dashboard
         'menu' => ['owner', 'admin'],               // Only owner and admin can manage menu
+        'topping' => ['owner', 'admin'],            // Only owner and admin can manage topping
         'kategori' => ['owner', 'admin'],           // Only owner and admin can manage categories
         'transaksi' => ['owner', 'admin'],          // Only owner and admin can view transactions
-        'user' => ['owner']                         // Only owner can manage users
+        'user' => ['owner'],                        // Only owner can manage users
+        'role' => ['owner']                         // Only owner can manage roles
     ];
 
     // Check if page has defined permissions
@@ -200,9 +202,11 @@ function getAccessiblePages($user = null)
     $page_permissions = [
         'dashboard' => ['owner', 'admin'],
         'menu' => ['owner', 'admin'],
+        'topping' => ['owner', 'admin'],
         'kategori' => ['owner', 'admin'],
         'transaksi' => ['owner', 'admin'],
-        'user' => ['owner']
+        'user' => ['owner'],
+        'role' => ['owner']
     ];
 
     foreach ($page_permissions as $page => $allowed_roles) {

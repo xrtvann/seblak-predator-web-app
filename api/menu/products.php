@@ -65,14 +65,16 @@ function getAllProducts()
 
         if (isset($_GET['is_topping'])) {
             $whereConditions[] = "p.is_topping = ?";
-            $params[] = $_GET['is_topping'] === 'true' ? 1 : 0;
+            $is_topping_value = ($_GET['is_topping'] === 'true' || $_GET['is_topping'] === '1' || $_GET['is_topping'] === 1) ? 1 : 0;
+            $params[] = $is_topping_value;
             $types .= "i";
         }
 
         // Optional is_active filter (now as parameter instead of default)
         if (isset($_GET['is_active'])) {
             $whereConditions[] = "p.is_active = ?";
-            $params[] = $_GET['is_active'] === 'true' ? 1 : 0;
+            $is_active_value = ($_GET['is_active'] === 'true' || $_GET['is_active'] === '1' || $_GET['is_active'] === 1) ? 1 : 0;
+            $params[] = $is_active_value;
             $types .= "i";
         }
 

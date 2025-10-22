@@ -4,14 +4,14 @@
         <div class="row align-items-center">
             <div class="col">
                 <div class="page-header-title">
-                    <h5 class="m-b-10" id="pageTitleText">Menu</h5>
+                    <h5 class="m-b-10" id="pageTitleText">Topping</h5>
                 </div>
             </div>
             <div class="col-auto">
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="index.php">Home</a></li>
                     <li class="breadcrumb-item"><a href="javascript: void(0)">Produk</a></li>
-                    <li class="breadcrumb-item" aria-current="page" id="breadcrumbText">Menu</li>
+                    <li class="breadcrumb-item" aria-current="page" id="breadcrumbText">Topping</li>
                 </ul>
             </div>
         </div>
@@ -27,8 +27,9 @@
             <div class="card-header">
                 <div class="row align-items-center">
                     <div class="col">
-                        <h5 id="cardTitleText">Data Menu</h5>
-                        <p class="text-muted mb-0 d-none" id="cardSubtitleText">Isi form di bawah untuk menambahkan menu
+                        <h5 id="cardTitleText">Data Topping</h5>
+                        <p class="text-muted mb-0 d-none" id="cardSubtitleText">Isi form di bawah untuk menambahkan
+                            topping
                             baru</p>
                     </div>
                     <div class="col-auto">
@@ -52,9 +53,9 @@
                             </ul>
 
                             <!-- Action Buttons -->
-                            <button type="button" class="btn btn-primary d-flex" id="btnTambahMenu"
+                            <button type="button" class="btn btn-warning d-flex" id="btnTambahMenu"
                                 onclick="showFormTambah()">
-                                <i class="ti ti-plus me-2"></i> Tambah Menu
+                                <i class="ti ti-plus me-2"></i> Tambah Topping
                             </button>
                             <button type="button" class="btn btn-secondary d-none" id="btnKembali"
                                 onclick="showDataMenu()">
@@ -184,6 +185,7 @@
     let activeFilters = new Map(); // Modern filter storage
     let currentSort = 'created_at_desc';
     let currentViewMode = 'active'; // Track if showing active or deleted items
+    let currentTypeFilter = 'all'; // Track product type filter: 'all', 'product', 'topping'
 
     // Filter Dropdown Management
     function toggleFilterDropdown() {
@@ -330,11 +332,11 @@
         if (container && categories.length > 0) {
             container.innerHTML = '';
 
-            // Filter only product categories
-            const productCategories = categories.filter(cat => cat.type === 'product');
-            console.log('Filtered product categories:', productCategories.length);
+            // Filter only topping categories
+            const toppingCategories = categories.filter(cat => cat.type === 'topping');
+            console.log('Filtered topping categories:', toppingCategories.length);
 
-            productCategories.forEach(category => {
+            toppingCategories.forEach(category => {
                 console.log('Adding category filter:', category.name, category.id);
                 const option = document.createElement('label');
                 option.className = 'filter-option';
@@ -544,12 +546,12 @@
     // Load menu data from API
     async function loadMenuData(showDeleted = false) {
         try {
-            // Build URL with is_active parameter and filter for products only (not toppings)
+            // Build URL with is_active parameter and filter for toppings only
             let url = 'api/menu/products.php';
             if (!showDeleted) {
-                url += '?is_active=true&is_topping=0';
+                url += '?is_active=true&is_topping=1';
             } else {
-                url += '?is_active=false&is_topping=0';
+                url += '?is_active=false&is_topping=1';
             }
 
             const response = await fetch(url);
@@ -558,8 +560,8 @@
             if (result.success) {
                 displayMenuData(result.data, showDeleted);
             } else {
-                console.error('Failed to load menu data:', result.message);
-                showNotification('Error loading menu data: ' + result.message, 'error');
+                console.error('Failed to load topping data:', result.message);
+                showNotification('Error loading topping data: ' + result.message, 'error');
             }
         } catch (error) {
             console.error('Error:', error);
@@ -567,16 +569,16 @@
         }
     }
 
-    // Show data menu view
+    // Show data topping view
     function showDataMenu() {
         console.log('showDataMenu called');
         const mainContent = document.getElementById('mainContentArea');
         console.log('Main content element:', mainContent);
 
         // Update header
-        document.getElementById('pageTitleText').textContent = 'Menu';
-        document.getElementById('breadcrumbText').textContent = 'Menu';
-        document.getElementById('cardTitleText').textContent = 'Data Menu';
+        document.getElementById('pageTitleText').textContent = 'Topping';
+        document.getElementById('breadcrumbText').textContent = 'Topping';
+        document.getElementById('cardTitleText').textContent = 'Data Topping';
         document.getElementById('cardSubtitleText').classList.add('d-none');
 
         // Toggle buttons
@@ -587,10 +589,10 @@
         // Set content
         mainContent.innerHTML = getDataMenuHTML();
 
-        // Populate category filter options
+        // Populate category filter options (only topping categories)
         populateCategoryFilterOptions();
 
-        // Reload data
+        // Reload data (only toppings)
         loadMenuData();
     }
 
@@ -609,7 +611,7 @@
 
     // Apply filters with modern system
     function applyFilters() {
-        // Start with all data (already filtered for products only by API)
+        // Start with all data (already filtered for toppings only from API)
         filteredMenuData = [...allMenuData];
 
         // Get search term
@@ -684,10 +686,10 @@
 
 
 
-    // Show form tambah menu
+    // Show form tambah topping
     function showFormTambah() {
         currentEditId = null;
-        showForm('Tambah Menu', 'Form Tambah Menu');
+        showForm('Tambah Topping', 'Form Tambah Topping');
     }
 
     // Show form edit menu
@@ -752,7 +754,7 @@
         // Update form title in the header
         const formTitle = document.getElementById('formTitle');
         if (formTitle) {
-            formTitle.textContent = data ? 'Edit Menu' : 'Tambah Menu Baru';
+            formTitle.textContent = data ? 'Edit Topping' : 'Tambah Topping Baru';
         }
 
         // Initialize form first (this loads categories)
@@ -768,9 +770,9 @@
     function getDataMenuHTML() {
         return `
             <!-- Info Alert -->
-            <div class="alert alert-primary alert-dismissible fade show mb-3" role="alert">
-                <i class="ti ti-soup me-2"></i>
-                <strong>Halaman Menu</strong> - Halaman ini khusus untuk mengelola produk seblak saja. Untuk topping, silakan ke halaman <a href="index.php?page=topping" class="alert-link">Topping</a>.
+            <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+                <i class="ti ti-meat me-2"></i>
+                <strong>Halaman Topping</strong> - Halaman ini khusus untuk mengelola topping saja.
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
 
@@ -788,7 +790,7 @@
                                 <div class="search-input-wrapper">
                                     <i class="ti ti-search search-icon"></i>
                                     <input type="text" class="form-control search-input" id="searchInput" 
-                                           placeholder="Search products..." onkeyup="applyFilters()"
+                                           placeholder="Search toppings..." onkeyup="applyFilters()"
                                            onchange="applyFilters()">
                                 </div>
                             </div>
@@ -871,7 +873,7 @@
                                     <tr class="column-headers">
                                         <th style="min-width: 50px;">#</th>
                                         <th style="min-width: 100px;">Gambar</th>
-                                        <th style="min-width: 200px;">Nama Menu</th>
+                                        <th style="min-width: 200px;">Nama Topping</th>
                                         <th style="min-width: 120px;">Kategori</th>
                                         <th style="min-width: 120px;">Harga</th>
                                         <th style="min-width: 100px;">Status</th>
@@ -994,8 +996,9 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Additional Settings Card - Hidden for product page -->
-                        <input type="hidden" id="isTopping" name="is_topping" value="0">
+
+                        <!-- Additional Settings Card - Hidden for topping page -->
+                        <input type="hidden" id="isTopping" name="is_topping" value="1">
                     </div>
 
                     <!-- Right Column - Preview -->
@@ -1083,7 +1086,7 @@
 
     // Display menu data
     function displayMenuData(menuData, showDeleted = false) {
-        allMenuData = menuData; // Store all data (already filtered for products only)
+        allMenuData = menuData; // Store all data (already filtered for toppings)
         filteredMenuData = [...allMenuData]; // Initialize filtered data
         currentPage = 1; // Reset to first page
         currentViewMode = showDeleted ? 'deleted' : 'active'; // Store current view mode
@@ -1099,7 +1102,7 @@
         tableBody.innerHTML = '';
 
         if (filteredMenuData.length === 0) {
-            const message = allMenuData.length === 0 ? 'Tidak ada data menu' : 'Tidak ada data yang sesuai dengan filter';
+            const message = allMenuData.length === 0 ? 'Tidak ada data topping' : 'Tidak ada data yang sesuai dengan filter';
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7" class="text-center">
@@ -1130,7 +1133,7 @@
                     <p class="text-muted f-12 mb-0">${item.description || ''}</p>
                 </td>
                 <td>
-                    <span class="badge bg-light-primary text-primary">
+                    <span class="badge bg-light-warning text-warning">
                         ${item.category_name}
                     </span>
                 </td>
@@ -1200,7 +1203,7 @@
                         <h6 class="card-title">${item.name}</h6>
                         <p class="card-text text-muted f-12 flex-grow-1">${item.description || 'No description'}</p>
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-light-primary text-primary">
+                            <span class="badge bg-light-warning text-warning">
                                 ${item.category_name}
                             </span>
                         </div>
@@ -1239,12 +1242,12 @@
         if (!select) return;
 
         // Clear existing options except first
-        select.innerHTML = '<option value="">Pilih Kategori Produk</option>';
+        select.innerHTML = '<option value="">Pilih Kategori Topping</option>';
 
-        // Filter only product categories
-        const productCategories = categories.filter(cat => cat.type === 'product');
+        // Filter only topping categories
+        const toppingCategories = categories.filter(cat => cat.type === 'topping');
 
-        productCategories.forEach(category => {
+        toppingCategories.forEach(category => {
             const option = document.createElement('option');
             option.value = category.id;
             option.textContent = category.name;

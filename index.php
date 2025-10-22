@@ -14,7 +14,7 @@ $auth_service->checkRememberMe();
 $current_user = getCurrentSessionUser();
 
 // Check if user is logged in for protected pages
-$protected_pages = ['dashboard', 'menu', 'kategori', 'transaksi', 'user'];
+$protected_pages = ['dashboard', 'menu', 'topping', 'kategori', 'transaksi', 'user', 'role'];
 $current_page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 
 // If user is not logged in and trying to access protected page, redirect to login
@@ -34,14 +34,16 @@ $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 $PageTitle = [
   'dashboard' => 'Dashboard',
   'menu' => 'Menu',
+  'topping' => 'Topping',
   'kategori' => 'Kategori',
   'transaksi' => 'Transaksi',
-  'user' => 'User'
+  'user' => 'User',
+  'role' => 'Role'
 ];
 $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
 
 // Validate page to prevent unauthorized access
-$allowed_pages = ['dashboard', 'menu', 'kategori', 'transaksi', 'user'];
+$allowed_pages = ['dashboard', 'menu', 'topping', 'kategori', 'transaksi', 'user', 'role'];
 if (!in_array($page, $allowed_pages)) {
   $page = 'dashboard';
 }
@@ -146,7 +148,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
             </li>
           <?php endif; ?>
 
-          <?php if (in_array('menu', $accessible_pages) || in_array('kategori', $accessible_pages)): ?>
+          <?php if (in_array('menu', $accessible_pages) || in_array('topping', $accessible_pages) || in_array('kategori', $accessible_pages)): ?>
             <li class="pc-item pc-caption">
               <label>Produk</label>
             </li>
@@ -157,6 +159,15 @@ if (isLoggedIn() && !canAccessPage($page)) {
               <a href="index.php?page=menu" class="pc-link">
                 <span class="pc-micon"><i class="ti ti-soup"></i></span>
                 <span class="pc-mtext">Menu</span>
+              </a>
+            </li>
+          <?php endif; ?>
+
+          <?php if (in_array('topping', $accessible_pages)): ?>
+            <li class="pc-item <?php echo ($page === 'topping') ? 'active' : ''; ?>">
+              <a href="index.php?page=topping" class="pc-link">
+                <span class="pc-micon"><i class="ti ti-meat"></i></span>
+                <span class="pc-mtext">Topping</span>
               </a>
             </li>
           <?php endif; ?>
@@ -182,14 +193,26 @@ if (isLoggedIn() && !canAccessPage($page)) {
             </li>
           <?php endif; ?>
 
-          <?php if (in_array('user', $accessible_pages)): ?>
+          <?php if (in_array('user', $accessible_pages) || in_array('role', $accessible_pages)): ?>
             <li class="pc-item pc-caption">
               <label>Manajemen User</label>
             </li>
+          <?php endif; ?>
+
+          <?php if (in_array('user', $accessible_pages)): ?>
             <li class="pc-item <?php echo ($page === 'user') ? 'active' : ''; ?>">
               <a href="?page=user" class="pc-link">
                 <span class="pc-micon"><i class="ti ti-users"></i></span>
                 <span class="pc-mtext">User</span>
+              </a>
+            </li>
+          <?php endif; ?>
+
+          <?php if (in_array('role', $accessible_pages)): ?>
+            <li class="pc-item <?php echo ($page === 'role') ? 'active' : ''; ?>">
+              <a href="?page=role" class="pc-link">
+                <span class="pc-micon"><i class="ti ti-shield-lock"></i></span>
+                <span class="pc-mtext">Role</span>
               </a>
             </li>
           <?php endif; ?>
@@ -348,7 +371,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
       <!-- [ Main Content ] start -->
       <?php
       // Daftar halaman yang diizinkan
-      $allowed_pages = ['dashboard', 'menu', 'kategori', 'transaksi', 'user'];
+      $allowed_pages = ['dashboard', 'menu', 'topping', 'kategori', 'transaksi', 'user', 'role'];
 
       if (in_array($page, $allowed_pages)) {
         include("dist/dashboard/pages/" . $page . ".php");
