@@ -158,6 +158,7 @@ function hasPageAccess($page, $user = null)
         'topping' => ['owner', 'admin'],            // Only owner and admin can manage topping
         'kategori' => ['owner', 'admin'],           // Only owner and admin can manage categories
         'transaksi' => ['owner', 'admin'],          // Only owner and admin can view transactions
+        'expenses' => ['owner', 'admin'],           // Only owner and admin can manage expenses
         'user' => ['owner'],                        // Only owner can manage users
         'role' => ['owner']                         // Only owner can manage roles
     ];
@@ -205,6 +206,7 @@ function getAccessiblePages($user = null)
         'topping' => ['owner', 'admin'],
         'kategori' => ['owner', 'admin'],
         'transaksi' => ['owner', 'admin'],
+        'expenses' => ['owner', 'admin'],
         'user' => ['owner'],
         'role' => ['owner']
     ];

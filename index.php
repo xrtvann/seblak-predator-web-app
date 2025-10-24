@@ -14,7 +14,7 @@ $auth_service->checkRememberMe();
 $current_user = getCurrentSessionUser();
 
 // Check if user is logged in for protected pages
-$protected_pages = ['dashboard', 'menu', 'topping', 'kategori', 'transaksi', 'user', 'role'];
+$protected_pages = ['dashboard', 'menu', 'topping', 'kategori', 'transaksi', 'expenses', 'user', 'role'];
 $current_page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 
 // If user is not logged in and trying to access protected page, redirect to login
@@ -37,13 +37,14 @@ $PageTitle = [
   'topping' => 'Topping',
   'kategori' => 'Kategori',
   'transaksi' => 'Transaksi',
+  'expenses' => 'Pengeluaran',
   'user' => 'User',
   'role' => 'Role'
 ];
 $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
 
 // Validate page to prevent unauthorized access
-$allowed_pages = ['dashboard', 'menu', 'topping', 'kategori', 'transaksi', 'user', 'role'];
+$allowed_pages = ['dashboard', 'menu', 'topping', 'kategori', 'transaksi', 'expenses', 'user', 'role'];
 if (!in_array($page, $allowed_pages)) {
   $page = 'dashboard';
 }
@@ -181,7 +182,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
             </li>
           <?php endif; ?>
 
-          <?php if (in_array('transaksi', $accessible_pages)): ?>
+          <?php if (in_array('transaksi', $accessible_pages) || in_array('expenses', $accessible_pages)): ?>
             <li class="pc-item pc-caption">
               <label>Transaksi</label>
             </li>
@@ -191,6 +192,14 @@ if (isLoggedIn() && !canAccessPage($page)) {
                 <span class="pc-mtext">Transaksi</span>
               </a>
             </li>
+            <?php if (in_array('expenses', $accessible_pages)): ?>
+              <li class="pc-item <?php echo ($page === 'expenses') ? 'active' : ''; ?>">
+                <a href="?page=expenses" class="pc-link">
+                  <span class="pc-micon"><i class="ti ti-cash"></i></span>
+                  <span class="pc-mtext">Pengeluaran</span>
+                </a>
+              </li>
+            <?php endif; ?>
           <?php endif; ?>
 
           <?php if (in_array('user', $accessible_pages) || in_array('role', $accessible_pages)): ?>
@@ -371,7 +380,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
       <!-- [ Main Content ] start -->
       <?php
       // Daftar halaman yang diizinkan
-      $allowed_pages = ['dashboard', 'menu', 'topping', 'kategori', 'transaksi', 'user', 'role'];
+      $allowed_pages = ['dashboard', 'menu', 'topping', 'kategori', 'transaksi', 'expenses', 'user', 'role'];
 
       if (in_array($page, $allowed_pages)) {
         include("dist/dashboard/pages/" . $page . ".php");

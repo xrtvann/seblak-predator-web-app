@@ -110,3 +110,10 @@ typings/
 
 # TernJS port file
 .tern-port
+
+# PHP Composer dependencies
+vendor/
+
+# PHPUnit cache and output
+.phpunit.result.cache
+tests/_output/
