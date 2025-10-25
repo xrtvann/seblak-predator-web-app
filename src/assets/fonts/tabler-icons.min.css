@@ -1765,6 +1765,11 @@
 .ti-equal:before {
   content: '\ee87';
 }
+
+.ti-paper-bag:before {
+  content: '\f02f';
+}
+
 .ti-equal-not:before {
   content: '\ee86';
 }

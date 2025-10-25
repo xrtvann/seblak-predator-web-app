@@ -3,7 +3,7 @@
         'name' => 'seblak-predator/restaurant-management',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '8f06eeaf9526961ab31e53f3ce90e47057e613bf',
+        'reference' => 'a50aee497909ca55503bfb75abb417a42c458f4d',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -238,7 +238,7 @@
         'seblak-predator/restaurant-management' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '8f06eeaf9526961ab31e53f3ce90e47057e613bf',
+            'reference' => 'a50aee497909ca55503bfb75abb417a42c458f4d',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

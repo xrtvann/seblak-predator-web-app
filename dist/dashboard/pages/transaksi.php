@@ -454,18 +454,39 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         return `
             <div class="card">
                 <div class="card-body">
+                    <!-- Order Type Buttons -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Tipe Pesanan <span class="text-danger">*</span></label>
+                        <div class="d-flex align-items-center gap-3">
+                            <button type="button" class="d-flex justify-content-center btn btn-outline-primary order-type-btn active w-50" data-order-type="dine_in" onclick="changeOrderType('dine_in')">
+                                <i class="ti ti-table me-2"></i>Dine In
+                            </button>
+                            <button type="button" class="d-flex justify-content-center btn btn-outline-primary order-type-btn w-50" data-order-type="take_away" onclick="changeOrderType('take_away')">
+                                <i class="ti ti-caret-down me-2"></i>Take Away
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Nama Pelanggan <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="step1_customerName" placeholder="Masukkan nama pelanggan">
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">No. Meja</label>
+                        <div class="col-md-3 mb-3 dine-in-field">
+                            <label class="form-label">No. Meja <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="step1_tableNumber" placeholder="Contoh: 5">
+                        </div>
+                        <div class="col-md-3 mb-3 take-away-field d-none">
+                            <label class="form-label">Waktu Ambil</label>
+                            <input type="time" class="form-control" id="step1_pickupTime">
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label">No. Telepon</label>
                             <input type="text" class="form-control" id="step1_phone" placeholder="08123456789">
+                        </div>
+                        <div class="col-12 mb-3 take-away-field d-none">
+                            <label class="form-label">Alamat Pengiriman</label>
+                            <textarea class="form-control" id="step1_deliveryAddress" rows="2" placeholder="Alamat lengkap untuk pengiriman (opsional)"></textarea>
                         </div>
                         <div class="col-12 mb-3">
                             <label class="form-label">Catatan</label>
@@ -482,6 +503,48 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         document.getElementById('step1_tableNumber').value = currentOrder.table_number || '';
         document.getElementById('step1_phone').value = currentOrder.phone || '';
         document.getElementById('step1_notes').value = currentOrder.notes || '';
+
+        // Set order type if exists
+        if (currentOrder.order_type) {
+            const radio = document.querySelector(`input[name="orderType"][value="${currentOrder.order_type}"]`);
+            if (radio) {
+                radio.checked = true;
+                changeOrderType(currentOrder.order_type);
+            }
+        }
+
+        // Populate take away fields
+        document.getElementById('step1_pickupTime').value = currentOrder.pickup_time || '';
+        document.getElementById('step1_deliveryAddress').value = currentOrder.delivery_address || '';
+    }
+
+    // Change order type
+    function changeOrderType(orderType) {
+        const dineInFields = document.querySelectorAll('.dine-in-field');
+        const takeAwayFields = document.querySelectorAll('.take-away-field');
+        const buttons = document.querySelectorAll('.order-type-btn');
+
+        if (orderType === 'dine_in') {
+            // Show dine in fields, hide take away fields
+            dineInFields.forEach(field => field.classList.remove('d-none'));
+            takeAwayFields.forEach(field => field.classList.add('d-none'));
+        } else if (orderType === 'take_away') {
+            // Hide dine in fields, show take away fields
+            dineInFields.forEach(field => field.classList.add('d-none'));
+            takeAwayFields.forEach(field => field.classList.remove('d-none'));
+        }
+
+        // Update button active states
+        buttons.forEach(btn => {
+            if (btn.getAttribute('data-order-type') === orderType) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Store order type
+        currentOrder.order_type = orderType;
     }
 
     function validateStep1() {
@@ -492,11 +555,22 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             return false;
         }
 
+        // Validate table number for dine in
+        if (currentOrder.order_type === 'dine_in') {
+            const tableNumber = document.getElementById('step1_tableNumber').value.trim();
+            if (!tableNumber) {
+                showNotification('No. meja wajib diisi untuk dine in', 'error');
+                return false;
+            }
+        }
+
         // Save to currentOrder
         currentOrder.customer_name = name;
         currentOrder.table_number = document.getElementById('step1_tableNumber').value.trim();
         currentOrder.phone = document.getElementById('step1_phone').value.trim();
         currentOrder.notes = document.getElementById('step1_notes').value.trim();
+        currentOrder.pickup_time = document.getElementById('step1_pickupTime').value;
+        currentOrder.delivery_address = document.getElementById('step1_deliveryAddress').value.trim();
 
         return true;
     }
@@ -901,7 +975,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             const itemTotal = item.unit_price * item.quantity;
             subtotal += itemTotal;
             console.log(`  Item subtotal: ${itemTotal}`);
-            
+
             if (item.toppings && item.toppings.length > 0) {
                 item.toppings.forEach(t => {
                     const toppingTotal = t.unit_price * t.quantity;
@@ -1010,11 +1084,11 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
             console.log('API Response status:', response.status);
             console.log('API Response ok:', response.ok);
-            
+
             // Get response text first
             const responseText = await response.text();
             console.log('API Response text:', responseText);
-            
+
             // Try to parse as JSON
             let result;
             try {
@@ -1024,7 +1098,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 console.error('Response was:', responseText);
                 throw new Error('Invalid JSON response from server');
             }
-            
+
             console.log('API Response data:', result);
 
             if (result.success && result.snap_token) {
