@@ -19094,6 +19094,9 @@ pre[class*=language-]>code {
   font-size: 20px;
   color: #2689e2;
 }
+.pc-header .pc-head-link>span>i {
+  font-size: 20px;
+}
 
 .pc-header .pc-head-link>i.material-icons-two-tone {
   font-size: 24px;

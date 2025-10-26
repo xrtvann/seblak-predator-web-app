@@ -107,11 +107,11 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         <p class="text-muted mb-0 d-none" id="cardSubtitleText">Form transaksi baru</p>
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-primary" id="btnNewOrder" onclick="showNewOrderForm()">
-                            <i class="ti ti-plus"></i> Transaksi Baru
+                        <button class="d-flex btn btn-primary" id="btnNewOrder" onclick="showNewOrderForm()">
+                            <i class="ti ti-plus me-2"></i> Transaksi Baru
                         </button>
-                        <button class="btn btn-secondary d-none" id="btnBackToList" onclick="showOrderList()">
-                            <i class="ti ti-arrow-left"></i> Kembali
+                        <button class="d-flex btn btn-secondary d-none" id="btnBackToList" onclick="showOrderList()">
+                            <i class="ti ti-arrow-left me-2"></i> Kembali
                         </button>
                     </div>
                 </div>
@@ -458,11 +458,11 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                     <div class="mb-4">
                         <label class="form-label fw-bold">Tipe Pesanan <span class="text-danger">*</span></label>
                         <div class="d-flex align-items-center gap-3">
-                            <button type="button" class="d-flex justify-content-center btn btn-outline-primary order-type-btn active w-50" data-order-type="dine_in" onclick="changeOrderType('dine_in')">
-                                <i class="ti ti-table me-2"></i>Dine In
+                            <button type="button" class="d-flex justify-content-center btn btn-outline-danger order-type-btn active w-50" data-order-type="dine_in" onclick="changeOrderType('dine_in')">
+                                <i class="fas fa-utensils me-2"></i>Dine In
                             </button>
                             <button type="button" class="d-flex justify-content-center btn btn-outline-primary order-type-btn w-50" data-order-type="take_away" onclick="changeOrderType('take_away')">
-                                <i class="ti ti-caret-down me-2"></i>Take Away
+                                <i class="fas fa-shopping-bag me-2"></i>Take Away
                             </button>
                         </div>
                     </div>
@@ -1733,8 +1733,8 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                     <input type="date" class="form-control" id="filterDate" value="${new Date().toISOString().split('T')[0]}" onchange="loadOrders()">
                 </div>
                 <div class="col-md-2">
-                    <button class="btn btn-secondary w-100" onclick="loadOrders()">
-                        <i class="ti ti-refresh"></i> Refresh
+                    <button class="d-flex btn btn-secondary w-100" onclick="loadOrders()">
+                        <i class="ti ti-refresh me-2"></i> Refresh
                     </button>
                 </div>
             </div>
