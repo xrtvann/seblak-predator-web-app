@@ -283,10 +283,10 @@ function handlePost($koneksi, $current_user)
 
         // Insert order
         $insertOrderQuery = "INSERT INTO orders (
-            id, order_number, customer_name, table_number, phone, notes,
-            subtotal, tax, discount, total_amount, payment_method, 
+            id, order_number, customer_name, table_number, phone, notes, order_type,
+            subtotal, tax, discount, total_amount, payment_method,
             payment_status, order_status, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $orderStmt = mysqli_prepare($koneksi, $insertOrderQuery);
 
@@ -294,6 +294,7 @@ function handlePost($koneksi, $current_user)
         $tableNumber = $input['table_number'] ?? null;
         $phone = $input['phone'] ?? null;
         $notes = $input['notes'] ?? null;
+        $orderType = $input['order_type'] ?? 'dine_in';
         $paymentMethod = $input['payment_method'] ?? 'cash';
         $paymentStatus = $input['payment_status'] ?? 'pending';
         $orderStatus = 'pending';
@@ -301,13 +302,14 @@ function handlePost($koneksi, $current_user)
 
         mysqli_stmt_bind_param(
             $orderStmt,
-            "ssssssdddsssss",
+            "sssssssdddsssss",
             $orderId,
             $orderNumber,
             $customerName,
             $tableNumber,
             $phone,
             $notes,
+            $orderType,
             $subtotal,
             $tax,
             $discount,
@@ -436,6 +438,12 @@ function handlePut($koneksi)
     if (isset($input['notes'])) {
         $updateFields[] = "notes = ?";
         $params[] = $input['notes'];
+        $types .= 's';
+    }
+
+    if (isset($input['order_type'])) {
+        $updateFields[] = "order_type = ?";
+        $params[] = $input['order_type'];
         $types .= 's';
     }
 

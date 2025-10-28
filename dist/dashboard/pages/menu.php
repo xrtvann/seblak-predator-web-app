@@ -1332,24 +1332,19 @@
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
 
-            // Debug: Log what's in the form data
             console.log('Form data before processing:', data);
 
             // Handle image upload if file is selected
             const fileInput = document.getElementById('menuImageFile');
-            const hasFile = fileInput.getAttribute('data-has-file') === 'true';
-            const existingUrl = fileInput.getAttribute('data-uploaded-url');
-            const existingImage = fileInput.getAttribute('data-existing-image');
             const actualFileExists = fileInput.files && fileInput.files[0];
 
             console.log('File detection:', {
-                hasFile: hasFile,
-                existingUrl: existingUrl,
-                existingImage: existingImage,
                 actualFileExists: actualFileExists,
                 filesLength: fileInput.files ? fileInput.files.length : 0,
                 isEditMode: !!currentEditId
             });
+
+            let imageUrl = '';
 
             if (actualFileExists) {
                 console.log('Uploading new file:', fileInput.files[0].name);
@@ -1367,37 +1362,40 @@
                 console.log('Upload result:', uploadResult);
 
                 if (uploadResult.success) {
-                    data.image_url = uploadResult.data.relative_url;
-                    console.log('Set image_url to:', data.image_url);
+                    // Use the relative URL returned by upload API
+                    imageUrl = uploadResult.data.relative_url;
+                    console.log('Set image_url to:', imageUrl);
                 } else {
                     throw new Error('Gagal mengupload gambar: ' + uploadResult.message);
                 }
-            } else if (existingUrl) {
-                // Use existing uploaded URL (for edit mode)
-                data.image_url = existingUrl;
-                console.log('Using existing URL:', existingUrl);
-            } else if (currentEditId && existingImage) {
-                // Edit mode with existing image - keep the current image
-                data.image_url = existingImage;
-                console.log('Keeping existing image:', existingImage);
-            } else {
-                // No file uploaded and no existing image - set to empty string
-                data.image_url = '';
-                console.log('No image file, setting image_url to empty string');
+            } else if (currentEditId) {
+                // For edit mode, check if there's an existing image
+                const existingImage = fileInput.getAttribute('data-existing-image');
+                if (existingImage && existingImage !== '0' && existingImage !== 'null' && existingImage.trim() !== '') {
+                    imageUrl = existingImage;
+                    console.log('Keeping existing image:', existingImage);
+                }
             }
+
+            // Set the image_url in data
+            data.image_url = imageUrl;
 
             // Remove file input data as it's not needed in JSON
             delete data.image_file;
 
-            // Debug: Log final data being sent
             console.log('Final data being sent to API:', data);
 
-            // Convert checkbox to boolean
-            data.is_topping = formData.has('is_topping');
+            // Ensure required fields are properly formatted
+            data.is_topping = false; // Always false for menu page (products only)
             data.is_active = true; // Default to active for new menus
 
             // Convert price to number
-            data.price = parseFloat(data.price);
+            data.price = parseFloat(data.price) || 0;
+
+            // Validate required fields
+            if (!data.name || !data.category_id || !data.price) {
+                throw new Error('Nama menu, kategori, dan harga wajib diisi');
+            }
 
             let url = 'api/menu/products.php';
             let method = 'POST';
@@ -1407,6 +1405,8 @@
                 method = 'PUT';
             }
 
+            console.log('Making API request to:', url, 'with method:', method);
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -1415,7 +1415,10 @@
                 body: JSON.stringify(data)
             });
 
+            console.log('API response status:', response.status);
+
             const result = await response.json();
+            console.log('API response:', result);
 
             // Hide loading
             hideAlert();
@@ -1425,13 +1428,13 @@
                     showDataMenu(); // Return to data view after user closes success alert
                 });
             } else {
-                showError('Gagal!', result.message);
+                showError('Gagal!', result.message || 'Terjadi kesalahan saat menyimpan data');
             }
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error in handleFormSubmit:', error);
             hideAlert();
-            showError('Kesalahan!', 'Terjadi kesalahan saat menghubungi server');
+            showError('Kesalahan!', error.message || 'Terjadi kesalahan saat menghubungi server');
         }
     }
 

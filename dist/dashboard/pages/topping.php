@@ -943,10 +943,10 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="menuName" class="form-label">Nama Menu <span class="text-danger">*</span></label>
+                                            <label for="menuName" class="form-label">Nama Topping <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="menuName" name="name" required
-                                                   placeholder="Masukkan nama menu">
-                                            <div class="form-text">Nama menu akan tampil di aplikasi</div>
+                                                   placeholder="Masukkan nama topping">
+                                            <div class="form-text">Nama topping akan tampil di aplikasi</div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">

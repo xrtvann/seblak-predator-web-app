@@ -139,6 +139,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     let allOrders = [];
     let allProducts = [];
     let allToppings = [];
+    let selectedItemId = '';
     let currentOrder = {
         customer_name: '',
         table_number: '',
@@ -595,6 +596,17 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         `;
     }
 
+    // Helper function to get image HTML
+    function getImageHTML(imageUrl, name, size) {
+        if (imageUrl) {
+            return `<img src="${imageUrl}" alt="${name}" class="img-fluid rounded" style="width: 100%; height: 150px; object-fit: cover;">`;
+        } else {
+            return `<div class="bg-light d-flex align-items-center justify-content-center rounded" style="width: 100%; height: 150px;">
+                        <i class="ti ti-soup" style="font-size: 48px; color: #6c757d;"></i>
+                    </div>`;
+        }
+    }
+
     function renderProducts() {
         const container = document.getElementById('productsList');
 
@@ -604,27 +616,40 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         }
 
         container.innerHTML = allProducts.map(product => `
-            <div class="col-md-4 mb-3 product-item">
-                <div class="card h-100 product-card ${isProductSelected(product.id) ? 'border-primary' : ''}" style="cursor: pointer;" onclick="toggleProduct('${product.id}')">
-                    <div class="card-body">
-                        <div class="d-flex align-items-start">
-                            ${product.image_url ?
-                `<img src="${product.image_url}" alt="${product.name}" class="img-thumbnail me-3" style="width: 70px; height: 70px; object-fit: cover;">` :
-                `<div class="bg-light d-flex align-items-center justify-content-center me-3" style="width: 70px; height: 70px; border-radius: 8px;">
-                                    <i class="ti ti-soup" style="font-size: 32px; color: #6c757d;"></i>
-                                </div>`
+            <div class="col-xl-3 col-md-6 col-sm-12 mb-3 product-item">
+                <div class="card h-100 menu-card ${isProductSelected(product.id) ? 'border-primary' : ''}" style="cursor: pointer;" onclick="toggleProduct('${product.id}')">
+                    <div class="card-image-container position-relative" style="height: 150px; overflow: hidden;">
+                        ${getImageHTML(product.image_url, product.name, 'medium')}
+                        <!-- Status badge -->
+                        <div class="position-absolute top-0 end-0 p-2">
+                            ${isProductSelected(product.id) ?
+                '<span class="badge bg-primary">Dipilih</span>' :
+                '<span class="badge bg-light text-dark">Tersedia</span>'
             }
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">${product.name}</h6>
-                                <p class="text-success mb-2"><strong>Rp ${formatPrice(product.price)}</strong></p>
-                                ${isProductSelected(product.id) ?
-                `<div class="input-group input-group-sm" onclick="event.stopPropagation()">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="updateProductQty('${product.id}', -1)">-</button>
-                                        <input type="number" class="form-control text-center" value="${getProductQty(product.id)}" readonly style="max-width: 60px;">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="updateProductQty('${product.id}', 1)">+</button>
-                                    </div>` :
-                '<span class="badge bg-light-primary text-primary">Klik untuk pilih</span>'
-            }
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title mb-1">${product.name}</h6>
+                        <p class="card-text text-muted f-12 flex-grow-1">${product.description || 'Deskripsi produk seblak'}</p>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-light-primary text-primary">Seblak</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 text-success">Rp ${formatPrice(product.price)}</h5>
+                            <div class="btn-group" role="group">
+                                ${isProductSelected(product.id) ? `
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateProductQty('${product.id}', -1); event.stopPropagation();" title="Kurangi">
+                                        <i class="ti ti-minus"></i>
+                                    </button>
+                                    <span class="btn btn-sm btn-primary">${getProductQty(product.id)}</span>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateProductQty('${product.id}', 1); event.stopPropagation();" title="Tambah">
+                                        <i class="ti ti-plus"></i>
+                                    </button>
+                                ` : `
+                                    <button type="button" class="btn btn-sm btn-outline-primary" title="Pilih Produk">
+                                        <i class="ti ti-plus"></i>
+                                    </button>
+                                `}
                             </div>
                         </div>
                     </div>
@@ -695,13 +720,26 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     // STEP 3: Pilih Topping
     function getStep3HTML() {
         return `
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-header">
                     <h6 class="mb-0">Produk yang Dipilih</h6>
-                    <small class="text-muted">Klik produk untuk menambah topping</small>
+                    <small class="text-muted">Klik "Tambah Topping" pada produk untuk menambah topping</small>
                 </div>
                 <div class="card-body">
                     <div id="selectedProductsList"></div>
+                </div>
+            </div>
+
+            <!-- Toppings Selection Section -->
+            <div class="card d-none" id="toppingsSection">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Pilih Topping untuk: <span id="selectedProductName"></span></h6>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="hideToppingsSection()">
+                        <i class="ti ti-x"></i> Selesai
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="toppingsGrid"></div>
                 </div>
             </div>
         `;
@@ -718,7 +756,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                             <h6 class="mb-1">${item.product_name}</h6>
                             <small class="text-muted">Rp ${formatPrice(item.unit_price)} x ${item.quantity}</small>
                         </div>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="showToppingModal('${item.id}')">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="showToppingsSection('${item.id}')">
                             <i class="ti ti-plus"></i> Tambah Topping
                         </button>
                     </div>
@@ -746,30 +784,44 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         `).join('');
     }
 
-    function showToppingModal(itemId) {
+    function showToppingsSection(itemId) {
         const item = currentOrder.items.find(i => i.id === itemId);
         if (!item) return;
 
-        const toppingsHTML = allToppings.map(topping => `
-            <div class="col-md-6 mb-2">
-                <div class="card topping-card" style="cursor: pointer;" onclick="addToppingToItem('${itemId}', '${topping.id}')">
-                    <div class="card-body py-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>${topping.name}</span>
-                            <strong class="text-success">Rp ${formatPrice(topping.price)}</strong>
+        // Update selected product name
+        document.getElementById('selectedProductName').textContent = item.product_name;
+
+        // Render toppings grid
+        const toppingsGrid = document.getElementById('toppingsGrid');
+        toppingsGrid.innerHTML = allToppings.map(topping => `
+            <div class="col-xl-3 col-md-6 col-sm-12 mb-3">
+                <div class="card h-100 menu-card topping-card" style="cursor: pointer;" onclick="addToppingToItem('${itemId}', '${topping.id}')">
+                    <div class="card-image-container position-relative" style="height: 120px; overflow: hidden;">
+                        ${topping.image_url ?
+                `<img src="${topping.image_url}" alt="${topping.name}" class="img-fluid rounded" style="width: 100%; height: 100%; object-fit: cover;">` :
+                `<div class="bg-light d-flex align-items-center justify-content-center rounded h-100">
+                                <i class="ti ti-plus" style="font-size: 32px; color: #6c757d;"></i>
+                            </div>`
+            }
+                    </div>
+                    <div class="card-body d-flex flex-column text-center">
+                        <h6 class="card-title mb-2">${topping.name}</h6>
+                        <div class="mt-auto">
+                            <span class="badge bg-light-primary text-primary mb-2">Topping</span>
                         </div>
+                        <h6 class="mb-0 text-success">Rp ${formatPrice(topping.price)}</h6>
                     </div>
                 </div>
             </div>
         `).join('');
 
-        Swal.fire({
-            title: `Pilih Topping untuk ${item.product_name}`,
-            html: `<div class="row">${toppingsHTML}</div>`,
-            width: '600px',
-            showConfirmButton: false,
-            showCloseButton: true
-        });
+        // Show toppings section
+        document.getElementById('toppingsSection').classList.remove('d-none');
+        document.getElementById('toppingsSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function hideToppingsSection() {
+        document.getElementById('toppingsSection').classList.add('d-none');
     }
 
     function addToppingToItem(itemId, toppingId) {
