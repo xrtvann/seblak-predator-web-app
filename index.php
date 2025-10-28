@@ -375,7 +375,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
 
 
   <!-- [ Main Content ] start -->
-  <div class="pc-container">
+  <div class="pc-container ">
     <div class="pc-content">
       <!-- [ Main Content ] start -->
       <?php
