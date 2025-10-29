@@ -717,145 +717,517 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         return true;
     }
 
-    // STEP 3: Pilih Topping
-    function getStep3HTML() {
-        return `
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">Produk yang Dipilih</h6>
-                    <small class="text-muted">Klik "Tambah Topping" pada produk untuk menambah topping</small>
-                </div>
-                <div class="card-body">
-                    <div id="selectedProductsList"></div>
-                </div>
-            </div>
+            // STEP 3: Pilih Topping
 
-            <!-- Toppings Selection Section -->
-            <div class="card d-none" id="toppingsSection">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">Pilih Topping untuk: <span id="selectedProductName"></span></h6>
-                    <button type="button" class="btn btn-sm btn-secondary" onclick="hideToppingsSection()">
-                        <i class="ti ti-x"></i> Selesai
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="row" id="toppingsGrid"></div>
-                </div>
-            </div>
-        `;
-    }
+            function getStep3HTML() {
 
-    function renderSelectedProducts() {
-        const container = document.getElementById('selectedProductsList');
+                return `
 
-        container.innerHTML = currentOrder.items.map(item => `
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h6 class="mb-1">${item.product_name}</h6>
-                            <small class="text-muted">Rp ${formatPrice(item.unit_price)} x ${item.quantity}</small>
+                    <div class="card mb-3">
+
+                        <div class="card-header">
+
+                            <h6 class="mb-0">Produk yang Dipilih</h6>
+
+                            <small class="text-muted">Klik "Tambah Topping" pada produk untuk menambah topping</small>
+
                         </div>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="showToppingsSection('${item.id}')">
-                            <i class="ti ti-plus"></i> Tambah Topping
-                        </button>
+
+                        <div class="card-body">
+
+                            <div id="selectedProductsList"></div>
+
+                        </div>
+
                     </div>
-                    
-                    ${item.toppings.length > 0 ? `
-                        <div class="border-top pt-2">
-                            <small class="text-muted d-block mb-2"><strong>Topping:</strong></small>
-                            ${item.toppings.map(topping => `
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div>
-                                        <span>${topping.topping_name}</span>
-                                        <small class="text-muted"> (${topping.quantity}x Rp ${formatPrice(topping.unit_price)})</small>
-                                    </div>
-                                    <div>
-                                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeTopping('${item.id}', '${topping.id}')">
-                                            <i class="ti ti-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : '<p class="text-muted mb-0"><small>Belum ada topping</small></p>'}
-                </div>
-            </div>
-        `).join('');
-    }
 
-    function showToppingsSection(itemId) {
-        const item = currentOrder.items.find(i => i.id === itemId);
-        if (!item) return;
+                `;
 
-        // Update selected product name
-        document.getElementById('selectedProductName').textContent = item.product_name;
-
-        // Render toppings grid
-        const toppingsGrid = document.getElementById('toppingsGrid');
-        toppingsGrid.innerHTML = allToppings.map(topping => `
-            <div class="col-xl-3 col-md-6 col-sm-12 mb-3">
-                <div class="card h-100 menu-card topping-card" style="cursor: pointer;" onclick="addToppingToItem('${itemId}', '${topping.id}')">
-                    <div class="card-image-container position-relative" style="height: 120px; overflow: hidden;">
-                        ${topping.image_url ?
-                `<img src="${topping.image_url}" alt="${topping.name}" class="img-fluid rounded" style="width: 100%; height: 100%; object-fit: cover;">` :
-                `<div class="bg-light d-flex align-items-center justify-content-center rounded h-100">
-                                <i class="ti ti-plus" style="font-size: 32px; color: #6c757d;"></i>
-                            </div>`
             }
-                    </div>
-                    <div class="card-body d-flex flex-column text-center">
-                        <h6 class="card-title mb-2">${topping.name}</h6>
-                        <div class="mt-auto">
-                            <span class="badge bg-light-primary text-primary mb-2">Topping</span>
+
+        
+
+                function renderSelectedProducts() {
+
+        
+
+                    const container = document.getElementById('selectedProductsList');
+
+        
+
+            
+
+        
+
+                    if (currentOrder.items.length === 0) {
+
+        
+
+                        container.innerHTML = `
+
+        
+
+                            <div class="text-center">
+
+        
+
+                                <p class="text-muted">Belum ada produk yang dipilih.</p>
+
+        
+
+                                <button class="btn btn-primary" onclick="renderStep(2)">
+
+        
+
+                                    <i class="ti ti-arrow-left"></i> Kembali ke Pilih Seblak
+
+        
+
+                                </button>
+
+        
+
+                            </div>
+
+        
+
+                        `;
+
+        
+
+                        return;
+
+        
+
+                    }
+
+        
+
+            
+
+        
+
+                    container.innerHTML = currentOrder.items.map(item => {
+
+                        const product = allProducts.find(p => p.id === item.product_id);
+
+                        
+
+                        let imageHTML;
+
+                        if (product && product.image_url) {
+
+                            imageHTML = `<img src="${product.image_url}" class="img-fluid rounded-start" alt="${item.product_name}" style="height: 100%; object-fit: cover;">`;
+
+                        } else {
+
+                            imageHTML = `<div class="bg-light d-flex align-items-center justify-content-center rounded-start" style="height: 100%; min-height: 150px;">
+
+                                            <i class="ti ti-soup" style="font-size: 48px; color: #6c757d;"></i>
+
+                                        </div>`;
+
+                        }
+
+
+
+                        const toppingsHTML = item.toppings.map(topping => `
+
+                            <div class="d-flex justify-content-between align-items-center">
+
+                                <small>+ ${topping.topping_name} (${topping.quantity}x)</small>
+
+                                <small class="text-success">Rp ${formatPrice(topping.unit_price * topping.quantity)}</small>
+
+                            </div>
+
+                        `).join('');
+
+
+
+                        return `
+
+                            <div class="card mb-3 border-0 shadow-sm">
+
+                                <div class="row g-0">
+
+                                    <div class="col-md-3">
+
+                                        ${imageHTML}
+
+                                    </div>
+
+                                    <div class="col-md-9">
+
+                                        <div class="card-body">
+
+                                            <div class="d-flex justify-content-between align-items-start">
+
+                                                <div>
+
+                                                    <h5 class="card-title mb-1">${item.product_name}</h5>
+
+                                                    <p class="card-text text-muted">Rp ${formatPrice(item.unit_price)} x ${item.quantity}</p>
+
+                                                </div>
+
+                                                <button type="button" class="btn btn-primary" onclick="showToppingsSection('${item.id}')">
+
+                                                    <i class="ti ti-plus"></i> Topping
+
+                                                </button>
+
+                                            </div>
+
+                                            <hr>
+
+                                            <div class="toppings-summary">
+
+                                                ${item.toppings.length > 0 ? toppingsHTML : '<small class="text-muted">Belum ada topping yang ditambahkan.</small>'}
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        `;
+
+                    }).join('');
+
+                }
+
+        
+
+            function showToppingsSection(itemId) {
+
+                const item = currentOrder.items.find(i => i.id === itemId);
+
+                if (!item) return;
+
+        
+
+                // Get unique topping categories
+
+                const toppingCategories = [...new Set(allToppings.map(t => t.category_name))];
+
+        
+
+                Swal.fire({
+
+                    title: `Pilih Topping untuk ${item.product_name}`,
+
+                    html: `
+
+                        <div class="container-fluid">
+
+                            <div class="row mb-3">
+
+                                <div class="col-md-8">
+
+                                    <input type="text" id="toppingSearch" class="form-control" placeholder="Cari topping...">
+
+                                </div>
+
+                                <div class="col-md-4">
+
+                                    <select id="toppingCategoryFilter" class="form-select">
+
+                                        <option value="">Semua Kategori</option>
+
+                                        ${toppingCategories.map(category => `<option value="${category}">${category}</option>`).join('')}
+
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+                            <div class="row" id="toppingsGrid" style="max-height: 400px; overflow-y: auto;">
+
+                                <!-- Toppings will be rendered here -->
+
+                            </div>
+
                         </div>
-                        <h6 class="mb-0 text-success">Rp ${formatPrice(topping.price)}</h6>
+
+                    `,
+
+                    width: '80%',
+
+                    showConfirmButton: false,
+
+                    showCloseButton: true,
+
+                    didOpen: () => {
+
+                        renderToppingsGrid(itemId);
+
+                        document.getElementById('toppingSearch').addEventListener('keyup', () => renderToppingsGrid(itemId));
+
+                        document.getElementById('toppingCategoryFilter').addEventListener('change', () => renderToppingsGrid(itemId));
+
+                    }
+
+                });
+
+            }
+
+        
+
+            function renderToppingsGrid(itemId) {
+
+                const search = document.getElementById('toppingSearch').value.toLowerCase();
+
+                const category = document.getElementById('toppingCategoryFilter').value;
+
+                const toppingsGrid = document.getElementById('toppingsGrid');
+
+        
+
+                const filteredToppings = allToppings.filter(topping => {
+
+                    const nameMatch = topping.name.toLowerCase().includes(search);
+
+                    const categoryMatch = category ? topping.category_name === category : true;
+
+                    return nameMatch && categoryMatch;
+
+                });
+
+        
+
+                toppingsGrid.innerHTML = filteredToppings.map(topping => `
+
+                    <div class="col-xl-3 col-md-6 col-sm-12 mb-3 topping-item">
+
+                        <div class="card h-100 menu-card ${isToppingSelected(itemId, topping.id) ? 'border-primary' : ''}" style="cursor: pointer;" onclick="toggleTopping('${itemId}', '${topping.id}')">
+
+                            <div class="card-image-container position-relative" style="height: 150px; overflow: hidden;">
+
+                                ${getImageHTML(topping.image_url, topping.name, 'medium')}
+
+                                <div class="position-absolute top-0 end-0 p-2">
+
+                                    ${isToppingSelected(itemId, topping.id) ?
+
+                                        '<span class="badge bg-primary">Dipilih</span>' :
+
+                                        '<span class="badge bg-light text-dark">Tersedia</span>'
+
+                                    }
+
+                                </div>
+
+                            </div>
+
+                            <div class="card-body d-flex flex-column">
+
+                                <h6 class="card-title mb-1">${topping.name}</h6>
+
+                                <p class="card-text text-muted f-12 flex-grow-1">${topping.description || 'Deskripsi topping'}</p>
+
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+
+                                    <span class="badge bg-light-info text-info">${topping.category_name || 'Topping'}</span>
+
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+
+                                    <h5 class="mb-0 text-success">Rp ${formatPrice(topping.price)}</h5>
+
+                                    <div class="btn-group" role="group">
+
+                                        ${isToppingSelected(itemId, topping.id) ? `
+
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateToppingQty('${itemId}', '${topping.id}', -1); event.stopPropagation();" title="Kurangi">
+
+                                                <i class="ti ti-minus"></i>
+
+                                            </button>
+
+                                            <span class="btn btn-sm btn-primary">${getToppingQty(itemId, topping.id)}</span>
+
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateToppingQty('${itemId}', '${topping.id}', 1); event.stopPropagation();" title="Tambah">
+
+                                                <i class="ti ti-plus"></i>
+
+                                            </button>
+
+                                        ` : `
+
+                                            <button type="button" class="btn btn-sm btn-outline-primary" title="Pilih Topping">
+
+                                                <i class="ti ti-plus"></i>
+
+                                            </button>
+
+                                        `}
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
                     </div>
-                </div>
-            </div>
-        `).join('');
 
-        // Show toppings section
-        document.getElementById('toppingsSection').classList.remove('d-none');
-        document.getElementById('toppingsSection').scrollIntoView({ behavior: 'smooth' });
-    }
+                `).join('');
 
-    function hideToppingsSection() {
-        document.getElementById('toppingsSection').classList.add('d-none');
-    }
+            }
 
-    function addToppingToItem(itemId, toppingId) {
-        const item = currentOrder.items.find(i => i.id === itemId);
-        const topping = allToppings.find(t => t.id === toppingId);
+        
 
-        if (!item || !topping) return;
+        
 
-        const existingTopping = item.toppings.find(t => t.topping_id === toppingId);
-        if (existingTopping) {
-            existingTopping.quantity++;
-        } else {
-            item.toppings.push({
-                id: 'topping_' + Date.now(),
-                topping_id: topping.id,
-                topping_name: topping.name,
-                unit_price: topping.price,
-                quantity: 1
-            });
-        }
+        
 
-        Swal.close();
-        renderSelectedProducts();
-    }
+        
 
-    function removeTopping(itemId, toppingId) {
-        const item = currentOrder.items.find(i => i.id === itemId);
-        if (!item) return;
+        
 
-        item.toppings = item.toppings.filter(t => t.id !== toppingId);
-        renderSelectedProducts();
-    }
+        
 
-    // STEP 4: Pembayaran
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+        
+
+            // Check if topping is selected for an item
+
+            function isToppingSelected(itemId, toppingId) {
+
+                const item = currentOrder.items.find(i => i.id === itemId);
+
+                if (!item) return false;
+
+                return item.toppings.some(t => t.topping_id === toppingId);
+
+            }
+
+        
+
+            // Get topping quantity for an item
+
+            function getToppingQty(itemId, toppingId) {
+
+                const item = currentOrder.items.find(i => i.id === itemId);
+
+                if (!item) return 0;
+
+                const topping = item.toppings.find(t => t.topping_id === toppingId);
+
+                return topping ? topping.quantity : 0;
+
+            }
+
+        
+
+            // Toggle topping selection
+
+            function toggleTopping(itemId, toppingId) {
+
+                const item = currentOrder.items.find(i => i.id === itemId);
+
+                const topping = allToppings.find(t => t.id === toppingId);
+
+        
+
+                if (!item || !topping) return;
+
+        
+
+                const existingIndex = item.toppings.findIndex(t => t.topping_id === toppingId);
+
+        
+
+                if (existingIndex >= 0) {
+
+                    // Remove topping
+
+                    item.toppings.splice(existingIndex, 1);
+
+                } else {
+
+                    // Add topping
+
+                    item.toppings.push({
+
+                        id: 'topping_' + Date.now(),
+
+                        topping_id: topping.id,
+
+                        topping_name: topping.name,
+
+                        unit_price: topping.price,
+
+                        quantity: 1
+
+                    });
+
+                }
+
+        
+
+                renderSelectedProducts();
+
+                // Re-render toppings grid to update selection state
+
+                renderToppingsGrid(itemId);
+
+            }
+
+        
+
+            // Update topping quantity
+
+            function updateToppingQty(itemId, toppingId, change) {
+
+                const item = currentOrder.items.find(i => i.id === itemId);
+
+                if (!item) return;
+
+        
+
+                const topping = item.toppings.find(t => t.topping_id === toppingId);
+
+                if (!topping) return;
+
+        
+
+                topping.quantity = Math.max(1, topping.quantity + change);
+
+                renderSelectedProducts();
+
+                // Re-render toppings grid to update quantity display
+
+                renderToppingsGrid(itemId);
+
+            }
+
+        
+
+            // STEP 4: Pembayaran
     function getStep4HTML() {
         return `
             <div class="row">
@@ -1268,227 +1640,13 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         }
     }
 
-    // Get new order form HTML
-    function getNewOrderFormHTML() {
-        return `
-            <form id="formNewOrder" onsubmit="submitNewOrder(event)">
-                <div class="row">
-                    <!-- Left Column - Order Info -->
-                    <div class="col-lg-8">
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="mb-0">Informasi Customer</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Nama Customer <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="customerName" required>
-                                    </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label class="form-label">No. Meja</label>
-                                        <input type="text" class="form-control" id="tableNumber">
-                                    </div>
-                                    <div class="col-md-3 mb-3">
-                                        <label class="form-label">No. Telepon</label>
-                                        <input type="text" class="form-control" id="phone">
-                                    </div>
-                                    <div class="col-12 mb-3">
-                                        <label class="form-label">Catatan</label>
-                                        <textarea class="form-control" id="notes" rows="2"></textarea>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="mb-0">Items Pesanan</h6>
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="showProductSelection()">
-                                        <i class="ti ti-plus"></i> Tambah Item
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div id="orderItemsList">
-                                    <p class="text-muted text-center">Belum ada item dipilih</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Right Column - Summary & Payment -->
-                    <div class="col-lg-4">
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="mb-0">Ringkasan Pesanan</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Subtotal:</span>
-                                    <strong id="summarySubtotal">Rp 0</strong>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Pajak (0%):</span>
-                                    <strong id="summaryTax">Rp 0</strong>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Diskon:</span>
-                                    <strong id="summaryDiscount">Rp 0</strong>
-                                </div>
-                                <hr>
-                                <div class="d-flex justify-content-between">
-                                    <h5>Total:</h5>
-                                    <h5 class="text-success" id="summaryTotal">Rp 0</h5>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h6 class="mb-0">Metode Pembayaran</h6>
-                            </div>
-                            <div class="card-body">
-                                <select class="form-select" id="paymentMethod" required>
-                                    <option value="cash">Tunai</option>
-                                    <option value="card">Kartu Debit/Kredit</option>
-                                    <option value="qris">QRIS</option>
-                                    <option value="transfer">Transfer</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <button type="submit" class="btn btn-success w-100 mb-2">
-                            <i class="ti ti-check"></i> Proses Transaksi
-                        </button>
-                        <button type="button" class="btn btn-secondary w-100" onclick="showOrderList()">
-                            Batal
-                        </button>
-                    </div>
-                </div>
-            </form>
-        `;
-    }
 
-    // Show product selection modal
-    function showProductSelection() {
-        const productsHTML = allProducts.map(product => `
-            <div class="col-md-6 mb-3">
-                <div class="card product-card" onclick="addProductToOrder('${product.id}')">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <img src="${product.image_url || 'assets/images/default-product.png'}" alt="${product.name}" 
-                                 class="img-thumbnail me-3" style="width: 60px; height: 60px; object-fit: cover;">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">${product.name}</h6>
-                                <p class="text-success mb-0"><strong>Rp ${formatPrice(product.price)}</strong></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
 
-        Swal.fire({
-            title: 'Pilih Produk',
-            html: `
-                <div class="row">
-                    ${productsHTML}
-                </div>
-            `,
-            width: '800px',
-            showConfirmButton: false,
-            showCloseButton: true
-        });
-    }
 
-    // Add product to order
-    function addProductToOrder(productId) {
-        const product = allProducts.find(p => p.id === productId);
-        if (!product) return;
-
-        Swal.close(); // Close product selection modal
-
-        const item = {
-            id: 'item_' + Date.now(),
-            product_id: product.id,
-            product_name: product.name,
-            unit_price: product.price,
-            quantity: 1,
-            toppings: []
-        };
-
-        currentOrder.items.push(item);
-        renderOrderItems();
-        updateOrderSummary();
-    }
-
-    // Render order items
-    function renderOrderItems() {
-        const container = document.getElementById('orderItemsList');
-        if (currentOrder.items.length === 0) {
-            container.innerHTML = '<p class="text-muted text-center">Belum ada item dipilih</p>';
-            return;
-        }
-
-        container.innerHTML = currentOrder.items.map((item, index) => {
-            const itemSubtotal = item.unit_price * item.quantity;
-            const toppingsSubtotal = item.toppings.reduce((sum, t) => sum + (t.unit_price * t.quantity), 0);
-            const totalSubtotal = itemSubtotal + toppingsSubtotal;
-
-            return `
-                <div class="card mb-2">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">${item.product_name}</h6>
-                                <small class="text-muted">Rp ${formatPrice(item.unit_price)}</small>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="removeOrderItem('${item.id}')">
-                                <i class="ti ti-trash"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="row align-items-center mb-2">
-                            <div class="col-4">
-                                <div class="input-group input-group-sm">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="updateItemQuantity('${item.id}', -1)">-</button>
-                                    <input type="number" class="form-control text-center" value="${item.quantity}" readonly>
-                                    <button class="btn btn-outline-secondary" type="button" onclick="updateItemQuantity('${item.id}', 1)">+</button>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="addToppingToItem('${item.id}')">
-                                    <i class="ti ti-plus"></i> Topping
-                                </button>
-                            </div>
-                            <div class="col-4 text-end">
-                                <strong class="text-success">Rp ${formatPrice(totalSubtotal)}</strong>
-                            </div>
-                        </div>
-
-                        ${item.toppings.length > 0 ? `
-                            <div class="border-top pt-2">
-                                <small class="text-muted d-block mb-1">Topping:</small>
-                                ${item.toppings.map(topping => `
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <small>+ ${topping.topping_name} (${topping.quantity}x)</small>
-                                        <div>
-                                            <small class="text-success me-2">Rp ${formatPrice(topping.unit_price * topping.quantity)}</small>
-                                            <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeToppingFromItem('${item.id}', '${topping.id}')">
-                                                <i class="ti ti-x"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
 
     // Add topping to item
     function addToppingToItem(itemId) {
@@ -1514,75 +1672,15 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         });
     }
 
-    // Select topping
-    function selectTopping(itemId, toppingId) {
-        const item = currentOrder.items.find(i => i.id === itemId);
-        const topping = allToppings.find(t => t.id === toppingId);
 
-        if (!item || !topping) return;
 
-        const existingTopping = item.toppings.find(t => t.topping_id === toppingId);
-        if (existingTopping) {
-            existingTopping.quantity++;
-        } else {
-            item.toppings.push({
-                id: 'topping_' + Date.now(),
-                topping_id: topping.id,
-                topping_name: topping.name,
-                unit_price: topping.price,
-                quantity: 1
-            });
-        }
 
-        Swal.close();
-        renderOrderItems();
-        updateOrderSummary();
-    }
 
-    // Remove topping from item
-    function removeToppingFromItem(itemId, toppingId) {
-        const item = currentOrder.items.find(i => i.id === itemId);
-        if (!item) return;
 
-        item.toppings = item.toppings.filter(t => t.id !== toppingId);
-        renderOrderItems();
-        updateOrderSummary();
-    }
 
-    // Update item quantity
-    function updateItemQuantity(itemId, change) {
-        const item = currentOrder.items.find(i => i.id === itemId);
-        if (!item) return;
 
-        item.quantity = Math.max(1, item.quantity + change);
-        renderOrderItems();
-        updateOrderSummary();
-    }
 
-    // Remove order item
-    function removeOrderItem(itemId) {
-        currentOrder.items = currentOrder.items.filter(i => i.id !== itemId);
-        renderOrderItems();
-        updateOrderSummary();
-    }
 
-    // Update order summary
-    function updateOrderSummary() {
-        const subtotal = currentOrder.items.reduce((sum, item) => {
-            const itemTotal = item.unit_price * item.quantity;
-            const toppingsTotal = item.toppings.reduce((tSum, t) => tSum + (t.unit_price * t.quantity), 0);
-            return sum + itemTotal + toppingsTotal;
-        }, 0);
-
-        const tax = 0; // 0% tax
-        const discount = 0; // No discount for now
-        const total = subtotal + tax - discount;
-
-        document.getElementById('summarySubtotal').textContent = 'Rp ' + formatPrice(subtotal);
-        document.getElementById('summaryTax').textContent = 'Rp ' + formatPrice(tax);
-        document.getElementById('summaryDiscount').textContent = 'Rp ' + formatPrice(discount);
-        document.getElementById('summaryTotal').textContent = 'Rp ' + formatPrice(total);
-    }
 
     // View order detail
     async function viewOrder(orderId) {
