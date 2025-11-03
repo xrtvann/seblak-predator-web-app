@@ -1,0 +1,530 @@
+<?php
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+require_once '../config/koneksi.php';
+
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit(0);
+}
+
+$method = $_SERVER['REQUEST_METHOD'];
+
+switch ($method) {
+    case 'GET':
+        if (isset($_GET['id'])) {
+            getLevelById();
+        } else {
+            getAllLevels();
+        }
+        break;
+    case 'POST':
+        createLevel();
+        break;
+    case 'PUT':
+        updateLevel();
+        break;
+    case 'DELETE':
+        deleteLevel();
+        break;
+    case 'PATCH':
+        handlePatchRequest();
+        break;
+    default:
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+        break;
+}
+
+function handlePatchRequest()
+{
+    $action = $_GET['action'] ?? '';
+
+    switch ($action) {
+        case 'restore':
+            restoreLevel();
+            break;
+        case 'permanent-delete':
+            permanentDeleteLevel();
+            break;
+        default:
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid PATCH action']);
+            break;
+    }
+}
+
+function getAllLevels()
+{
+    global $koneksi;
+
+    try {
+        // Get filter parameters
+        $status = $_GET['status'] ?? 'active'; // active, inactive, all
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $per_page = max(1, min(100, (int) ($_GET['per_page'] ?? 50)));
+        $search = $_GET['search'] ?? '';
+
+        // Build WHERE clause
+        $whereConditions = [];
+        $params = [];
+        $types = '';
+
+        if ($status === 'active') {
+            $whereConditions[] = "is_active = TRUE";
+        } elseif ($status === 'inactive') {
+            $whereConditions[] = "is_active = FALSE";
+        }
+
+        if (!empty($search)) {
+            $whereConditions[] = "name LIKE ?";
+            $searchTerm = "%{$search}%";
+            $params[] = $searchTerm;
+            $types .= "s";
+        }
+
+        $whereClause = empty($whereConditions) ? "1=1" : implode(" AND ", $whereConditions);
+
+        // Get total count
+        $countQuery = "SELECT COUNT(*) as total FROM spice_levels WHERE " . $whereClause;
+        if (!empty($params)) {
+            $countStmt = mysqli_prepare($koneksi, $countQuery);
+            mysqli_stmt_bind_param($countStmt, $types, ...$params);
+            mysqli_stmt_execute($countStmt);
+            $countResult = mysqli_stmt_get_result($countStmt);
+        } else {
+            $countResult = mysqli_query($koneksi, $countQuery);
+        }
+
+        $totalRow = mysqli_fetch_assoc($countResult);
+        $total = $totalRow['total'];
+        $last_page = ceil($total / $per_page);
+
+        // Get paginated data
+        $offset = ($page - 1) * $per_page;
+        $query = "SELECT * FROM spice_levels WHERE " . $whereClause . " ORDER BY level_number ASC, sort_order ASC LIMIT ? OFFSET ?";
+
+        $allParams = array_merge($params, [$per_page, $offset]);
+        $allTypes = $types . "ii";
+
+        $stmt = mysqli_prepare($koneksi, $query);
+        mysqli_stmt_bind_param($stmt, $allTypes, ...$allParams);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        if (!$result) {
+            throw new Exception('Database query failed: ' . mysqli_error($koneksi));
+        }
+
+        $levels = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $row['price'] = floatval($row['price']);
+            $row['level_number'] = (int) $row['level_number'];
+            $row['is_active'] = (bool) $row['is_active'];
+            $row['sort_order'] = (int) $row['sort_order'];
+            $levels[] = $row;
+        }
+
+        http_response_code(200);
+        echo json_encode([
+            'success' => true,
+            'data' => $levels,
+            'meta' => [
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $per_page,
+                'last_page' => $last_page,
+                'from' => $offset + 1,
+                'to' => min($offset + $per_page, $total)
+            ],
+            'message' => 'Spice levels retrieved successfully'
+        ]);
+
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function getLevelById()
+{
+    global $koneksi;
+
+    $level_id = $_GET['id'] ?? '';
+    if (empty($level_id)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Level ID is required']);
+        return;
+    }
+
+    try {
+        $query = "SELECT * FROM spice_levels WHERE id = ?";
+        $stmt = mysqli_prepare($koneksi, $query);
+        mysqli_stmt_bind_param($stmt, "s", $level_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        if ($row = mysqli_fetch_assoc($result)) {
+            $row['price'] = floatval($row['price']);
+            $row['level_number'] = (int) $row['level_number'];
+            $row['is_active'] = (bool) $row['is_active'];
+            $row['sort_order'] = (int) $row['sort_order'];
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'data' => $row,
+                'message' => 'Spice level retrieved successfully'
+            ]);
+        } else {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Spice level not found']);
+        }
+
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function createLevel()
+{
+    global $koneksi;
+
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    // Validate required fields
+    $required_fields = ['name', 'level_number', 'price'];
+    foreach ($required_fields as $field) {
+        if (!isset($input[$field]) && $field !== 'price') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => ucfirst($field) . ' is required']);
+            return;
+        }
+    }
+
+    try {
+        // Generate ID
+        $id = 'lvl_' . uniqid();
+
+        // Validate and set values
+        $name = mysqli_real_escape_string($koneksi, trim($input['name']));
+        $level_number = (int) $input['level_number'];
+        $price = isset($input['price']) ? floatval($input['price']) : 0.00;
+
+        if ($price < 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Price must be non-negative']);
+            return;
+        }
+
+        if ($level_number < 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Level number must be non-negative']);
+            return;
+        }
+
+        // Check if level_number already exists
+        $checkQuery = "SELECT id FROM spice_levels WHERE level_number = ? AND is_active = TRUE";
+        $checkStmt = mysqli_prepare($koneksi, $checkQuery);
+        mysqli_stmt_bind_param($checkStmt, "i", $level_number);
+        mysqli_stmt_execute($checkStmt);
+        $checkResult = mysqli_stmt_get_result($checkStmt);
+
+        if (mysqli_num_rows($checkResult) > 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Level number already exists']);
+            return;
+        }
+
+        $image = isset($input['image']) ? mysqli_real_escape_string($koneksi, trim($input['image'])) : null;
+        $sort_order = isset($input['sort_order']) ? (int) $input['sort_order'] : $level_number;
+
+        // Insert level
+        $insertQuery = "INSERT INTO spice_levels (id, name, level_number, price, image, is_active, sort_order, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, ?, TRUE, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        $insertStmt = mysqli_prepare($koneksi, $insertQuery);
+        mysqli_stmt_bind_param($insertStmt, "ssidsi", $id, $name, $level_number, $price, $image, $sort_order);
+
+        if (mysqli_stmt_execute($insertStmt)) {
+            http_response_code(201);
+            echo json_encode([
+                'success' => true,
+                'data' => [
+                    'id' => $id,
+                    'name' => $name,
+                    'level_number' => $level_number,
+                    'price' => $price,
+                    'image' => $image,
+                    'sort_order' => $sort_order
+                ],
+                'message' => 'Spice level created successfully'
+            ]);
+        } else {
+            throw new Exception('Failed to create spice level: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function updateLevel()
+{
+    global $koneksi;
+
+    $level_id = $_GET['id'] ?? '';
+    if (empty($level_id)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Level ID is required']);
+        return;
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    try {
+        // Check if level exists
+        $checkQuery = "SELECT id FROM spice_levels WHERE id = ?";
+        $checkStmt = mysqli_prepare($koneksi, $checkQuery);
+        mysqli_stmt_bind_param($checkStmt, "s", $level_id);
+        mysqli_stmt_execute($checkStmt);
+        $checkResult = mysqli_stmt_get_result($checkStmt);
+
+        if (mysqli_num_rows($checkResult) === 0) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Spice level not found']);
+            return;
+        }
+
+        $updateFields = [];
+        $types = "";
+        $values = [];
+
+        if (isset($input['name'])) {
+            $updateFields[] = "name = ?";
+            $types .= "s";
+            $values[] = mysqli_real_escape_string($koneksi, trim($input['name']));
+        }
+
+        if (isset($input['level_number'])) {
+            $level_number = (int) $input['level_number'];
+            if ($level_number < 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Level number must be non-negative']);
+                return;
+            }
+
+            // Check if level_number already exists (excluding current record)
+            $checkQuery = "SELECT id FROM spice_levels WHERE level_number = ? AND id != ? AND is_active = TRUE";
+            $checkStmt = mysqli_prepare($koneksi, $checkQuery);
+            mysqli_stmt_bind_param($checkStmt, "is", $level_number, $level_id);
+            mysqli_stmt_execute($checkStmt);
+            $checkResult = mysqli_stmt_get_result($checkStmt);
+
+            if (mysqli_num_rows($checkResult) > 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Level number already exists']);
+                return;
+            }
+
+            $updateFields[] = "level_number = ?";
+            $types .= "i";
+            $values[] = $level_number;
+        }
+
+        if (isset($input['price'])) {
+            $price = floatval($input['price']);
+            if ($price < 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Price must be non-negative']);
+                return;
+            }
+            $updateFields[] = "price = ?";
+            $types .= "d";
+            $values[] = $price;
+        }
+
+        if (isset($input['image'])) {
+            $updateFields[] = "image = ?";
+            $types .= "s";
+            $values[] = $input['image'] ? mysqli_real_escape_string($koneksi, trim($input['image'])) : null;
+        }
+
+        if (isset($input['is_active'])) {
+            $updateFields[] = "is_active = ?";
+            $types .= "i";
+            $values[] = $input['is_active'] ? 1 : 0;
+        }
+
+        if (isset($input['sort_order'])) {
+            $updateFields[] = "sort_order = ?";
+            $types .= "i";
+            $values[] = (int) $input['sort_order'];
+        }
+
+        if (empty($updateFields)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'No valid fields to update']);
+            return;
+        }
+
+        $updateFields[] = "updated_at = CURRENT_TIMESTAMP";
+        $types .= "s";
+        $values[] = $level_id;
+
+        $updateQuery = "UPDATE spice_levels SET " . implode(", ", $updateFields) . " WHERE id = ?";
+        $updateStmt = mysqli_prepare($koneksi, $updateQuery);
+        mysqli_stmt_bind_param($updateStmt, $types, ...$values);
+
+        if (mysqli_stmt_execute($updateStmt)) {
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Spice level updated successfully'
+            ]);
+        } else {
+            throw new Exception('Failed to update spice level: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function deleteLevel()
+{
+    global $koneksi;
+
+    $level_id = $_GET['id'] ?? '';
+    if (empty($level_id)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Level ID is required']);
+        return;
+    }
+
+    try {
+        // Soft delete level
+        $deleteQuery = "UPDATE spice_levels SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        $deleteStmt = mysqli_prepare($koneksi, $deleteQuery);
+        mysqli_stmt_bind_param($deleteStmt, "s", $level_id);
+
+        if (mysqli_stmt_execute($deleteStmt)) {
+            if (mysqli_affected_rows($koneksi) > 0) {
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Spice level deleted successfully (soft delete)'
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Spice level not found']);
+            }
+        } else {
+            throw new Exception('Failed to delete spice level: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function restoreLevel()
+{
+    global $koneksi;
+
+    $level_id = $_GET['id'] ?? '';
+    if (empty($level_id)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Level ID is required']);
+        return;
+    }
+
+    try {
+        $restoreQuery = "UPDATE spice_levels SET is_active = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        $restoreStmt = mysqli_prepare($koneksi, $restoreQuery);
+        mysqli_stmt_bind_param($restoreStmt, "s", $level_id);
+
+        if (mysqli_stmt_execute($restoreStmt)) {
+            if (mysqli_affected_rows($koneksi) > 0) {
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Spice level restored successfully'
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Spice level not found']);
+            }
+        } else {
+            throw new Exception('Failed to restore spice level: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function permanentDeleteLevel()
+{
+    global $koneksi;
+
+    $level_id = $_GET['id'] ?? '';
+    if (empty($level_id)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Level ID is required']);
+        return;
+    }
+
+    try {
+        $deleteQuery = "DELETE FROM spice_levels WHERE id = ?";
+        $deleteStmt = mysqli_prepare($koneksi, $deleteQuery);
+        mysqli_stmt_bind_param($deleteStmt, "s", $level_id);
+
+        if (mysqli_stmt_execute($deleteStmt)) {
+            if (mysqli_affected_rows($koneksi) > 0) {
+                http_response_code(200);
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Spice level permanently deleted'
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'message' => 'Spice level not found']);
+            }
+        } else {
+            throw new Exception('Failed to delete spice level: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}

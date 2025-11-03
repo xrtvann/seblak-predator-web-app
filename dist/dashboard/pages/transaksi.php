@@ -286,29 +286,23 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         </div>
                     </div>
                     <div class="d-flex justify-content-between mt-3">
-                        <div class="text-center" style="width: 25%;">
+                        <div class="text-center" style="width: 33.33%;">
                             <div class="step-circle" id="stepCircle1">
                                 <i class="ti ti-user"></i>
                             </div>
                             <small class="d-block mt-2 fw-bold" id="stepLabel1">Informasi Pelanggan</small>
                         </div>
-                        <div class="text-center" style="width: 25%;">
+                        <div class="text-center" style="width: 33.33%;">
                             <div class="step-circle" id="stepCircle2">
-                                <i class="ti ti-soup"></i>
+                                <i class="ti ti-shopping-cart"></i>
                             </div>
-                            <small class="d-block mt-2" id="stepLabel2">Pilih Seblak</small>
+                            <small class="d-block mt-2" id="stepLabel2">Informasi Pesanan</small>
                         </div>
-                        <div class="text-center" style="width: 25%;">
+                        <div class="text-center" style="width: 33.33%;">
                             <div class="step-circle" id="stepCircle3">
-                                <i class="ti ti-pizza"></i>
-                            </div>
-                            <small class="d-block mt-2" id="stepLabel3">Pilih Topping</small>
-                        </div>
-                        <div class="text-center" style="width: 25%;">
-                            <div class="step-circle" id="stepCircle4">
                                 <i class="ti ti-cash"></i>
                             </div>
-                            <small class="d-block mt-2" id="stepLabel4">Pembayaran</small>
+                            <small class="d-block mt-2" id="stepLabel3">Pembayaran</small>
                         </div>
                     </div>
                 </div>
@@ -364,12 +358,12 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         const btnPrev = document.getElementById('btnPrevStep');
         const btnNext = document.getElementById('btnNextStep');
 
-        // Update progress bar
+        // Update progress bar - now 3 steps instead of 4
         const progressBar = document.getElementById('progressBar');
-        progressBar.style.width = ((step - 1) / 3 * 100) + '%';
+        progressBar.style.width = ((step - 1) / 2 * 100) + '%';
 
-        // Update step circles
-        for (let i = 1; i <= 4; i++) {
+        // Update step circles - now only 3 circles
+        for (let i = 1; i <= 3; i++) {
             const circle = document.getElementById('stepCircle' + i);
             const label = document.getElementById('stepLabel' + i);
             circle.classList.remove('active', 'completed');
@@ -386,15 +380,14 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         // Update title
         const titles = {
             1: 'Transaksi Baru - Step 1: Informasi Pelanggan',
-            2: 'Transaksi Baru - Step 2: Pilih Seblak',
-            3: 'Transaksi Baru - Step 3: Pilih Topping',
-            4: 'Transaksi Baru - Step 4: Pembayaran'
+            2: 'Transaksi Baru - Step 2: Informasi Pesanan',
+            3: 'Transaksi Baru - Step 3: Pembayaran'
         };
         document.getElementById('cardTitleText').textContent = titles[step];
 
         // Show/hide buttons
         btnPrev.style.display = step === 1 ? 'none' : 'inline-block';
-        btnNext.innerHTML = step === 4 ? '<i class="ti ti-check"></i> Proses Transaksi' : 'Selanjutnya <i class="ti ti-arrow-right"></i>';
+        btnNext.innerHTML = step === 3 ? '<i class="ti ti-check"></i> Proses Transaksi' : 'Selanjutnya <i class="ti ti-arrow-right"></i>';
 
         // Render step content
         switch (step) {
@@ -404,15 +397,11 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 break;
             case 2:
                 stepContent.innerHTML = getStep2HTML();
-                renderProducts();
+                renderProductsAndToppings();
                 break;
             case 3:
                 stepContent.innerHTML = getStep3HTML();
-                renderSelectedProducts();
-                break;
-            case 4:
-                stepContent.innerHTML = getStep4HTML();
-                updateStep4Summary();
+                updateStep3Summary();
                 break;
         }
     }
@@ -430,10 +419,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             console.log('Validating step 2...');
             if (!validateStep2()) return;
         } else if (currentStep === 3) {
-            console.log('Step 3, no validation required');
-            // Step 3 optional, can skip
-        } else if (currentStep === 4) {
-            console.log('Step 4, calling submitNewOrder()...');
+            console.log('Step 3, calling submitNewOrder()...');
             submitNewOrder();
             return;
         }
@@ -576,25 +562,68 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         return true;
     }
 
-    // STEP 2: Pilih Seblak
+    // STEP 2: Informasi Pesanan (Products & Toppings Combined)
     function getStep2HTML() {
         return `
             <div class="row">
-                <div class="col-12 mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="ti ti-search"></i></span>
-                        <input type="text" class="form-control" id="searchProduct" placeholder="Cari produk..." onkeyup="filterProducts()">
+                <!-- Left Column: Product & Topping Selection -->
+                <div class="col-lg-8">
+                    <!-- Products Section -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Pilih Produk</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="ti ti-search"></i></span>
+                                        <input type="text" class="form-control" id="searchProduct" placeholder="Cari produk..." onkeyup="filterProducts()">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" id="productsList">
+                                <div class="col-12 text-center">
+                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                    <p class="mt-2">Memuat produk...</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="row" id="productsList">
-                <div class="col-12 text-center">
-                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                    <p class="mt-2">Memuat produk...</p>
+
+                <!-- Right Column: Selected Items with Toppings -->
+                <div class="col-lg-4">
+                    <div class="card sticky-top" style="top: 20px;">
+                        <div class="card-header">
+                            <h6 class="mb-0">Pesanan Anda</h6>
+                        </div>
+                        <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                            <div id="selectedItemsList">
+                                <div class="text-center text-muted">
+                                    <i class="ti ti-shopping-cart" style="font-size: 48px;"></i>
+                                    <p class="mt-2">Belum ada produk dipilih</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>Total:</strong>
+                                <h5 class="mb-0 text-success" id="orderTotalPrice">Rp 0</h5>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
     }
+
+    // Render products and manage toppings in the new Step 2
+    function renderProductsAndToppings() {
+        renderProducts();
+        updateSelectedItemsList();
+    }
+
 
     // Helper function to get image HTML
     function getImageHTML(imageUrl, name, size) {
@@ -676,19 +705,28 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         if (existingIndex >= 0) {
             // Remove product
             currentOrder.items.splice(existingIndex, 1);
+            renderProducts();
+            updateSelectedItemsList();
         } else {
-            // Add product
-            currentOrder.items.push({
-                id: 'item_' + Date.now(),
-                product_id: product.id,
-                product_name: product.name,
-                unit_price: product.price,
-                quantity: 1,
-                toppings: []
-            });
+            // Check if product has variants (levels)
+            if (product.variants && product.variants.length > 0) {
+                // Show variant selection modal
+                showVariantSelectionModal(product);
+            } else {
+                // Add product directly without variants
+                currentOrder.items.push({
+                    id: 'item_' + Date.now(),
+                    product_id: product.id,
+                    product_name: product.name,
+                    unit_price: product.price,
+                    quantity: 1,
+                    toppings: [],
+                    variants: []
+                });
+                renderProducts();
+                updateSelectedItemsList();
+            }
         }
-
-        renderProducts();
     }
 
     function updateProductQty(productId, change) {
@@ -697,6 +735,102 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
         item.quantity = Math.max(1, item.quantity + change);
         renderProducts();
+        updateSelectedItemsList();
+    }
+
+    // Update the selected items list in Step 2
+    function updateSelectedItemsList() {
+        const container = document.getElementById('selectedItemsList');
+        if (!container) return;
+
+        if (currentOrder.items.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="ti ti-shopping-cart" style="font-size: 48px;"></i>
+                    <p class="mt-2">Belum ada produk dipilih</p>
+                </div>
+            `;
+            document.getElementById('orderTotalPrice').textContent = 'Rp 0';
+            return;
+        }
+
+        let total = 0;
+        container.innerHTML = currentOrder.items.map((item, index) => {
+            const itemSubtotal = item.unit_price * item.quantity;
+            const toppingsSubtotal = item.toppings.reduce((sum, t) => sum + (t.unit_price * t.quantity), 0);
+            const itemTotal = itemSubtotal + toppingsSubtotal;
+            total += itemTotal;
+
+            return `
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${item.product_name}</h6>
+                            <small class="text-muted">${item.quantity}x Rp ${formatPrice(item.unit_price)}</small>
+                            ${item.variants && item.variants.length > 0 ? `
+                                <div class="mt-1">
+                                    ${item.variants.map(v => `
+                                        <span class="badge bg-light-primary text-primary me-1">
+                                            <i class="ti ti-adjustments-horizontal"></i> ${v.option_name}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem('${item.id}')" title="Hapus">
+                            <i class="ti ti-trash"></i>
+                        </button>
+                    </div>
+                    
+                    ${item.toppings.length > 0 ? `
+                        <div class="ps-3 mb-2">
+                            ${item.toppings.map(t => `
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">+ ${t.topping_name} (${t.quantity}x)</small>
+                                    <div class="d-flex align-items-center gap-1">
+                                        <small class="text-success">Rp ${formatPrice(t.unit_price * t.quantity)}</small>
+                                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeTopping('${item.id}', '${t.topping_id}')" title="Hapus topping">
+                                            <i class="ti ti-x" style="font-size: 14px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="showToppingsModal('${item.id}')">
+                            <i class="ti ti-plus"></i> Tambah Topping
+                        </button>
+                        <strong class="text-success">Rp ${formatPrice(itemTotal)}</strong>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('orderTotalPrice').textContent = 'Rp ' + formatPrice(total);
+    }
+
+    // Remove item from order
+    function removeItem(itemId) {
+        const index = currentOrder.items.findIndex(i => i.id === itemId);
+        if (index >= 0) {
+            currentOrder.items.splice(index, 1);
+            renderProducts();
+            updateSelectedItemsList();
+        }
+    }
+
+    // Remove topping from item
+    function removeTopping(itemId, toppingId) {
+        const item = currentOrder.items.find(i => i.id === itemId);
+        if (!item) return;
+
+        const toppingIndex = item.toppings.findIndex(t => t.topping_id === toppingId);
+        if (toppingIndex >= 0) {
+            item.toppings.splice(toppingIndex, 1);
+            updateSelectedItemsList();
+        }
     }
 
     function filterProducts() {
@@ -717,291 +851,80 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         return true;
     }
 
-            // STEP 3: Pilih Topping
+    // Show toppings modal (renamed from showToppingsSection for clarity)
+    function showToppingsModal(itemId) {
+        const item = currentOrder.items.find(i => i.id === itemId);
+        if (!item) return;
 
-            function getStep3HTML() {
+        // Get unique topping categories
+        const toppingCategories = [...new Set(allToppings.map(t => t.category_name))];
 
-                return `
-
-                    <div class="card mb-3">
-
-                        <div class="card-header">
-
-                            <h6 class="mb-0">Produk yang Dipilih</h6>
-
-                            <small class="text-muted">Klik "Tambah Topping" pada produk untuk menambah topping</small>
-
+        Swal.fire({
+            title: `Pilih Topping untuk ${item.product_name}`,
+            html: `
+                <div class="container-fluid">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <input type="text" id="toppingSearch" class="form-control" placeholder="Cari topping...">
                         </div>
-
-                        <div class="card-body">
-
-                            <div id="selectedProductsList"></div>
-
+                        <div class="col-md-4">
+                            <select id="toppingCategoryFilter" class="form-select">
+                                <option value="">Semua Kategori</option>
+                                ${toppingCategories.map(category => `<option value="${category}">${category}</option>`).join('')}
+                            </select>
                         </div>
-
                     </div>
-
-                `;
-
+                    <div class="row" id="toppingsGrid" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Toppings will be rendered here -->
+                    </div>
+                </div>
+            `,
+            width: '80%',
+            showConfirmButton: true,
+            confirmButtonText: 'Selesai',
+            showCloseButton: true,
+            didOpen: () => {
+                renderToppingsGrid(itemId);
+                document.getElementById('toppingSearch').addEventListener('keyup', () => renderToppingsGrid(itemId));
+                document.getElementById('toppingCategoryFilter').addEventListener('change', () => renderToppingsGrid(itemId));
+            },
+            didClose: () => {
+                // Update selected items list when modal closes
+                updateSelectedItemsList();
             }
+        });
+    }
 
-        
+    // Keep the old function name for backward compatibility
+    function showToppingsSection(itemId) {
+        showToppingsModal(itemId);
+    }
 
-                function renderSelectedProducts() {
 
-        
 
-                    const container = document.getElementById('selectedProductsList');
+    function renderToppingsGrid(itemId) {
 
-        
+        const search = document.getElementById('toppingSearch').value.toLowerCase();
 
-            
+        const category = document.getElementById('toppingCategoryFilter').value;
 
-        
+        const toppingsGrid = document.getElementById('toppingsGrid');
 
-                    if (currentOrder.items.length === 0) {
 
-        
 
-                        container.innerHTML = `
+        const filteredToppings = allToppings.filter(topping => {
 
-        
+            const nameMatch = topping.name.toLowerCase().includes(search);
 
-                            <div class="text-center">
+            const categoryMatch = category ? topping.category_name === category : true;
 
-        
+            return nameMatch && categoryMatch;
 
-                                <p class="text-muted">Belum ada produk yang dipilih.</p>
+        });
 
-        
 
-                                <button class="btn btn-primary" onclick="renderStep(2)">
 
-        
-
-                                    <i class="ti ti-arrow-left"></i> Kembali ke Pilih Seblak
-
-        
-
-                                </button>
-
-        
-
-                            </div>
-
-        
-
-                        `;
-
-        
-
-                        return;
-
-        
-
-                    }
-
-        
-
-            
-
-        
-
-                    container.innerHTML = currentOrder.items.map(item => {
-
-                        const product = allProducts.find(p => p.id === item.product_id);
-
-                        
-
-                        let imageHTML;
-
-                        if (product && product.image_url) {
-
-                            imageHTML = `<img src="${product.image_url}" class="img-fluid rounded-start" alt="${item.product_name}" style="height: 100%; object-fit: cover;">`;
-
-                        } else {
-
-                            imageHTML = `<div class="bg-light d-flex align-items-center justify-content-center rounded-start" style="height: 100%; min-height: 150px;">
-
-                                            <i class="ti ti-soup" style="font-size: 48px; color: #6c757d;"></i>
-
-                                        </div>`;
-
-                        }
-
-
-
-                        const toppingsHTML = item.toppings.map(topping => `
-
-                            <div class="d-flex justify-content-between align-items-center">
-
-                                <small>+ ${topping.topping_name} (${topping.quantity}x)</small>
-
-                                <small class="text-success">Rp ${formatPrice(topping.unit_price * topping.quantity)}</small>
-
-                            </div>
-
-                        `).join('');
-
-
-
-                        return `
-
-                            <div class="card mb-3 border-0 shadow-sm">
-
-                                <div class="row g-0">
-
-                                    <div class="col-md-3">
-
-                                        ${imageHTML}
-
-                                    </div>
-
-                                    <div class="col-md-9">
-
-                                        <div class="card-body">
-
-                                            <div class="d-flex justify-content-between align-items-start">
-
-                                                <div>
-
-                                                    <h5 class="card-title mb-1">${item.product_name}</h5>
-
-                                                    <p class="card-text text-muted">Rp ${formatPrice(item.unit_price)} x ${item.quantity}</p>
-
-                                                </div>
-
-                                                <button type="button" class="btn btn-primary" onclick="showToppingsSection('${item.id}')">
-
-                                                    <i class="ti ti-plus"></i> Topping
-
-                                                </button>
-
-                                            </div>
-
-                                            <hr>
-
-                                            <div class="toppings-summary">
-
-                                                ${item.toppings.length > 0 ? toppingsHTML : '<small class="text-muted">Belum ada topping yang ditambahkan.</small>'}
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        `;
-
-                    }).join('');
-
-                }
-
-        
-
-            function showToppingsSection(itemId) {
-
-                const item = currentOrder.items.find(i => i.id === itemId);
-
-                if (!item) return;
-
-        
-
-                // Get unique topping categories
-
-                const toppingCategories = [...new Set(allToppings.map(t => t.category_name))];
-
-        
-
-                Swal.fire({
-
-                    title: `Pilih Topping untuk ${item.product_name}`,
-
-                    html: `
-
-                        <div class="container-fluid">
-
-                            <div class="row mb-3">
-
-                                <div class="col-md-8">
-
-                                    <input type="text" id="toppingSearch" class="form-control" placeholder="Cari topping...">
-
-                                </div>
-
-                                <div class="col-md-4">
-
-                                    <select id="toppingCategoryFilter" class="form-select">
-
-                                        <option value="">Semua Kategori</option>
-
-                                        ${toppingCategories.map(category => `<option value="${category}">${category}</option>`).join('')}
-
-                                    </select>
-
-                                </div>
-
-                            </div>
-
-                            <div class="row" id="toppingsGrid" style="max-height: 400px; overflow-y: auto;">
-
-                                <!-- Toppings will be rendered here -->
-
-                            </div>
-
-                        </div>
-
-                    `,
-
-                    width: '80%',
-
-                    showConfirmButton: false,
-
-                    showCloseButton: true,
-
-                    didOpen: () => {
-
-                        renderToppingsGrid(itemId);
-
-                        document.getElementById('toppingSearch').addEventListener('keyup', () => renderToppingsGrid(itemId));
-
-                        document.getElementById('toppingCategoryFilter').addEventListener('change', () => renderToppingsGrid(itemId));
-
-                    }
-
-                });
-
-            }
-
-        
-
-            function renderToppingsGrid(itemId) {
-
-                const search = document.getElementById('toppingSearch').value.toLowerCase();
-
-                const category = document.getElementById('toppingCategoryFilter').value;
-
-                const toppingsGrid = document.getElementById('toppingsGrid');
-
-        
-
-                const filteredToppings = allToppings.filter(topping => {
-
-                    const nameMatch = topping.name.toLowerCase().includes(search);
-
-                    const categoryMatch = category ? topping.category_name === category : true;
-
-                    return nameMatch && categoryMatch;
-
-                });
-
-        
-
-                toppingsGrid.innerHTML = filteredToppings.map(topping => `
+        toppingsGrid.innerHTML = filteredToppings.map(topping => `
 
                     <div class="col-xl-3 col-md-6 col-sm-12 mb-3 topping-item">
 
@@ -1015,11 +938,11 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
                                     ${isToppingSelected(itemId, topping.id) ?
 
-                                        '<span class="badge bg-primary">Dipilih</span>' :
+                '<span class="badge bg-primary">Dipilih</span>' :
 
-                                        '<span class="badge bg-light text-dark">Tersedia</span>'
+                '<span class="badge bg-light text-dark">Tersedia</span>'
 
-                                    }
+            }
 
                                 </div>
 
@@ -1081,154 +1004,263 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
                 `).join('');
 
-            }
+    }
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-        
 
-            // Check if topping is selected for an item
 
-            function isToppingSelected(itemId, toppingId) {
 
-                const item = currentOrder.items.find(i => i.id === itemId);
 
-                if (!item) return false;
 
-                return item.toppings.some(t => t.topping_id === toppingId);
 
-            }
 
-        
 
-            // Get topping quantity for an item
 
-            function getToppingQty(itemId, toppingId) {
 
-                const item = currentOrder.items.find(i => i.id === itemId);
 
-                if (!item) return 0;
 
-                const topping = item.toppings.find(t => t.topping_id === toppingId);
 
-                return topping ? topping.quantity : 0;
 
-            }
 
-        
 
-            // Toggle topping selection
+    // Check if topping is selected for an item
 
-            function toggleTopping(itemId, toppingId) {
+    function isToppingSelected(itemId, toppingId) {
 
-                const item = currentOrder.items.find(i => i.id === itemId);
+        const item = currentOrder.items.find(i => i.id === itemId);
 
-                const topping = allToppings.find(t => t.id === toppingId);
+        if (!item) return false;
 
-        
+        return item.toppings.some(t => t.topping_id === toppingId);
 
-                if (!item || !topping) return;
+    }
 
-        
 
-                const existingIndex = item.toppings.findIndex(t => t.topping_id === toppingId);
 
-        
+    // Get topping quantity for an item
 
-                if (existingIndex >= 0) {
+    function getToppingQty(itemId, toppingId) {
 
-                    // Remove topping
+        const item = currentOrder.items.find(i => i.id === itemId);
 
-                    item.toppings.splice(existingIndex, 1);
+        if (!item) return 0;
 
-                } else {
+        const topping = item.toppings.find(t => t.topping_id === toppingId);
 
-                    // Add topping
+        return topping ? topping.quantity : 0;
 
-                    item.toppings.push({
+    }
 
-                        id: 'topping_' + Date.now(),
 
-                        topping_id: topping.id,
 
-                        topping_name: topping.name,
+    // Toggle topping selection
+    function toggleTopping(itemId, toppingId) {
+        const item = currentOrder.items.find(i => i.id === itemId);
+        const topping = allToppings.find(t => t.id === toppingId);
 
-                        unit_price: topping.price,
+        if (!item || !topping) return;
 
-                        quantity: 1
+        const existingIndex = item.toppings.findIndex(t => t.topping_id === toppingId);
 
-                    });
+        if (existingIndex >= 0) {
+            // Remove topping
+            item.toppings.splice(existingIndex, 1);
+        } else {
+            // Add topping
+            item.toppings.push({
+                id: 'topping_' + Date.now(),
+                topping_id: topping.id,
+                topping_name: topping.name,
+                unit_price: topping.price,
+                quantity: 1
+            });
+        }
 
+        // Re-render toppings grid to update selection state
+        renderToppingsGrid(itemId);
+        // Update the selected items list (will be called when modal closes)
+    }
+
+    // Update topping quantity
+    function updateToppingQty(itemId, toppingId, change) {
+        const item = currentOrder.items.find(i => i.id === itemId);
+        if (!item) return;
+
+        const topping = item.toppings.find(t => t.topping_id === toppingId);
+        if (!topping) return;
+
+        topping.quantity = Math.max(1, topping.quantity + change);
+        // Re-render toppings grid to update quantity display
+        renderToppingsGrid(itemId);
+    }
+
+    // Show variant (level) selection modal
+    function showVariantSelectionModal(product) {
+        if (!product.variants || product.variants.length === 0) {
+            // No variants, add product directly
+            currentOrder.items.push({
+                id: 'item_' + Date.now(),
+                product_id: product.id,
+                product_name: product.name,
+                unit_price: product.price,
+                quantity: 1,
+                toppings: [],
+                variants: []
+            });
+            renderProducts();
+            updateSelectedItemsList();
+            return;
+        }
+
+        const selectedVariants = {};
+        let totalPriceAdjustment = 0;
+
+        Swal.fire({
+            title: `Pilih Level untuk ${product.name}`,
+            html: `
+                <div class="container-fluid">
+                    <div class="text-start mb-3">
+                        <p class="text-muted mb-0">Harga Dasar: <strong class="text-success">Rp ${formatPrice(product.price)}</strong></p>
+                        <p class="text-muted mb-0">Penyesuaian Harga: <strong id="variantPriceAdjustment" class="text-info">Rp 0</strong></p>
+                        <hr>
+                        <h5>Total: <strong id="variantTotalPrice" class="text-success">Rp ${formatPrice(product.price)}</strong></h5>
+                    </div>
+                    <div id="variantGroupsContainer">
+                        ${renderVariantGroups(product.variants)}
+                    </div>
+                </div>
+            `,
+            width: '600px',
+            showCancelButton: true,
+            confirmButtonText: 'Tambahkan ke Pesanan',
+            cancelButtonText: 'Batal',
+            showCloseButton: true,
+            preConfirm: () => {
+                // Validate required variant groups
+                const requiredGroups = product.variants.filter(g => g.is_required);
+                for (const group of requiredGroups) {
+                    if (!selectedVariants[group.id]) {
+                        Swal.showValidationMessage(`Pilih ${group.name}`);
+                        return false;
+                    }
                 }
+                return selectedVariants;
+            },
+            didOpen: () => {
+                // Add event listeners to radio buttons
+                product.variants.forEach(group => {
+                    group.options.forEach(option => {
+                        const radioBtn = document.getElementById(`variant_${group.id}_${option.id}`);
+                        if (radioBtn) {
+                            radioBtn.addEventListener('change', function () {
+                                if (this.checked) {
+                                    // Update selected variants
+                                    selectedVariants[group.id] = {
+                                        group_id: group.id,
+                                        group_name: group.name,
+                                        option_id: option.id,
+                                        option_name: option.name,
+                                        price_adjustment: option.price_adjustment
+                                    };
 
-        
+                                    // Calculate total price adjustment
+                                    totalPriceAdjustment = Object.values(selectedVariants)
+                                        .reduce((sum, v) => sum + parseFloat(v.price_adjustment || 0), 0);
 
-                renderSelectedProducts();
-
-                // Re-render toppings grid to update selection state
-
-                renderToppingsGrid(itemId);
-
+                                    // Update price display
+                                    document.getElementById('variantPriceAdjustment').textContent =
+                                        'Rp ' + formatPrice(totalPriceAdjustment);
+                                    document.getElementById('variantTotalPrice').textContent =
+                                        'Rp ' + formatPrice(product.price + totalPriceAdjustment);
+                                }
+                            });
+                        }
+                    });
+                });
             }
-
-        
-
-            // Update topping quantity
-
-            function updateToppingQty(itemId, toppingId, change) {
-
-                const item = currentOrder.items.find(i => i.id === itemId);
-
-                if (!item) return;
-
-        
-
-                const topping = item.toppings.find(t => t.topping_id === toppingId);
-
-                if (!topping) return;
-
-        
-
-                topping.quantity = Math.max(1, topping.quantity + change);
-
-                renderSelectedProducts();
-
-                // Re-render toppings grid to update quantity display
-
-                renderToppingsGrid(itemId);
-
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                // Add product with selected variants
+                const finalPrice = product.price + totalPriceAdjustment;
+                currentOrder.items.push({
+                    id: 'item_' + Date.now(),
+                    product_id: product.id,
+                    product_name: product.name,
+                    unit_price: finalPrice,
+                    quantity: 1,
+                    toppings: [],
+                    variants: Object.values(selectedVariants)
+                });
+                renderProducts();
+                updateSelectedItemsList();
+                showNotification('Produk berhasil ditambahkan', 'success');
             }
+        });
+    }
 
-        
+    // Render variant groups for modal
+    function renderVariantGroups(variantGroups) {
+        return variantGroups.map(group => `
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        ${group.name}
+                        ${group.is_required ? '<span class="badge bg-danger ms-2">Wajib</span>' : '<span class="badge bg-secondary ms-2">Opsional</span>'}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        ${group.options.map((option, index) => `
+                            <label class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" style="cursor: pointer;">
+                                <div class="d-flex align-items-center">
+                                    <input 
+                                        type="radio" 
+                                        class="form-check-input me-3" 
+                                        name="variant_group_${group.id}" 
+                                        id="variant_${group.id}_${option.id}"
+                                        value="${option.id}"
+                                        ${index === 0 && group.is_required ? 'checked' : ''}
+                                    >
+                                    <div>
+                                        <strong>${option.name}</strong>
+                                        ${option.price_adjustment !== 0 ?
+                `<small class="d-block text-muted">
+                                                ${option.price_adjustment > 0 ? '+' : ''}Rp ${formatPrice(option.price_adjustment)}
+                                            </small>`
+                : ''
+            }
+                                    </div>
+                                </div>
+                                ${option.price_adjustment > 0 ?
+                `<span class="badge bg-light-warning text-warning">+Rp ${formatPrice(option.price_adjustment)}</span>` :
+                option.price_adjustment < 0 ?
+                    `<span class="badge bg-light-success text-success">-Rp ${formatPrice(Math.abs(option.price_adjustment))}</span>` :
+                    `<span class="badge bg-light-secondary text-secondary">Standar</span>`
+            }
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
 
-            // STEP 4: Pembayaran
-    function getStep4HTML() {
+
+    // STEP 3: Pembayaran (formerly Step 4)
+    function getStep3HTML() {
         return `
             <div class="row">
                 <div class="col-lg-8">
@@ -1237,7 +1269,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                             <h6 class="mb-0">Ringkasan Pesanan</h6>
                         </div>
                         <div class="card-body">
-                            <div id="step4_orderSummary"></div>
+                            <div id="step3_orderSummary"></div>
                         </div>
                     </div>
                 </div>
@@ -1247,10 +1279,10 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                             <h6 class="mb-0">Detail Pelanggan</h6>
                         </div>
                         <div class="card-body">
-                            <p class="mb-1"><strong>Nama:</strong> <span id="step4_name"></span></p>
-                            <p class="mb-1"><strong>Meja:</strong> <span id="step4_table"></span></p>
-                            <p class="mb-1"><strong>Telepon:</strong> <span id="step4_phone"></span></p>
-                            <p class="mb-0"><strong>Catatan:</strong> <span id="step4_notes"></span></p>
+                            <p class="mb-1"><strong>Nama:</strong> <span id="step3_name"></span></p>
+                            <p class="mb-1"><strong>Meja:</strong> <span id="step3_table"></span></p>
+                            <p class="mb-1"><strong>Telepon:</strong> <span id="step3_phone"></span></p>
+                            <p class="mb-0"><strong>Catatan:</strong> <span id="step3_notes"></span></p>
                         </div>
                     </div>
                     
@@ -1261,20 +1293,20 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Subtotal:</span>
-                                <strong id="step4_subtotal">Rp 0</strong>
+                                <strong id="step3_subtotal">Rp 0</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Pajak (0%):</span>
-                                <strong id="step4_tax">Rp 0</strong>
+                                <strong id="step3_tax">Rp 0</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Diskon:</span>
-                                <strong id="step4_discount">Rp 0</strong>
+                                <strong id="step3_discount">Rp 0</strong>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between">
                                 <h5>Total:</h5>
-                                <h5 class="text-success" id="step4_total">Rp 0</h5>
+                                <h5 class="text-success" id="step3_total">Rp 0</h5>
                             </div>
                         </div>
                     </div>
@@ -1284,7 +1316,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                             <h6 class="mb-0">Metode Pembayaran</h6>
                         </div>
                         <div class="card-body">
-                            <select class="form-select mb-3" id="step4_paymentMethod" onchange="togglePaymentMethod()">
+                            <select class="form-select mb-3" id="step3_paymentMethod" onchange="togglePaymentMethod()">
                                 <option value="cash">Tunai (Cash)</option>
                                 <option value="midtrans">Midtrans (Kartu/E-Wallet/Bank Transfer)</option>
                             </select>
@@ -1311,12 +1343,12 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         `;
     }
 
-    function updateStep4Summary() {
+    function updateStep3Summary() {
         // Customer info
-        document.getElementById('step4_name').textContent = currentOrder.customer_name || '-';
-        document.getElementById('step4_table').textContent = currentOrder.table_number || '-';
-        document.getElementById('step4_phone').textContent = currentOrder.phone || '-';
-        document.getElementById('step4_notes').textContent = currentOrder.notes || '-';
+        document.getElementById('step3_name').textContent = currentOrder.customer_name || '-';
+        document.getElementById('step3_table').textContent = currentOrder.table_number || '-';
+        document.getElementById('step3_phone').textContent = currentOrder.phone || '-';
+        document.getElementById('step3_notes').textContent = currentOrder.notes || '-';
 
         // Order summary
         let subtotal = 0;
@@ -1332,6 +1364,19 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         <strong>${item.product_name}</strong>
                         <span>${item.quantity}x Rp ${formatPrice(item.unit_price)}</span>
                     </div>
+                    ${item.variants && item.variants.length > 0 ? `
+                        <div class="ps-3 mb-1">
+                            ${item.variants.map(v => `
+                                <small class="text-primary">
+                                    <i class="ti ti-adjustments-horizontal"></i> ${v.option_name}
+                                    ${v.price_adjustment !== 0 ?
+                    ` (${v.price_adjustment > 0 ? '+' : ''}Rp ${formatPrice(v.price_adjustment)})`
+                    : ''
+                }
+                                </small><br>
+                            `).join('')}
+                        </div>
+                    ` : ''}
                     ${item.toppings.length > 0 ? `
                         <div class="ps-3">
                             ${item.toppings.map(t => `
@@ -1349,23 +1394,23 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             `;
         }).join('');
 
-        document.getElementById('step4_orderSummary').innerHTML = summaryHTML;
+        document.getElementById('step3_orderSummary').innerHTML = summaryHTML;
 
         const tax = 0;
         const discount = 0;
         const total = subtotal + tax - discount;
 
-        document.getElementById('step4_subtotal').textContent = 'Rp ' + formatPrice(subtotal);
-        document.getElementById('step4_tax').textContent = 'Rp ' + formatPrice(tax);
-        document.getElementById('step4_discount').textContent = 'Rp ' + formatPrice(discount);
-        document.getElementById('step4_total').textContent = 'Rp ' + formatPrice(total);
+        document.getElementById('step3_subtotal').textContent = 'Rp ' + formatPrice(subtotal);
+        document.getElementById('step3_tax').textContent = 'Rp ' + formatPrice(tax);
+        document.getElementById('step3_discount').textContent = 'Rp ' + formatPrice(discount);
+        document.getElementById('step3_total').textContent = 'Rp ' + formatPrice(total);
 
-        document.getElementById('step4_paymentMethod').value = currentOrder.payment_method || 'cash';
+        document.getElementById('step3_paymentMethod').value = currentOrder.payment_method || 'cash';
     }
 
     // Toggle payment method info
     function togglePaymentMethod() {
-        const method = document.getElementById('step4_paymentMethod').value;
+        const method = document.getElementById('step3_paymentMethod').value;
         const cashInfo = document.getElementById('cashPaymentInfo');
         const midtransInfo = document.getElementById('midtransPaymentInfo');
 
@@ -1381,7 +1426,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     // Submit transaction
     async function submitNewOrder() {
         console.log('🚀 submitNewOrder() called');
-        currentOrder.payment_method = document.getElementById('step4_paymentMethod').value;
+        currentOrder.payment_method = document.getElementById('step3_paymentMethod').value;
         console.log('Payment method:', currentOrder.payment_method);
         console.log('Current order object:', currentOrder);
 

@@ -4,14 +4,14 @@
         <div class="row align-items-center">
             <div class="col">
                 <div class="page-header-title">
-                    <h5 class="m-b-10" id="pageTitleText">Menu</h5>
+                    <h5 class="m-b-10" id="pageTitleText">Komponen Seblak</h5>
                 </div>
             </div>
             <div class="col-auto">
                 <ul class="breadcrumb">
                     <li class="breadcrumb-item"><a href="index.php">Home</a></li>
                     <li class="breadcrumb-item"><a href="javascript: void(0)">Produk</a></li>
-                    <li class="breadcrumb-item" aria-current="page" id="breadcrumbText">Menu</li>
+                    <li class="breadcrumb-item" aria-current="page" id="breadcrumbText">Komponen Seblak</li>
                 </ul>
             </div>
         </div>
@@ -350,6 +350,38 @@
         }
     }
 
+    // Populate component type filter options
+    function populateComponentTypeFilterOptions() {
+        const container = document.getElementById('categoryFilterOptions');
+
+        if (!container) {
+            console.log('Component type filter container not found');
+            return;
+        }
+
+        const componentTypes = [
+            { id: 'spice_level', name: '🌶️ Tingkat Pedas', icon: '🌶️' },
+            { id: 'egg_type', name: '🥚 Jenis Telur', icon: '🥚' },
+            { id: 'broth_flavor', name: '🍲 Rasa Kuah', icon: '🍲' },
+            { id: 'kencur_level', name: '🌿 Tingkat Kencur', icon: '🌿' }
+        ];
+
+        container.innerHTML = '';
+
+        componentTypes.forEach(type => {
+            const option = document.createElement('label');
+            option.className = 'filter-option';
+            option.innerHTML = `
+                <input type="checkbox" class="filter-checkbox" data-filter="component_type" data-value="${type.id}" onchange="handleFilterChange(this)">
+                <span class="filter-icon">${type.icon}</span>
+                <span class="filter-label">${type.name}</span>
+            `;
+            container.appendChild(option);
+        });
+
+        console.log('Populated component type filters');
+    }
+
     // Close dropdown when clicking outside
     document.addEventListener('click', function (e) {
         const dropdown = document.getElementById('filterDropdown');
@@ -507,20 +539,7 @@
     // Initialize page
     document.addEventListener('DOMContentLoaded', function () {
         showDataMenu();
-        loadCategories();
-
-        // Add event listeners for live preview updates
-        document.addEventListener('input', function (e) {
-            if (e.target.matches('#menuName, #menuDescription, #menuPrice, #menuCategory')) {
-                updatePreview();
-            }
-        });
-
-        document.addEventListener('change', function (e) {
-            if (e.target.matches('#isTopping, #menuCategory')) {
-                updatePreview();
-            }
-        });
+        // Categories not needed for components view
     });
 
     // Load categories from API
@@ -541,29 +560,57 @@
         }
     }
 
-    // Load menu data from API
+    // Load menu data from API - Now loads ALL seblak components in one unified list
     async function loadMenuData(showDeleted = false) {
         try {
-            // Build URL with is_active parameter and filter for products only (not toppings)
-            let url = 'api/menu/products.php';
-            if (!showDeleted) {
-                url += '?is_active=true&is_topping=0';
-            } else {
-                url += '?is_active=false&is_topping=0';
-            }
+            // Load all base components in parallel
+            const [spiceLevelsRes, customOptionsRes] = await Promise.all([
+                fetch(`api/spice-levels.php?is_active=${!showDeleted}`),
+                fetch(`api/customization-options.php?is_active=${!showDeleted}`)
+            ]);
 
-            const response = await fetch(url);
-            const result = await response.json();
+            const spiceLevels = await spiceLevelsRes.json();
+            const customOptions = await customOptionsRes.json();
 
-            if (result.success) {
-                displayMenuData(result.data, showDeleted);
+            if (spiceLevels.success && customOptions.success) {
+                // Combine all components into single array with type labels
+                const allComponents = [];
+
+                // Add spice levels
+                (spiceLevels.data || []).forEach(item => {
+                    allComponents.push({
+                        ...item,
+                        component_type: 'spice_level',
+                        component_type_label: 'Tingkat Pedas',
+                        api_endpoint: 'spice-levels',
+                        extra_info: `Level ${item.level_number}`
+                    });
+                });
+
+                // Add customization options
+                (customOptions.data || []).forEach(item => {
+                    let typeLabel = '';
+                    if (item.type === 'egg_type') typeLabel = 'Jenis Telur';
+                    else if (item.type === 'broth_flavor') typeLabel = 'Rasa Kuah';
+                    else if (item.type === 'kencur_level') typeLabel = 'Tingkat Kencur';
+
+                    allComponents.push({
+                        ...item,
+                        component_type: item.type,
+                        component_type_label: typeLabel,
+                        api_endpoint: 'customization-options',
+                        extra_info: item.type
+                    });
+                });
+
+                displayMenuData(allComponents, showDeleted);
             } else {
-                console.error('Failed to load menu data:', result.message);
-                showNotification('Error loading menu data: ' + result.message, 'error');
+                console.error('Failed to load components data', spiceLevels, customOptions);
+                showNotification('Error loading components data. Please refresh the page.', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            showNotification('Error connecting to server', 'error');
+            showNotification('Error connecting to server: ' + error.message, 'error');
         }
     }
 
@@ -574,21 +621,21 @@
         console.log('Main content element:', mainContent);
 
         // Update header
-        document.getElementById('pageTitleText').textContent = 'Menu';
-        document.getElementById('breadcrumbText').textContent = 'Menu';
-        document.getElementById('cardTitleText').textContent = 'Data Menu';
+        document.getElementById('pageTitleText').textContent = 'Komponen Seblak';
+        document.getElementById('breadcrumbText').textContent = 'Komponen Seblak';
+        document.getElementById('cardTitleText').textContent = 'Data Komponen Seblak';
         document.getElementById('cardSubtitleText').classList.add('d-none');
 
-        // Toggle buttons
+        // Toggle buttons - Show them now for CRUD operations
         document.getElementById('btnTambahMenu').classList.remove('d-none');
         document.getElementById('btnKembali').classList.add('d-none');
         document.getElementById('viewToggleTabs').classList.remove('d-none');
 
-        // Set content
+        // Set content - Use same structure as topping page
         mainContent.innerHTML = getDataMenuHTML();
 
-        // Populate category filter options
-        populateCategoryFilterOptions();
+        // Populate component type filter options
+        populateComponentTypeFilterOptions();
 
         // Reload data
         loadMenuData();
@@ -609,7 +656,7 @@
 
     // Apply filters with modern system
     function applyFilters() {
-        // Start with all data (already filtered for products only by API)
+        // Start with all data
         filteredMenuData = [...allMenuData];
 
         // Get search term
@@ -617,34 +664,33 @@
         const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
         // Apply active filters
-        // Collect category filters for OR logic
-        const categoryFilters = Array.from(activeFilters.values()).filter(filter => filter.type === 'category');
+        // Collect component type filters for OR logic
+        const componentTypeFilters = Array.from(activeFilters.values()).filter(filter => filter.type === 'component_type');
 
-        console.log('Applying filters - Category filters found:', categoryFilters.length);
+        console.log('Applying filters - Component type filters found:', componentTypeFilters.length);
 
-        if (categoryFilters.length > 0) {
-            // OR logic: show items that match ANY selected category
-            const selectedCategoryIds = categoryFilters.map(filter => filter.value);
-            console.log('Selected category IDs:', selectedCategoryIds);
+        if (componentTypeFilters.length > 0) {
+            // OR logic: show items that match ANY selected component type
+            const selectedTypes = componentTypeFilters.map(filter => filter.value);
+            console.log('Selected component types:', selectedTypes);
             console.log('Total items before filtering:', filteredMenuData.length);
 
             filteredMenuData = filteredMenuData.filter(item => {
-                const matches = selectedCategoryIds.includes(item.category_id);
+                const matches = selectedTypes.includes(item.component_type);
                 if (matches) {
-                    console.log('Item matches filter:', item.name, item.category_id);
+                    console.log('Item matches filter:', item.name, item.component_type);
                 }
                 return matches;
             });
 
-            console.log('Total items after category filtering:', filteredMenuData.length);
+            console.log('Total items after component type filtering:', filteredMenuData.length);
         }
 
         // Apply search filter
         if (searchTerm) {
             filteredMenuData = filteredMenuData.filter(item =>
                 item.name.toLowerCase().includes(searchTerm) ||
-                (item.description && item.description.toLowerCase().includes(searchTerm)) ||
-                item.category_name.toLowerCase().includes(searchTerm)
+                item.component_type_label.toLowerCase().includes(searchTerm)
             );
         }
 
@@ -682,7 +728,112 @@
         }
     }
 
+    // CRUD functions for components
+    async function editComponent(id, componentType, apiEndpoint) {
+        console.log('Editing component:', id, componentType, apiEndpoint);
+        // TODO: Implement edit form for components
+        showNotification('Edit function coming soon!', 'info');
+    }
 
+    async function deleteComponent(id, name, apiEndpoint) {
+        const result = await Swal.fire({
+            title: 'Hapus Komponen?',
+            text: `Yakin ingin menghapus "${name}"? Item ini akan dipindahkan ke tempat sampah.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`api/${apiEndpoint}.php?id=${id}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Komponen berhasil dihapus', 'success');
+                    loadMenuData();
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error connecting to server', 'error');
+            }
+        }
+    }
+
+    async function restoreComponent(id, name, apiEndpoint) {
+        const result = await Swal.fire({
+            title: 'Pulihkan Komponen?',
+            text: `Yakin ingin memulihkan "${name}"?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Pulihkan!',
+            cancelButtonText: 'Batal'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`api/${apiEndpoint}.php?id=${id}&action=restore`, {
+                    method: 'PATCH'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Komponen berhasil dipulihkan', 'success');
+                    loadMenuData();
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error connecting to server', 'error');
+            }
+        }
+    }
+
+    async function permanentDeleteComponent(id, name, apiEndpoint) {
+        const result = await Swal.fire({
+            title: 'Hapus Permanen?',
+            text: `PERINGATAN: "${name}" akan dihapus PERMANEN dan tidak dapat dikembalikan!`,
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Ya, Hapus Permanen!',
+            cancelButtonText: 'Batal',
+            input: 'text',
+            inputPlaceholder: 'Ketik "HAPUS" untuk konfirmasi',
+            inputValidator: (value) => {
+                if (value !== 'HAPUS') {
+                    return 'Ketik "HAPUS" untuk melanjutkan!'
+                }
+            }
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`api/${apiEndpoint}.php?id=${id}&action=permanent_delete`, {
+                    method: 'PATCH'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Komponen berhasil dihapus permanen', 'success');
+                    loadMenuData(true);
+                } else {
+                    showNotification('Error: ' + data.message, 'error');
+                }
+            } catch (error) {
+                showNotification('Error connecting to server', 'error');
+            }
+        }
+    }
 
     // Show form tambah menu
     function showFormTambah() {
@@ -762,6 +913,31 @@
         if (data) {
             populateForm(data);
         }
+    }
+
+    // Get components HTML - Display base seblak components
+    function getComponentsHTML() {
+        return `
+            <!-- Info Alert -->
+            <div class="alert alert-info alert-dismissible fade show mb-3" role="alert">
+                <i class="ti ti-soup me-2"></i>
+                <strong>Komponen Dasar Seblak</strong> - Halaman ini menampilkan komponen dasar untuk membuat seblak: tingkat kepedasan, jenis telur, rasa kuah, dan tingkat kencur.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="componentsLoading" class="text-center py-5" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading components...</p>
+            </div>
+
+            <!-- Components Container -->
+            <div id="componentsContainer">
+                <!-- Components will be rendered here -->
+            </div>
+        `;
     }
 
     // Get data menu HTML
@@ -870,9 +1046,9 @@
                                 <thead class="table-light table-header-sticky">
                                     <tr class="column-headers">
                                         <th style="min-width: 50px;">#</th>
-                                        <th style="min-width: 100px;">Gambar</th>
-                                        <th style="min-width: 200px;">Nama Menu</th>
-                                        <th style="min-width: 120px;">Kategori</th>
+                                        <th style="min-width: 200px;">Nama Komponen</th>
+                                        <th style="min-width: 150px;">Tipe</th>
+                                        <th style="min-width: 120px;">Info</th>
                                         <th style="min-width: 120px;">Harga</th>
                                         <th style="min-width: 100px;">Status</th>
                                         <th style="min-width: 120px;">Aksi</th>
@@ -884,7 +1060,7 @@
                                             <div class="spinner-border spinner-border-sm" role="status">
                                                 <span class="visually-hidden">Loading...</span>
                                             </div>
-                                            Loading menu data...
+                                            Loading components data...
                                         </td>
                                     </td>
                                 </tr>
@@ -1081,6 +1257,214 @@
         `;
     }
 
+    // Display components data - organized by type
+    function displayComponentsData(componentsData, showDeleted = false) {
+        const container = document.getElementById('componentsContainer');
+        if (!container) return;
+
+        let html = '<div class="row">';
+
+        // 1. Spice Levels Section
+        html += `
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="ti ti-flame me-2"></i>Tingkat Kepedasan (${componentsData.spice_levels.length})</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="50">#</th>
+                                        <th>Nama</th>
+                                        <th width="100">Level</th>
+                                        <th width="120">Harga</th>
+                                        <th width="100">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${componentsData.spice_levels.map((item, index) => `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td><strong>${item.name}</strong></td>
+                                            <td><span class="badge ${getLevelBadgeClass(item.level_number)}">${item.level_number}</span></td>
+                                            <td>Rp ${formatPrice(item.price)}</td>
+                                            <td>
+                                                <span class="badge bg-light-${item.is_active ? 'success' : 'danger'} text-${item.is_active ? 'success' : 'danger'}">
+                                                    ${item.is_active ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 2. Egg Types Section
+        html += `
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="ti ti-eggs me-2"></i>Jenis Telur (${componentsData.egg_types.length})</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="40">#</th>
+                                        <th>Nama</th>
+                                        <th width="120">Harga</th>
+                                        <th width="80">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${componentsData.egg_types.map((item, index) => `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>${item.name}</td>
+                                            <td>Rp ${formatPrice(item.price)}</td>
+                                            <td>
+                                                <span class="badge bg-light-${item.is_active ? 'success' : 'danger'} text-${item.is_active ? 'success' : 'danger'}">
+                                                    ${item.is_active ? '✓' : '✗'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 3. Broth Flavors Section
+        html += `
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="ti ti-soup me-2"></i>Rasa Kuah (${componentsData.broth_flavors.length})</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="40">#</th>
+                                        <th>Nama</th>
+                                        <th width="120">Harga</th>
+                                        <th width="80">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${componentsData.broth_flavors.map((item, index) => `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td>${item.name}</td>
+                                            <td>Rp ${formatPrice(item.price)}</td>
+                                            <td>
+                                                <span class="badge bg-light-${item.is_active ? 'success' : 'danger'} text-${item.is_active ? 'success' : 'danger'}">
+                                                    ${item.is_active ? '✓' : '✗'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 4. Kencur Levels Section
+        html += `
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="ti ti-leaf me-2"></i>Tingkat Kencur (${componentsData.kencur_levels.length})</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="50">#</th>
+                                        <th>Nama</th>
+                                        <th width="120">Harga</th>
+                                        <th width="100">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${componentsData.kencur_levels.map((item, index) => `
+                                        <tr>
+                                            <td>${index + 1}</td>
+                                            <td><strong>${item.name}</strong></td>
+                                            <td>Rp ${formatPrice(item.price)}</td>
+                                            <td>
+                                                <span class="badge bg-light-${item.is_active ? 'success' : 'danger'} text-${item.is_active ? 'success' : 'danger'}">
+                                                    ${item.is_active ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        html += '</div>';
+
+        // Summary Card
+        const totalItems = componentsData.spice_levels.length + componentsData.egg_types.length +
+            componentsData.broth_flavors.length + componentsData.kencur_levels.length;
+
+        html = `
+            <div class="alert alert-light border mb-4">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h3 class="text-danger mb-0">${componentsData.spice_levels.length}</h3>
+                        <small class="text-muted">Tingkat Pedas</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-warning mb-0">${componentsData.egg_types.length}</h3>
+                        <small class="text-muted">Jenis Telur</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-primary mb-0">${componentsData.broth_flavors.length}</h3>
+                        <small class="text-muted">Rasa Kuah</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="text-success mb-0">${componentsData.kencur_levels.length}</h3>
+                        <small class="text-muted">Tingkat Kencur</small>
+                    </div>
+                </div>
+            </div>
+        ` + html;
+
+        container.innerHTML = html;
+    }
+
+    // Helper function to get badge class based on spice level
+    function getLevelBadgeClass(level) {
+        if (level === 0) return 'bg-secondary';
+        if (level === 1) return 'bg-success';
+        if (level === 2) return 'bg-info';
+        if (level === 3) return 'bg-warning';
+        if (level === 4) return 'bg-orange';
+        if (level === 5) return 'bg-danger';
+        return 'bg-dark';
+    }
+
     // Display menu data
     function displayMenuData(menuData, showDeleted = false) {
         allMenuData = menuData; // Store all data (already filtered for products only)
@@ -1099,7 +1483,7 @@
         tableBody.innerHTML = '';
 
         if (filteredMenuData.length === 0) {
-            const message = allMenuData.length === 0 ? 'Tidak ada data menu' : 'Tidak ada data yang sesuai dengan filter';
+            const message = allMenuData.length === 0 ? 'Tidak ada data komponen' : 'Tidak ada data yang sesuai dengan filter';
             tableBody.innerHTML = `
                 <tr>
                     <td colspan="7" class="text-center">
@@ -1118,23 +1502,28 @@
         paginatedData.forEach((item, index) => {
             const actualIndex = startIndex + index + 1; // Global index
             const row = document.createElement('tr');
+
+            // Determine badge color based on component type
+            let badgeColor = 'primary';
+            if (item.component_type === 'spice_level') badgeColor = 'danger';
+            else if (item.component_type === 'egg_type') badgeColor = 'warning';
+            else if (item.component_type === 'broth_flavor') badgeColor = 'info';
+            else if (item.component_type === 'kencur_level') badgeColor = 'success';
+
             row.innerHTML = `
                 <td>${actualIndex}</td>
                 <td>
-                    <div class="menu-image-container position-relative" style="width: 60px; height: 40px;">
-                        ${getImageHTML(item.image_url, item.name, 'small')}
-                    </div>
-                </td>
-                <td>
                     <h6 class="mb-1">${item.name}</h6>
-                    <p class="text-muted f-12 mb-0">${item.description || ''}</p>
                 </td>
                 <td>
-                    <span class="badge bg-light-primary text-primary">
-                        ${item.category_name}
+                    <span class="badge bg-light-${badgeColor} text-${badgeColor}">
+                        ${item.component_type_label}
                     </span>
                 </td>
-                <td>Rp ${formatPrice(item.price)}</td>
+                <td>
+                    <small class="text-muted">${item.extra_info || '-'}</small>
+                </td>
+                <td><strong>Rp ${formatPrice(item.price)}</strong></td>
                 <td>
                     <span class="badge bg-light-${item.is_active ? 'success' : 'danger'} text-${item.is_active ? 'success' : 'danger'}">
                         ${item.is_active ? 'Active' : 'Inactive'}
@@ -1144,18 +1533,18 @@
                     <div class="btn-group" role="group">
                         ${currentViewMode === 'active' ? `
                             <!-- Active Items: Edit + Delete -->
-                            <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editMenu('${item.id}')" title="Edit Menu">
+                            <button type="button" class="btn btn-sm btn-outline-warning me-2" onclick="editComponent('${item.id}', '${item.component_type}', '${item.api_endpoint}')" title="Edit Component">
                                 <i class="ti ti-edit"></i>
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Soft Delete">
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteComponent('${item.id}', '${item.name.replace(/'/g, "&apos;")}', '${item.api_endpoint}')" title="Soft Delete">
                                 <i class="ti ti-trash"></i>
                             </button>
                         ` : `
                             <!-- Deleted Items: Restore + Permanent Delete -->
-                            <button type="button" class="btn btn-sm btn-outline-success me-2" onclick="restoreMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Restore Item">
+                            <button type="button" class="btn btn-sm btn-outline-success me-2" onclick="restoreComponent('${item.id}', '${item.name.replace(/'/g, "&apos;")}', '${item.api_endpoint}')" title="Restore Item">
                                 <i class="ti ti-refresh"></i>
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Permanent Delete">
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteComponent('${item.id}', '${item.name.replace(/'/g, "&apos;")}', '${item.api_endpoint}')" title="Permanent Delete">
                                 <i class="ti ti-trash"></i>
                             </button>
                         `}
@@ -1724,6 +2113,28 @@
     // Utility functions
     function formatPrice(price) {
         return new Intl.NumberFormat('id-ID').format(price);
+    }
+
+    function showLoading() {
+        const loadingEl = document.getElementById('componentsLoading');
+        const containerEl = document.getElementById('componentsContainer');
+        if (loadingEl) {
+            loadingEl.style.display = 'block';
+        }
+        if (containerEl) {
+            containerEl.style.display = 'none';
+        }
+    }
+
+    function hideLoading() {
+        const loadingEl = document.getElementById('componentsLoading');
+        const containerEl = document.getElementById('componentsContainer');
+        if (loadingEl) {
+            loadingEl.style.display = 'none';
+        }
+        if (containerEl) {
+            containerEl.style.display = 'block';
+        }
     }
 
     // Simple image URL handling - converts database filename to proper path

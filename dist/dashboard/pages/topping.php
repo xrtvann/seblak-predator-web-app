@@ -327,29 +327,34 @@
     function populateCategoryFilterOptions() {
         const container = document.getElementById('categoryFilterOptions');
 
-        console.log('Populating category filter options:', categories.length, 'categories found');
-
-        if (container && categories.length > 0) {
-            container.innerHTML = '';
-
-            // Filter only topping categories
-            const toppingCategories = categories.filter(cat => cat.type === 'topping');
-            console.log('Filtered topping categories:', toppingCategories.length);
-
-            toppingCategories.forEach(category => {
-                console.log('Adding category filter:', category.name, category.id);
-                const option = document.createElement('label');
-                option.className = 'filter-option';
-                option.innerHTML = `
-                    <input type="checkbox" class="filter-checkbox" data-filter="category" data-value="${category.id}" onchange="handleFilterChange(this)">
-                    <span class="filter-icon">📂</span>
-                    <span class="filter-label">${category.name}</span>
-                `;
-                container.appendChild(option);
-            });
-        } else {
-            console.log('No categories to populate or container not found:', container, categories);
+        if (!container) {
+            console.log('Category filter container not found');
+            return;
         }
+
+        // Filter only active topping categories
+        const toppingCategories = categories.filter(cat => cat.type === 'topping' && cat.is_active);
+
+        console.log('Populating category filter options:', toppingCategories.length, 'categories');
+
+        if (toppingCategories.length === 0) {
+            container.innerHTML = '<p class="text-muted small">No categories available</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+
+        toppingCategories.forEach(category => {
+            console.log('Adding category filter:', category.name, category.id);
+            const option = document.createElement('label');
+            option.className = 'filter-option';
+            option.innerHTML = `
+                <input type="checkbox" class="filter-checkbox" data-filter="category" data-value="${category.id}" onchange="handleFilterChange(this)">
+                <span class="filter-icon">📂</span>
+                <span class="filter-label">${category.name}</span>
+            `;
+            container.appendChild(option);
+        });
     }
 
     // Close dropdown when clicking outside
@@ -373,7 +378,7 @@
 
     async function editMenu(id) {
         try {
-            const response = await fetch(`api/menu/products.php?id=${id}`);
+            const response = await fetch(`api/menu/toppings.php?id=${id}`);
             const result = await response.json();
 
             if (result.success) {
@@ -546,12 +551,12 @@
     // Load menu data from API
     async function loadMenuData(showDeleted = false) {
         try {
-            // Build URL with is_active parameter and filter for toppings only
-            let url = 'api/menu/products.php';
+            // Build URL for toppings API and filter by availability
+            let url = 'api/menu/toppings.php';
             if (!showDeleted) {
-                url += '?is_active=true&is_topping=1';
+                url += '?is_available=true';
             } else {
-                url += '?is_active=false&is_topping=1';
+                url += '?is_available=false';
             }
 
             const response = await fetch(url);
@@ -645,8 +650,7 @@
         if (searchTerm) {
             filteredMenuData = filteredMenuData.filter(item =>
                 item.name.toLowerCase().includes(searchTerm) ||
-                (item.description && item.description.toLowerCase().includes(searchTerm)) ||
-                item.category_name.toLowerCase().includes(searchTerm)
+                (item.category_name && item.category_name.toLowerCase().includes(searchTerm))
             );
         }
 
@@ -698,7 +702,7 @@
         currentEditId = id;
 
         try {
-            const apiUrl = `api/menu/products.php?id=${id}`;
+            const apiUrl = `api/menu/toppings.php?id=${id}`;
             console.log('Fetching from URL:', apiUrl);
 
             const response = await fetch(apiUrl);
@@ -951,11 +955,12 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="menuCategory" class="form-label">Kategori <span class="text-danger">*</span></label>
-                                            <select class="form-select" id="menuCategory" name="category_id" required>
+                                            <label for="menuCategory" class="form-label">Kategori</label>
+                                            <select class="form-select" id="menuCategory" name="category">
                                                 <option value="">Pilih Kategori</option>
+                                                <!-- Options will be populated dynamically from categories API -->
                                             </select>
-                                            <div class="form-text">Pilih kategori yang sesuai</div>
+                                            <div class="form-text">Pilih kategori topping</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1130,11 +1135,11 @@
                 </td>
                 <td>
                     <h6 class="mb-1">${item.name}</h6>
-                    <p class="text-muted f-12 mb-0">${item.description || ''}</p>
+                    <p class="text-muted f-12 mb-0">${item.category_name || 'No category'}</p>
                 </td>
                 <td>
                     <span class="badge bg-light-warning text-warning">
-                        ${item.category_name}
+                        ${item.category_name || 'No category'}
                     </span>
                 </td>
                 <td>Rp ${formatPrice(item.price)}</td>
@@ -1201,10 +1206,10 @@
                     </div>
                     <div class="card-body d-flex flex-column">
                         <h6 class="card-title">${item.name}</h6>
-                        <p class="card-text text-muted f-12 flex-grow-1">${item.description || 'No description'}</p>
+                        <p class="card-text text-muted f-12 flex-grow-1">${item.category_name || 'No category'}</p>
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="badge bg-light-warning text-warning">
-                                ${item.category_name}
+                                ${item.category_name || 'No category'}
                             </span>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
@@ -1238,21 +1243,33 @@
 
     // Populate category select
     function populateCategorySelect() {
-        const select = document.getElementById('menuCategory');
-        if (!select) return;
+        const categorySelect = document.getElementById('menuCategory');
 
-        // Clear existing options except first
-        select.innerHTML = '<option value="">Pilih Kategori Topping</option>';
+        if (!categorySelect) {
+            console.log('Category select not found');
+            return;
+        }
 
         // Filter only topping categories
-        const toppingCategories = categories.filter(cat => cat.type === 'topping');
+        const toppingCategories = categories.filter(cat => cat.type === 'topping' && cat.is_active);
 
+        if (toppingCategories.length === 0) {
+            console.log('No active topping categories found');
+            return;
+        }
+
+        // Clear existing options except the first (placeholder)
+        categorySelect.innerHTML = '<option value="">Pilih Kategori</option>';
+
+        // Add category options
         toppingCategories.forEach(category => {
             const option = document.createElement('option');
             option.value = category.id;
             option.textContent = category.name;
-            select.appendChild(option);
+            categorySelect.appendChild(option);
         });
+
+        console.log(`Loaded ${toppingCategories.length} topping categories`);
     }
 
     // Populate form for editing
@@ -1262,24 +1279,16 @@
         // Basic form fields
         document.getElementById('menuName').value = data.name || '';
         document.getElementById('menuPrice').value = data.price || '';
-        document.getElementById('menuDescription').value = data.description || '';
-        document.getElementById('isTopping').checked = data.is_topping || false;
-        document.getElementById('isActive').checked = data.is_active !== undefined ? data.is_active : true;
-        document.getElementById('submitText').textContent = 'Update Menu';
 
-        // Handle category selection - need to ensure categories are loaded first
-        setTimeout(() => {
-            const categorySelect = document.getElementById('menuCategory');
-            if (categorySelect && data.category_id) {
-                categorySelect.value = data.category_id;
-                console.log('Set category to:', data.category_id);
+        // Topping-specific fields
+        const categorySelect = document.getElementById('menuCategory');
+        if (categorySelect && data.category_id) {
+            categorySelect.value = data.category_id;
+        }
 
-                // Trigger change event to ensure any listeners are notified
-                categorySelect.dispatchEvent(new Event('change'));
-            }
-        }, 100);
+        document.getElementById('submitText').textContent = 'Update Topping';
 
-        // Handle image data for edit mode
+        // Handle image data for edit mode - toppings table uses 'image' field
         const fileInput = document.getElementById('menuImageFile');
         if (fileInput) {
             // Clear any previous data
@@ -1396,13 +1405,12 @@
             console.log('Final data being sent to API:', data);
 
             // Convert checkbox to boolean
-            data.is_topping = formData.has('is_topping');
-            data.is_active = true; // Default to active for new menus
+            data.is_available = true; // Default to available for new toppings
 
             // Convert price to number
             data.price = parseFloat(data.price);
 
-            let url = 'api/menu/products.php';
+            let url = 'api/menu/toppings.php';
             let method = 'POST';
 
             if (currentEditId) {
@@ -1445,7 +1453,7 @@
             showLoading('Menghapus...', 'Sedang menghapus menu, tunggu sebentar...');
 
             try {
-                const response = await fetch(`api/menu/products.php?id=${id}`, {
+                const response = await fetch(`api/menu/toppings.php?id=${id}`, {
                     method: 'DELETE'
                 });
 
@@ -1477,7 +1485,7 @@
             showLoading('Memulihkan...', 'Sedang memulihkan menu, tunggu sebentar...');
 
             try {
-                const response = await fetch(`api/menu/products.php?id=${id}&action=restore`, {
+                const response = await fetch(`api/menu/toppings.php?id=${id}&action=restore`, {
                     method: 'PATCH'
                 });
 
@@ -1509,7 +1517,7 @@
             showLoading('Menghapus Permanen...', 'Sedang menghapus menu secara permanen, tunggu sebentar...');
 
             try {
-                const response = await fetch(`api/menu/products.php?id=${id}&action=permanent_delete`, {
+                const response = await fetch(`api/menu/toppings.php?id=${id}&action=permanent_delete`, {
                     method: 'PATCH'
                 });
 

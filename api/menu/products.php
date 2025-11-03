@@ -128,6 +128,50 @@ function getAllProducts()
             $row['price'] = floatval($row['price']);
             $row['is_topping'] = (bool) $row['is_topping'];
             $row['is_active'] = (bool) $row['is_active'];
+
+            // Get product variants for each product
+            $variantQuery = "SELECT vg.id as group_id, vg.name as group_name, 
+                                    vg.is_required, vg.allow_multiple, vg.sort_order,
+                                    vo.id as option_id, vo.name as option_name, 
+                                    vo.price_adjustment, vo.is_active as option_active,
+                                    vo.sort_order as option_sort_order
+                             FROM product_variant_groups vg
+                             LEFT JOIN product_variant_options vo ON vg.id = vo.variant_group_id AND vo.is_active = TRUE
+                             WHERE vg.product_id = ?
+                             ORDER BY vg.sort_order, vo.sort_order";
+
+            $variantStmt = mysqli_prepare($koneksi, $variantQuery);
+            mysqli_stmt_bind_param($variantStmt, "s", $row['id']);
+            mysqli_stmt_execute($variantStmt);
+            $variantResult = mysqli_stmt_get_result($variantStmt);
+
+            $variants = [];
+            while ($variantRow = mysqli_fetch_assoc($variantResult)) {
+                $groupId = $variantRow['group_id'];
+                if (!isset($variants[$groupId])) {
+                    $variants[$groupId] = [
+                        'id' => $variantRow['group_id'],
+                        'name' => $variantRow['group_name'],
+                        'is_required' => (bool) $variantRow['is_required'],
+                        'allow_multiple' => (bool) $variantRow['allow_multiple'],
+                        'sort_order' => $variantRow['sort_order'],
+                        'options' => []
+                    ];
+                }
+
+                if ($variantRow['option_id']) {
+                    $variants[$groupId]['options'][] = [
+                        'id' => $variantRow['option_id'],
+                        'name' => $variantRow['option_name'],
+                        'price_adjustment' => floatval($variantRow['price_adjustment']),
+                        'is_active' => (bool) $variantRow['option_active'],
+                        'sort_order' => $variantRow['option_sort_order']
+                    ];
+                }
+            }
+
+            $row['variants'] = array_values($variants);
+
             $products[] = $row;
         }
 

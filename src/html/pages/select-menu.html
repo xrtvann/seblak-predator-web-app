@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <!-- [Head] start -->
+  <head>
+    @@include('../layouts/head-page-meta.html', {'title': 'Select Menu'})
+    @@include('../layouts/head-css.html')
+  </head>
+  <!-- [Head] end -->
+  <!-- [Body] Start -->
+  <body>
+    @@include('../layouts/layout-vertical.html')
+
+    <!-- [ Main Content ] start -->
+    <div class="pc-container">
+      <div class="pc-content">
+        <!-- [ Main Content ] start -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h3>Select Menu</h3>
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="ti ti-search"></i></span>
+                      <input type="text" id="searchInput" class="form-control" placeholder="Search product...">
+                    </div>
+                  </div>
+                </div>
+                <div id="seblak-orders">
+                  <!-- Seblak order items will be dynamically added here -->
+                </div>
+                <button id="add-seblak-btn" class="btn btn-primary mt-3">Add Seblak</button>
+                <hr>
+                <button id="place-order-btn" class="btn btn-success">Place Order</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- [ Main Content ] end -->
+      </div>
+    </div>
+    <!-- [ Main Content ] end -->
+    @@include('../layouts/footer-block.html')
+    @@include('../layouts/footer-js.html')
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const seblakOrdersContainer = document.getElementById('seblak-orders');
+        const addSeblakBtn = document.getElementById('add-seblak-btn');
+        const placeOrderBtn = document.getElementById('place-order-btn');
+        const searchInput = document.getElementById('searchInput');
+        let seblakOrderCount = 0;
+        let allProducts = [];
+
+        // Fetch all products initially
+        fetch('/api/menu/products.php?is_topping=false&is_active=true')
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              allProducts = data.data;
+              addSeblakOrder(); // Add the first order form after products are loaded
+            }
+          });
+
+        function filterProducts(searchTerm) {
+          const lowerCaseSearchTerm = searchTerm.toLowerCase();
+          return allProducts.filter(product => product.name.toLowerCase().includes(lowerCaseSearchTerm));
+        }
+
+        function populateBaseSeblak(orderIndex, products) {
+          const selectElement = document.getElementById(`base-seblak-${orderIndex}`);
+          selectElement.innerHTML = '<option selected disabled>Choose a base seblak</option>';
+          products.forEach(product => {
+            const option = new Option(product.name, product.id);
+            selectElement.add(option);
+          });
+        }
+
+        function addSeblakOrder() {
+          seblakOrderCount++;
+          const orderId = `seblak-order-${seblakOrderCount}`;
+          const orderTemplate = `
+            <div class="card mb-3" id="${orderId}" data-order-index="${seblakOrderCount}">
+              <div class="card-body">
+                <h5 class="card-title">Seblak #${seblakOrderCount}</h5>
+                <div class="mb-3">
+                  <label for="seblak-name-${seblakOrderCount}" class="form-label">Name for this Seblak</label>
+                  <input type="text" class="form-control" id="seblak-name-${seblakOrderCount}" placeholder="e.g., John's Seblak">
+                </div>
+                <div class="mb-3">
+                  <label for="base-seblak-${seblakOrderCount}" class="form-label">Base Seblak</label>
+                  <select class="form-select" id="base-seblak-${seblakOrderCount}">
+                    <!-- Options will be populated from API -->
+                  </select>
+                </div>
+                <div id="variants-container-${seblakOrderCount}">
+                  <!-- Variants will be populated here -->
+                </div>
+                <div id="toppings-container-${seblakOrderCount}">
+                  <!-- Toppings will be populated here -->
+                </div>
+                <button class="btn btn-danger btn-sm remove-seblak-btn" data-order-id="${orderId}">Remove</button>
+              </div>
+            </div>
+          `;
+          seblakOrdersContainer.insertAdjacentHTML('beforeend', orderTemplate);
+          populateBaseSeblak(seblakOrderCount, allProducts);
+
+          const baseSeblakSelect = document.getElementById(`base-seblak-${seblakOrderCount}`);
+          baseSeblakSelect.addEventListener('change', (event) => {
+            loadProductDetails(event.target.value, seblakOrderCount);
+          });
+        }
+
+        function loadProductDetails(productId, orderIndex) {
+          const variantsContainer = document.getElementById(`variants-container-${orderIndex}`);
+          const toppingsContainer = document.getElementById(`toppings-container-${orderIndex}`);
+          variantsContainer.innerHTML = '';
+          toppingsContainer.innerHTML = '';
+
+          if (!productId) return;
+
+          fetch(`/api/menu/products.php?id=${productId}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                const product = data.data;
+                // Display variants
+                if (product.variants && product.variants.length > 0) {
+                  let variantsHtml = '<h6>Variants</h6>';
+                  product.variants.forEach(group => {
+                    variantsHtml += `<p><b>${group.name}</b></p>`;
+                    group.options.forEach(option => {
+                      const inputType = group.allow_multiple ? 'checkbox' : 'radio';
+                      variantsHtml += `
+                        <div class="form-check">
+                          <input class="form-check-input variant-option" type="${inputType}" name="variant-group-${orderIndex}-${group.id}" id="variant-option-${option.id}" value="${option.id}" data-group-id="${group.id}">
+                          <label class="form-check-label" for="variant-option-${option.id}">
+                            ${option.name} (+${option.price_adjustment})
+                          </label>
+                        </div>
+                      `;
+                    });
+                  });
+                  variantsContainer.innerHTML = variantsHtml;
+                }
+
+                // Display toppings
+                if (product.toppings && product.toppings.length > 0) {
+                  let toppingsHtml = '<h6>Toppings</h6>';
+                  product.toppings.forEach(topping => {
+                    toppingsHtml += `
+                      <div class="form-check">
+                        <input class="form-check-input topping-option" type="checkbox" id="topping-${orderIndex}-${topping.id}" value="${topping.id}">
+                        <label class="form-check-label" for="topping-${orderIndex}-${topping.id}">
+                          ${topping.name} (+${topping.price})
+                        </label>
+                      </div>
+                    `;
+                  });
+                  toppingsContainer.innerHTML = toppingsHtml;
+                }
+              }
+            });
+        }
+
+        function placeOrder() {
+          const orders = [];
+          const orderElements = seblakOrdersContainer.querySelectorAll('[id^=seblak-order-]');
+
+          orderElements.forEach(orderElement => {
+            const orderIndex = orderElement.dataset.orderIndex;
+            const seblakName = document.getElementById(`seblak-name-${orderIndex}`).value;
+            const baseSeblakId = document.getElementById(`base-seblak-${orderIndex}`).value;
+
+            const selectedVariants = [];
+            const variantElements = orderElement.querySelectorAll('.variant-option:checked');
+            variantElements.forEach(variant => {
+              selectedVariants.push(variant.value);
+            });
+
+            const selectedToppings = [];
+            const toppingElements = orderElement.querySelectorAll('.topping-option:checked');
+            toppingElements.forEach(topping => {
+              selectedToppings.push(topping.value);
+            });
+
+            orders.push({
+              name: seblakName,
+              base_product_id: baseSeblakId,
+              variants: selectedVariants,
+              toppings: selectedToppings
+            });
+          });
+
+          // Send the order to the server
+          fetch('/api/orders/create.php', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ items: orders })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              alert('Order placed successfully!');
+              // Optionally, redirect to an order confirmation page
+              // window.location.href = '/pages/order-confirmation.html';
+            } else {
+              alert('Error placing order: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while placing the order.');
+          });
+        }
+
+        addSeblakBtn.addEventListener('click', addSeblakOrder);
+        placeOrderBtn.addEventListener('click', placeOrder);
+
+        seblakOrdersContainer.addEventListener('click', function(event) {
+          if (event.target.classList.contains('remove-seblak-btn')) {
+            const orderId = event.target.dataset.orderId;
+            const orderElement = document.getElementById(orderId);
+            if (orderElement) {
+              orderElement.remove();
+            }
+          }
+        });
+
+        searchInput.addEventListener('input', function(event) {
+          const searchTerm = event.target.value;
+          const filteredProducts = filterProducts(searchTerm);
+          const orderElements = seblakOrdersContainer.querySelectorAll('[id^=seblak-order-]');
+          orderElements.forEach(orderElement => {
+            const orderIndex = orderElement.dataset.orderIndex;
+            populateBaseSeblak(orderIndex, filteredProducts);
+          });
+        });
+
+      });
+    </script>
+  </body>
+  <!-- [Body] end -->
+</html>
