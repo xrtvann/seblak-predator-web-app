@@ -433,7 +433,6 @@
         if (form) {
             form.reset();
             // Reset visibility of type-specific fields
-            document.getElementById('spiceLevelFields').classList.add('d-none');
             document.getElementById('customizationFields').classList.add('d-none');
             // Reset image preview
             showImagePlaceholder();
@@ -444,22 +443,13 @@
     // Handle component type change
     function handleComponentTypeChange() {
         const componentType = document.getElementById('componentType').value;
-        const spiceLevelFields = document.getElementById('spiceLevelFields');
         const customizationFields = document.getElementById('customizationFields');
 
-        // Hide all type-specific fields first
-        spiceLevelFields.classList.add('d-none');
-        customizationFields.classList.add('d-none');
-
-        // Show relevant fields based on component type
-        if (componentType === 'spice_level') {
-            spiceLevelFields.classList.remove('d-none');
-            // Make level field required
-            document.getElementById('spiceLevel').setAttribute('required', 'required');
-        } else if (componentType && componentType !== 'spice_level') {
+        // Show description field for all component types
+        if (componentType) {
             customizationFields.classList.remove('d-none');
-            // Remove required from level field
-            document.getElementById('spiceLevel').removeAttribute('required');
+        } else {
+            customizationFields.classList.add('d-none');
         }
 
         updateComponentPreview();
@@ -511,14 +501,9 @@
             statusBadge.className = 'badge bg-secondary';
         }
 
-       
-        // Update description
-        let description = '';
-        if (componentType === 'spice_level') {
-            description = document.getElementById('spiceDescription')?.value || 'Deskripsi akan tampil di sini...';
-        } else {
-            description = document.getElementById('optionDescription')?.value || 'Deskripsi akan tampil di sini...';
-        }
+
+        // Update description (use the same field for all component types)
+        const description = document.getElementById('optionDescription')?.value || 'Deskripsi akan tampil di sini...';
         document.getElementById('previewDescription').textContent = description;
     }
 
@@ -738,7 +723,7 @@
             if (result.success) {
                 categories = result.data;
                 populateCategorySelect();
-                populateCategoryFilterOptions(); 
+                populateCategoryFilterOptions();
             } else {
                 console.error('Failed to load categories:', result.message);
             }
@@ -803,7 +788,7 @@
 
     // Show data menu view
     function showDataMenu() {
-      
+
         const mainContent = document.getElementById('mainContentArea');
 
 
@@ -1385,7 +1370,7 @@
                                     <div class="mb-3">
                                         <label for="optionDescription" class="form-label">Deskripsi</label>
                                         <textarea class="form-control" id="optionDescription" name="description" rows="3"
-                                                  placeholder="Deskripsi opsi."></textarea>
+                                                  placeholder="Deskripsi opsi." oninput="updateComponentPreview()"></textarea>
                               
                                     </div>
                                 </div>
@@ -1906,15 +1891,8 @@
             isAvailableCheck.checked = data.is_available !== undefined ? data.is_available : true;
         }
 
-        // Type-specific fields
-        if (data.component_type === 'spice_level') {
-            // Populate spice level fields
-            document.getElementById('spiceLevel').value = data.level || 0;
-            document.getElementById('spiceDescription').value = data.description || '';
-        } else {
-            // Populate customization option fields
-            document.getElementById('optionDescription').value = data.description || '';
-        }
+        // Populate description field (same field for all component types)
+        document.getElementById('optionDescription').value = data.description || '';
 
         // Handle existing image
         if (data.image_url) {
