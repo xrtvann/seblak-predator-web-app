@@ -154,7 +154,7 @@ function hasPageAccess($page, $user = null)
     // Define page access permissions
     $page_permissions = [
         'dashboard' => ['owner', 'admin'],          // Only owner and admin can access dashboard
-        'menu' => ['owner', 'admin'],               // Only owner and admin can manage menu
+        'dasar-seblak' => ['owner', 'admin'],       // Only owner and admin can manage dasar seblak
         'topping' => ['owner', 'admin'],            // Only owner and admin can manage topping
         'kategori' => ['owner', 'admin'],           // Only owner and admin can manage categories
         'transaksi' => ['owner', 'admin'],          // Only owner and admin can view transactions
@@ -202,7 +202,7 @@ function getAccessiblePages($user = null)
     // Define page access permissions
     $page_permissions = [
         'dashboard' => ['owner', 'admin'],
-        'menu' => ['owner', 'admin'],
+        'dasar-seblak' => ['owner', 'admin'],
         'topping' => ['owner', 'admin'],
         'kategori' => ['owner', 'admin'],
         'transaksi' => ['owner', 'admin'],

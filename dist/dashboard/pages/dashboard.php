@@ -9,7 +9,7 @@
             </div>
             <div class="col-auto">
                 <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="index.php">Home</a></li>
+                    <li class="breadcrumb-item"><a href="index.php">Beranda</a></li>
                     <li class="breadcrumb-item" aria-current="page">Dashboard</li>
                 </ul>
             </div>
@@ -113,8 +113,8 @@
                     </div>
                     <div class="col-md-6">
                         <h6>Quick Actions:</h6>
-                        <a href="index.php?page=menu" class="btn btn-primary me-2 mb-2">
-                            <i class="ti ti-soup me-1"></i>Kelola Menu
+                        <a href="index.php?page=dasar-seblak" class="btn btn-primary me-2 mb-2">
+                            <i class="ti ti-soup me-1"></i>Kelola Dasar Seblak
                         </a>
                         <a href="index.php?page=transaksi" class="btn btn-success me-2 mb-2">
                             <i class="ti ti-receipt me-1"></i>Transaksi Baru

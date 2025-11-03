@@ -4,14 +4,14 @@
         <div class="row align-items-center">
             <div class="col">
                 <div class="page-header-title">
-                    <h5 class="m-b-10" id="pageTitleText">Komponen Seblak</h5>
+                    <h5 class="m-b-10" id="pageTitleText">Dasar Seblak</h5>
                 </div>
             </div>
             <div class="col-auto">
                 <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="index.php">Home</a></li>
+                    <li class="breadcrumb-item"><a href="index.php">Beranda</a></li>
                     <li class="breadcrumb-item"><a href="javascript: void(0)">Produk</a></li>
-                    <li class="breadcrumb-item" aria-current="page" id="breadcrumbText">Komponen Seblak</li>
+                    <li class="breadcrumb-item" aria-current="page" id="breadcrumbText">Dasar Seblak</li>
                 </ul>
             </div>
         </div>
@@ -27,9 +27,9 @@
             <div class="card-header">
                 <div class="row align-items-center">
                     <div class="col">
-                        <h5 id="cardTitleText">Data Menu</h5>
-                        <p class="text-muted mb-0 d-none" id="cardSubtitleText">Isi form di bawah untuk menambahkan menu
-                            baru</p>
+                        <h5 id="cardTitleText">Data Dasar Seblak</h5>
+                        <p class="text-muted mb-0 d-none" id="cardSubtitleText">Isi form di bawah untuk menambahkan
+                            komponen dasar seblak baru</p>
                     </div>
                     <div class="col-auto">
                         <div class="d-flex align-items-center" id="headerActions">
@@ -54,7 +54,7 @@
                             <!-- Action Buttons -->
                             <button type="button" class="btn btn-primary d-flex" id="btnTambahMenu"
                                 onclick="showFormTambah()">
-                                <i class="ti ti-plus me-2"></i> Tambah Menu
+                                <i class="ti ti-plus me-2"></i> Tambah Komponen
                             </button>
                             <button type="button" class="btn btn-secondary d-none" id="btnKembali"
                                 onclick="showDataMenu()">
@@ -360,10 +360,10 @@
         }
 
         const componentTypes = [
-            { id: 'spice_level', name: '🌶️ Tingkat Pedas', icon: '🌶️' },
-            { id: 'egg_type', name: '🥚 Jenis Telur', icon: '🥚' },
-            { id: 'broth_flavor', name: '🍲 Rasa Kuah', icon: '🍲' },
-            { id: 'kencur_level', name: '🌿 Tingkat Kencur', icon: '🌿' }
+            { id: 'spice_level', name: 'Tingkat Pedas', icon: '🌶️' },
+            { id: 'egg_type', name: 'Jenis Telur', icon: '🥚' },
+            { id: 'broth_flavor', name: 'Rasa Kuah', icon: '🍲' },
+            { id: 'kencur_level', name: 'Tingkat Kencur', icon: '🌿' }
         ];
 
         container.innerHTML = '';
@@ -397,7 +397,7 @@
     // Show form for adding new menu
     function showFormTambah() {
         currentEditId = null;
-        showForm('Tambah Menu', 'Form Tambah Menu');
+        showForm('Tambah Komponen', 'Form Tambah Komponen Dasar Seblak');
     }
 
 
@@ -408,20 +408,219 @@
 
             if (result.success) {
                 currentEditId = id;
-                showForm('Edit Menu', 'Form Edit Menu', result.data);
+                showForm('Edit Komponen', 'Form Edit Komponen Dasar Seblak', result.data);
             } else {
-                showNotification('Error loading menu data: ' + result.message, 'error');
+                showNotification('Error memuat data komponen: ' + result.message, 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            showNotification('Error connecting to server', 'error');
+            showNotification('Error menghubungkan ke server', 'error');
         }
     }
 
     // Reset form
     function resetForm() {
-        document.getElementById('menuForm').reset();
-        updatePreview();
+        const form = document.getElementById('componentForm');
+        if (form) {
+            form.reset();
+            updateComponentPreview();
+        }
+    }
+
+    // Reset component form
+    function resetComponentForm() {
+        const form = document.getElementById('componentForm');
+        if (form) {
+            form.reset();
+            // Reset visibility of type-specific fields
+            document.getElementById('spiceLevelFields').classList.add('d-none');
+            document.getElementById('customizationFields').classList.add('d-none');
+            // Reset image preview
+            showImagePlaceholder();
+            updateComponentPreview();
+        }
+    }
+
+    // Handle component type change
+    function handleComponentTypeChange() {
+        const componentType = document.getElementById('componentType').value;
+        const spiceLevelFields = document.getElementById('spiceLevelFields');
+        const customizationFields = document.getElementById('customizationFields');
+
+        // Hide all type-specific fields first
+        spiceLevelFields.classList.add('d-none');
+        customizationFields.classList.add('d-none');
+
+        // Show relevant fields based on component type
+        if (componentType === 'spice_level') {
+            spiceLevelFields.classList.remove('d-none');
+            // Make level field required
+            document.getElementById('spiceLevel').setAttribute('required', 'required');
+        } else if (componentType && componentType !== 'spice_level') {
+            customizationFields.classList.remove('d-none');
+            // Remove required from level field
+            document.getElementById('spiceLevel').removeAttribute('required');
+        }
+
+        updateComponentPreview();
+    }
+
+    // Update component preview
+    function updateComponentPreview() {
+        const componentType = document.getElementById('componentType')?.value || '';
+        const name = document.getElementById('componentName')?.value || 'Nama Komponen';
+        const price = document.getElementById('componentPrice')?.value || 0;
+        const isAvailable = document.getElementById('isAvailable')?.checked || true;
+
+        // Update preview name
+        document.getElementById('previewComponentName').textContent = name;
+
+        // Update preview price
+        document.getElementById('previewComponentPrice').textContent = 'Rp ' + formatPrice(price);
+
+        // Update preview type badge
+        const typeBadge = document.getElementById('previewComponentType');
+        const typeLabels = {
+            'spice_level': '🌶️ Tingkat Pedas',
+            'egg_type': '🥚 Jenis Telur',
+            'broth_flavor': '🍲 Rasa Kuah',
+            'kencur_level': '🌿 Tingkat Kencur'
+        };
+        const typeColors = {
+            'spice_level': 'bg-danger',
+            'egg_type': 'bg-warning',
+            'broth_flavor': 'bg-info',
+            'kencur_level': 'bg-success'
+        };
+
+        if (componentType && typeLabels[componentType]) {
+            typeBadge.textContent = typeLabels[componentType];
+            typeBadge.className = 'badge ' + typeColors[componentType];
+        } else {
+            typeBadge.textContent = 'Pilih Tipe';
+            typeBadge.className = 'badge bg-secondary';
+        }
+
+        // Update status badge
+        const statusBadge = document.getElementById('previewComponentStatus');
+        if (isAvailable) {
+            statusBadge.textContent = 'Tersedia';
+            statusBadge.className = 'badge bg-success';
+        } else {
+            statusBadge.textContent = 'Tidak Tersedia';
+            statusBadge.className = 'badge bg-secondary';
+        }
+
+        // Update spice level preview
+        const spiceLevelPreview = document.getElementById('previewSpiceLevel');
+        if (componentType === 'spice_level') {
+            const level = document.getElementById('spiceLevel')?.value || 0;
+            const levelBar = document.getElementById('previewSpiceLevelBar');
+            const percentage = (parseInt(level) / 5) * 100;
+            levelBar.style.width = percentage + '%';
+            levelBar.textContent = 'Level ' + level;
+            spiceLevelPreview.classList.remove('d-none');
+        } else {
+            spiceLevelPreview.classList.add('d-none');
+        }
+
+        // Update description
+        let description = '';
+        if (componentType === 'spice_level') {
+            description = document.getElementById('spiceDescription')?.value || 'Deskripsi akan tampil di sini...';
+        } else {
+            description = document.getElementById('optionDescription')?.value || 'Deskripsi akan tampil di sini...';
+        }
+        document.getElementById('previewDescription').textContent = description;
+    }
+
+    // Handle component image upload
+    function handleComponentImageUpload(input) {
+        const file = input.files[0];
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+        if (!file) {
+            // No file selected, show placeholder
+            showImagePlaceholder();
+            return;
+        }
+
+        // Validate file type
+        if (!allowedTypes.includes(file.type)) {
+            alert('Tipe file tidak didukung! Gunakan JPG, PNG, GIF, atau WebP.');
+            input.value = '';
+            showImagePlaceholder();
+            return;
+        }
+
+        // Validate file size
+        if (file.size > maxSize) {
+            alert('Ukuran file terlalu besar! Maksimal 2MB.');
+            input.value = '';
+            showImagePlaceholder();
+            return;
+        }
+
+        // Show upload progress
+        const progressBar = document.getElementById('componentUploadProgress');
+        const progressBarInner = progressBar.querySelector('.progress-bar');
+        progressBar.style.display = 'block';
+        progressBarInner.style.width = '0%';
+
+        // Simulate upload progress
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            progressBarInner.style.width = progress + '%';
+            if (progress >= 90) {
+                clearInterval(interval);
+            }
+        }, 50);
+
+        // Read and preview image
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            // Complete progress
+            clearInterval(interval);
+            progressBarInner.style.width = '100%';
+
+            // Show preview
+            const previewImage = document.getElementById('previewComponentImage');
+            const previewPlaceholder = document.getElementById('previewComponentPlaceholder');
+
+            previewImage.src = e.target.result;
+            previewImage.style.display = 'block';
+            previewPlaceholder.style.display = 'none';
+
+            // Hide progress bar after a short delay
+            setTimeout(() => {
+                progressBar.style.display = 'none';
+                progressBarInner.style.width = '0%';
+            }, 500);
+        };
+
+        reader.onerror = function () {
+            clearInterval(interval);
+            alert('Gagal membaca file gambar!');
+            progressBar.style.display = 'none';
+            showImagePlaceholder();
+            input.value = '';
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    // Show image placeholder
+    function showImagePlaceholder() {
+        const previewImage = document.getElementById('previewComponentImage');
+        const previewPlaceholder = document.getElementById('previewComponentPlaceholder');
+
+        if (previewImage && previewPlaceholder) {
+            previewImage.style.display = 'none';
+            previewImage.src = '';
+            previewPlaceholder.style.display = 'flex';
+        }
     }
 
     // Update preview from form inputs
@@ -606,11 +805,11 @@
                 displayMenuData(allComponents, showDeleted);
             } else {
                 console.error('Failed to load components data', spiceLevels, customOptions);
-                showNotification('Error loading components data. Please refresh the page.', 'error');
+                showNotification('Error memuat data komponen. Silakan refresh halaman.', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            showNotification('Error connecting to server: ' + error.message, 'error');
+            showNotification('Error menghubungkan ke server: ' + error.message, 'error');
         }
     }
 
@@ -621,9 +820,9 @@
         console.log('Main content element:', mainContent);
 
         // Update header
-        document.getElementById('pageTitleText').textContent = 'Komponen Seblak';
-        document.getElementById('breadcrumbText').textContent = 'Komponen Seblak';
-        document.getElementById('cardTitleText').textContent = 'Data Komponen Seblak';
+        document.getElementById('pageTitleText').textContent = 'Dasar Seblak';
+        document.getElementById('breadcrumbText').textContent = 'Dasar Seblak';
+        document.getElementById('cardTitleText').textContent = 'Data Dasar Seblak';
         document.getElementById('cardSubtitleText').classList.add('d-none');
 
         // Toggle buttons - Show them now for CRUD operations
@@ -731,8 +930,28 @@
     // CRUD functions for components
     async function editComponent(id, componentType, apiEndpoint) {
         console.log('Editing component:', id, componentType, apiEndpoint);
-        // TODO: Implement edit form for components
-        showNotification('Edit function coming soon!', 'info');
+
+        try {
+            // Fetch component data
+            const response = await fetch(`${apiEndpoint}?id=${id}`);
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                currentEditId = id;
+                const data = result.data;
+
+                // Add component type and API endpoint to data for form population
+                data.component_type = componentType;
+                data.api_endpoint = apiEndpoint;
+
+                showForm('Edit Komponen', 'Form Edit Komponen Dasar Seblak', data);
+            } else {
+                showNotification('Error memuat data komponen: ' + (result.message || 'Data tidak ditemukan'), 'error');
+            }
+        } catch (error) {
+            console.error('Error loading component:', error);
+            showNotification('Error menghubungkan ke server: ' + error.message, 'error');
+        }
     }
 
     async function deleteComponent(id, name, apiEndpoint) {
@@ -761,7 +980,7 @@
                     showNotification('Error: ' + data.message, 'error');
                 }
             } catch (error) {
-                showNotification('Error connecting to server', 'error');
+                showNotification('Error menghubungkan ke server', 'error');
             }
         }
     }
@@ -792,7 +1011,7 @@
                     showNotification('Error: ' + data.message, 'error');
                 }
             } catch (error) {
-                showNotification('Error connecting to server', 'error');
+                showNotification('Error menghubungkan ke server', 'error');
             }
         }
     }
@@ -830,7 +1049,7 @@
                     showNotification('Error: ' + data.message, 'error');
                 }
             } catch (error) {
-                showNotification('Error connecting to server', 'error');
+                showNotification('Error menghubungkan ke server', 'error');
             }
         }
     }
@@ -862,9 +1081,9 @@
             console.log('Edit data received:', result);
 
             if (result.success) {
-                showForm('Edit Menu', 'Form Edit Menu', result.data);
+                showForm('Edit Komponen', 'Form Edit Komponen Dasar Seblak', result.data);
             } else {
-                showNotification('Error loading menu data: ' + result.message, 'error');
+                showNotification('Error memuat data komponen: ' + result.message, 'error');
             }
         } catch (error) {
             console.error('Detailed error:', error);
@@ -873,11 +1092,11 @@
             console.error('Error stack:', error.stack);
 
             if (error.message.includes('fetch')) {
-                showNotification('Network error: Cannot connect to server. Please check if the server is running.', 'error');
+                showNotification('Error jaringan: Tidak dapat terhubung ke server. Pastikan server berjalan.', 'error');
             } else if (error.message.includes('JSON')) {
-                showNotification('Server response error: Invalid data format received.', 'error');
+                showNotification('Error respons server: Format data tidak valid.', 'error');
             } else {
-                showNotification('Error connecting to server: ' + error.message, 'error');
+                showNotification('Error menghubungkan ke server: ' + error.message, 'error');
             }
         }
     }
@@ -903,7 +1122,7 @@
         // Update form title in the header
         const formTitle = document.getElementById('formTitle');
         if (formTitle) {
-            formTitle.textContent = data ? 'Edit Menu' : 'Tambah Menu Baru';
+            formTitle.textContent = data ? 'Edit Komponen Dasar Seblak' : 'Tambah Komponen Dasar Seblak Baru';
         }
 
         // Initialize form first (this loads categories)
@@ -946,7 +1165,7 @@
             <!-- Info Alert -->
             <div class="alert alert-primary alert-dismissible fade show mb-3" role="alert">
                 <i class="ti ti-soup me-2"></i>
-                <strong>Halaman Menu</strong> - Halaman ini khusus untuk mengelola produk seblak saja. Untuk topping, silakan ke halaman <a href="index.php?page=topping" class="alert-link">Topping</a>.
+                <strong>Halaman Dasar Seblak</strong> - Halaman ini khusus untuk mengelola dasar bahan seblak
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
 
@@ -964,7 +1183,7 @@
                                 <div class="search-input-wrapper">
                                     <i class="ti ti-search search-icon"></i>
                                     <input type="text" class="form-control search-input" id="searchInput" 
-                                           placeholder="Search products..." onkeyup="applyFilters()"
+                                           placeholder="Cari" onkeyup="applyFilters()"
                                            onchange="applyFilters()">
                                 </div>
                             </div>
@@ -974,7 +1193,7 @@
                                 <div class="filter-dropdown position-relative">
                                     <button type="button" class="btn filter-btn" id="filterButton" onclick="toggleFilterDropdown()">
                                         <i class="ti ti-filter"></i>
-                                        <span class="filter-text">Filters</span>
+                                        <span class="filter-text">Filter</span>
                                         <span class="filter-badge" id="filterBadge" style="display: none;">0</span>
                                     </button>
                                     
@@ -995,7 +1214,7 @@
                                                     <label class="filter-option">
                                                         <input type="checkbox" class="filter-checkbox" data-filter="view_mode" data-value="deleted" onchange="handleViewModeChange(this)">
                                                         <span class="filter-icon">🗑️</span>
-                                                        <span class="filter-label">Show Deleted Items</span>
+                                                        <span class="filter-label">Item Terhapus</span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -1101,115 +1320,178 @@
     // Get form HTML
     function getFormHTML() {
         return `
-            <!-- Form Container with Table Header Background -->
+            <!-- Form Container for Dasar Seblak Components -->
             <div class="card">
                 <div class="card-body table-light p-4 rounded">
-                    <form id="menuForm" enctype="multipart/form-data">
+                    <form id="componentForm" enctype="multipart/form-data">
                 <div class="row">
                     <!-- Left Column - Form Fields -->
                     <div class="col-lg-8">
+                        <!-- Component Type Selection -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-layout-grid me-2"></i>Tipe Komponen</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="componentType" class="form-label">Pilih Tipe Komponen <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="componentType" name="component_type" required onchange="handleComponentTypeChange()">
+                                        <option value="">-- Pilih Tipe Komponen --</option>
+                                        <option value="spice_level">🌶️ Tingkat Pedas</option>
+                                        <option value="egg_type">🥚 Jenis Telur</option>
+                                        <option value="broth_flavor">🍲 Rasa Kuah</option>
+                                        <option value="kencur_level">🌿 Tingkat Kencur</option>
+                                    </select>
+                                    <div class="form-text">Tentukan jenis komponen dasar seblak yang akan ditambahkan</div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Basic Information Card -->
                         <div class="card mb-3">
                             <div class="card-header">
-                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-info-circle me-2"></i>Informasi Dasar</h6>
+                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-info-circle me-2"></i>Informasi Komponen</h6>
                             </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="menuName" class="form-label">Nama Menu <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="menuName" name="name" required
-                                                   placeholder="Masukkan nama menu">
-                                            <div class="form-text">Nama menu akan tampil di aplikasi</div>
+                                            <label for="componentName" class="form-label">Nama Komponen <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="componentName" name="name" required
+                                                   placeholder="Contoh: Level 1, Telur Ayam, dll" oninput="updateComponentPreview()">
+                                            <div class="form-text">Nama yang akan ditampilkan kepada pelanggan</div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="menuCategory" class="form-label">Kategori <span class="text-danger">*</span></label>
-                                            <select class="form-select" id="menuCategory" name="category_id" required>
-                                                <option value="">Pilih Kategori</option>
-                                            </select>
-                                            <div class="form-text">Pilih kategori yang sesuai</div>
+                                            <label for="componentPrice" class="form-label">Harga Tambahan <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="ti ti-currency-rupiah"></i> Rp</span>
+                                                <input type="number" class="form-control" id="componentPrice" name="price" min="0" step="500" required
+                                                       placeholder="0" oninput="updateComponentPreview()">
+                                            </div>
+                                            <div class="form-text">Harga tambahan untuk komponen ini (0 jika gratis)</div>
                                         </div>
                                     </div>
                                 </div>
-                                
+
+                                <!-- Spice Level Specific Field -->
+                                <div id="spiceLevelFields" class="d-none">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="spiceLevel" class="form-label">Level Kepedasan <span class="text-danger">*</span></label>
+                                                <select class="form-select" id="spiceLevel" name="level">
+                                                    <option value="0">Level 0 - Tidak Pedas</option>
+                                                    <option value="1">Level 1 - Sedikit Pedas</option>
+                                                    <option value="2">Level 2 - Pedas Sedang</option>
+                                                    <option value="3">Level 3 - Pedas</option>
+                                                    <option value="4">Level 4 - Sangat Pedas</option>
+                                                    <option value="5">Level 5 - Extra Pedas</option>
+                                                </select>
+                                                <div class="form-text">Tingkat kepedasan komponen ini</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="spiceDescription" class="form-label">Deskripsi Kepedasan</label>
+                                                <input type="text" class="form-control" id="spiceDescription" name="description"
+                                                       placeholder="Contoh: Pedas mantap untuk pemula">
+                                                <div class="form-text">Deskripsi singkat tingkat pedas</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Customization Options Specific Field -->
+                                <div id="customizationFields" class="d-none">
+                                    <div class="mb-3">
+                                        <label for="optionDescription" class="form-label">Deskripsi</label>
+                                        <textarea class="form-control" id="optionDescription" name="description" rows="3"
+                                                  placeholder="Deskripsi opsi kustomisasi ini..."></textarea>
+                                        <div class="form-text">Jelaskan detail komponen untuk pelanggan</div>
+                                    </div>
+                                </div>
+
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="menuPrice" class="form-label">Harga <span class="text-danger">*</span></label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class="ti ti-currency-rupiah"></i> Rp</span>
-                                                <input type="number" class="form-control" id="menuPrice" name="price" min="0" required
-                                                       placeholder="0" onkeyup="formatPricePreview()">
+                                            <label class="form-label">Status Ketersediaan</label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="isAvailable" name="is_available" checked onchange="updateComponentPreview()">
+                                                <label class="form-check-label" for="isAvailable">
+                                                    Tersedia untuk dipesan
+                                                </label>
                                             </div>
-                                            <div class="form-text">Harga dalam Rupiah</div>
+                                            <div class="form-text">Nonaktifkan jika komponen sedang tidak tersedia</div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label class="form-label">Gambar Menu</label>
-                                            
-                                            <!-- File Upload Only -->
-                                            <input type="file" class="form-control" id="menuImageFile" name="image_file" 
-                                                   accept="image/*" onchange="handleFileUpload(this)">
+                                            <label class="form-label">Gambar Komponen (Opsional)</label>
+                                            <input type="file" class="form-control" id="componentImageFile" name="image_file" 
+                                                   accept="image/*" onchange="handleComponentImageUpload(this)">
                                             <div class="form-text">Upload gambar (JPG, PNG, GIF - Max: 2MB)</div>
-                                            <div id="uploadProgress" class="progress mt-2" style="display: none; height: 4px;">
+                                            <div id="componentUploadProgress" class="progress mt-2" style="display: none; height: 4px;">
                                                 <div class="progress-bar progress-bar-striped progress-bar-animated" 
                                                      role="progressbar" style="width: 0%"></div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="mb-3">
-                                    <label for="menuDescription" class="form-label">Deskripsi (Opsional)</label>
-                                    <textarea class="form-control" id="menuDescription" name="description" rows="4" 
-                                              placeholder="Deskripsi menu yang menarik untuk pelanggan..."></textarea>
-                                 
-                                </div>
                             </div>
                         </div>
-                        <!-- Additional Settings Card - Hidden for product page -->
-                        <input type="hidden" id="isTopping" name="is_topping" value="0">
                     </div>
 
                     <!-- Right Column - Preview -->
                     <div class="col-lg-4">
                         <div class="card sticky-top" style="top: 20px;">
                             <div class="card-header">
-                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-eye me-2"></i>Preview Menu</h6>
+                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-eye me-2"></i>Preview Komponen</h6>
                             </div>
                             <div class="card-body">
-                                <!-- Menu Preview Card -->
-                                <div class="card border" id="menuPreviewCard">
-                                    <div class="position-relative">
-                                        <!-- Image Preview -->
-                                        <div id="previewImageContainer" class="position-relative" style="height: 180px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center;">
-                                            <!-- Default placeholder icon -->
-                                            <div id="previewPlaceholder" class="text-center">
-                                                <i class="ti ti-photo text-muted" style="font-size: 3rem;"></i>
-                                                <p class="text-muted mt-2 mb-0 small">Belum ada gambar</p>
-                                            </div>
-                                            <!-- Actual image (hidden by default) -->
-                                            <img id="previewImage" 
-                                                 alt="Preview" class="card-img-top" 
-                                                 style="height: 180px; object-fit: cover; display: none;">
+                                <!-- Component Preview Card -->
+                                <div class="card border" id="componentPreviewCard">
+                                    <!-- Image Preview -->
+                                    <div id="previewComponentImageContainer" class="position-relative" style="height: 150px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                                        <!-- Default placeholder icon -->
+                                        <div id="previewComponentPlaceholder" class="text-center">
+                                            <i class="ti ti-photo text-muted" style="font-size: 2.5rem;"></i>
+                                            <p class="text-muted mt-2 mb-0 small">Belum ada gambar</p>
                                         </div>
-                                        <div class="position-absolute top-0 end-0 p-2">
-                                            <span class="badge bg-success" id="previewStatus">Active</span>
-                                        </div>
+                                        <!-- Actual image (hidden by default) -->
+                                        <img id="previewComponentImage" 
+                                             alt="Preview" 
+                                             style="width: 100%; height: 150px; object-fit: cover; display: none;">
                                     </div>
+                                    
                                     <div class="card-body">
-                                        <h6 class="card-title mb-1" id="previewName">Nama Menu</h6>
-                                        <p class="card-text text-muted f-12 mb-2" id="previewDescription">Deskripsi menu akan tampil di sini...</p>
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <span class="badge bg-light-primary text-primary" id="previewCategory">Kategori</span>
-                                            <span class="badge bg-light-info text-info d-none" id="previewTopping">Topping</span>
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div>
+                                                <h6 class="mb-1" id="previewComponentName">Nama Komponen</h6>
+                                                <span class="badge" id="previewComponentType">Tipe Komponen</span>
+                                            </div>
+                                            <span class="badge bg-success" id="previewComponentStatus">Tersedia</span>
                                         </div>
+                                        
+                                        <div id="previewSpiceLevel" class="mb-3 d-none">
+                                            <div class="d-flex align-items-center">
+                                                <span class="me-2">Level:</span>
+                                                <div class="flex-fill">
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-danger" id="previewSpiceLevelBar" role="progressbar" style="width: 0%">0</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <h5 class="mb-0" id="previewPrice">Rp 0</h5>
-                                            <small class="text-muted">Preview</small>
+                                            <h5 class="mb-0 text-primary" id="previewComponentPrice">Rp 0</h5>
+                                            <small class="text-muted">Harga Tambahan</small>
+                                        </div>
+
+                                        <div id="previewDescription" class="mt-3 text-muted small">
+                                            Deskripsi akan tampil di sini...
                                         </div>
                                     </div>
                                 </div>
@@ -1218,10 +1500,11 @@
                                 <div class="mt-3">
                                     <h6 class="mb-2"><i class="ti ti-bulb me-1"></i>Tips:</h6>
                                     <ul class="list-unstyled f-12 text-muted">
-                                        <li><i class="ti ti-check text-success me-1"></i>Gunakan gambar berkualitas tinggi</li>
-                                        <li><i class="ti ti-check text-success me-1"></i>Tulis deskripsi yang menarik</li>
-                                        <li><i class="ti ti-check text-success me-1"></i>Pastikan harga sudah sesuai</li>
-                                        <li><i class="ti ti-check text-success me-1"></i>Pilih kategori yang tepat</li>
+                                        <li><i class="ti ti-check text-success me-1"></i>Gunakan nama yang jelas dan mudah dipahami</li>
+                                        <li><i class="ti ti-check text-success me-1"></i>Upload gambar berkualitas tinggi (opsional)</li>
+                                        <li><i class="ti ti-check text-success me-1"></i>Sesuaikan harga dengan biaya tambahan</li>
+                                        <li><i class="ti ti-check text-success me-1"></i>Berikan deskripsi yang informatif</li>
+                                        <li><i class="ti ti-check text-success me-1"></i>Pastikan status ketersediaan sudah benar</li>
                                     </ul>
                                 </div>
                             </div>
@@ -1239,11 +1522,11 @@
                                         <i class="ti ti-arrow-left me-1"></i> Kembali ke Daftar
                                     </button>
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-secondary d-flex" onclick="resetForm()">
+                                        <button type="button" class="btn btn-secondary d-flex" onclick="resetComponentForm()">
                                             <i class="ti ti-refresh me-2"></i> Reset Form
                                         </button>
                                         <button type="submit" class="btn btn-success d-flex" id="submitBtn">
-                                            <i class="ti ti-check me-2"></i> <span id="submitText">Simpan Menu</span>
+                                            <i class="ti ti-check me-2"></i> <span id="submitText">Simpan Komponen</span>
                                         </button>
                                     </div>
                                 </div>
@@ -1643,68 +1926,188 @@
 
     // Populate form for editing
     function populateForm(data) {
-        console.log('Populating form with data:', data);
+        console.log('Populating component form with data:', data);
 
-        // Basic form fields
-        document.getElementById('menuName').value = data.name || '';
-        document.getElementById('menuPrice').value = data.price || '';
-        document.getElementById('menuDescription').value = data.description || '';
-        document.getElementById('isTopping').checked = data.is_topping || false;
-        document.getElementById('isActive').checked = data.is_active !== undefined ? data.is_active : true;
-        document.getElementById('submitText').textContent = 'Update Menu';
-
-        // Handle category selection - need to ensure categories are loaded first
-        setTimeout(() => {
-            const categorySelect = document.getElementById('menuCategory');
-            if (categorySelect && data.category_id) {
-                categorySelect.value = data.category_id;
-                console.log('Set category to:', data.category_id);
-
-                // Trigger change event to ensure any listeners are notified
-                categorySelect.dispatchEvent(new Event('change'));
-            }
-        }, 100);
-
-        // Handle image data for edit mode
-        const fileInput = document.getElementById('menuImageFile');
-        if (fileInput) {
-            // Clear any previous data
-            fileInput.removeAttribute('data-existing-image');
-            fileInput.removeAttribute('data-uploaded-url');
-            fileInput.removeAttribute('data-has-file');
-
-            if (data.image_url && data.image_url !== '0' && data.image_url !== 'null') {
-                // Store the existing image URL as a data attribute
-                fileInput.setAttribute('data-existing-image', data.image_url);
-                console.log('Stored existing image:', data.image_url);
-
-                // Show current image in preview
-                updateImagePreviewForEdit(data.image_url);
-            } else {
-                // No existing image, show placeholder
-                resetImagePreview();
-            }
+        // Populate component type
+        const componentTypeSelect = document.getElementById('componentType');
+        if (componentTypeSelect && data.component_type) {
+            componentTypeSelect.value = data.component_type;
+            handleComponentTypeChange();
         }
 
-        // Update preview with the loaded data
-        updatePreview();
-    }    // Initialize form
+        // Basic fields
+        document.getElementById('componentName').value = data.name || '';
+        document.getElementById('componentPrice').value = data.price || '';
+
+        // Availability status
+        const isAvailableCheck = document.getElementById('isAvailable');
+        if (isAvailableCheck) {
+            isAvailableCheck.checked = data.is_available !== undefined ? data.is_available : true;
+        }
+
+        // Type-specific fields
+        if (data.component_type === 'spice_level') {
+            // Populate spice level fields
+            document.getElementById('spiceLevel').value = data.level || 0;
+            document.getElementById('spiceDescription').value = data.description || '';
+        } else {
+            // Populate customization option fields
+            document.getElementById('optionDescription').value = data.description || '';
+        }
+
+        // Handle existing image
+        if (data.image_url) {
+            const previewImage = document.getElementById('previewComponentImage');
+            const previewPlaceholder = document.getElementById('previewComponentPlaceholder');
+
+            if (previewImage && previewPlaceholder) {
+                previewImage.src = data.image_url;
+                previewImage.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+            }
+        } else {
+            showImagePlaceholder();
+        }
+
+        // Update submit button text
+        document.getElementById('submitText').textContent = 'Update Komponen';
+
+        // Update preview
+        updateComponentPreview();
+    }
+
+    // Initialize form
     function initForm() {
-        populateCategorySelect();
+        // Component form doesn't need category select
+        // Initialize form event listener
+        const form = document.getElementById('componentForm');
+        if (form) {
+            // Remove existing event listener if any
+            const newForm = form.cloneNode(true);
+            form.parentNode.replaceChild(newForm, form);
 
-        // Clear any upload status
-        const fileInput = document.getElementById('menuImageFile');
-        if (fileInput) {
-            fileInput.value = '';
-            fileInput.removeAttribute('data-uploaded-url');
-            fileInput.removeAttribute('data-has-file');
+            // Add submit event listener
+            newForm.addEventListener('submit', handleComponentFormSubmit);
         }
 
-        // Reset image preview to placeholder for new forms
-        resetImagePreview();
+        // Initialize preview
+        updateComponentPreview();
+    }
 
-        const form = document.getElementById('menuForm');
-        form.addEventListener('submit', handleFormSubmit);
+    // Handle component form submit
+    async function handleComponentFormSubmit(e) {
+        e.preventDefault();
+
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+
+        // Show loading
+        showLoading('Menyimpan...', 'Sedang memproses data komponen, tunggu sebentar...');
+
+        try {
+            const formData = new FormData(e.target);
+            const componentType = formData.get('component_type');
+
+            // Validate component type
+            if (!componentType) {
+                hideAlert();
+                showError('Error', 'Silakan pilih tipe komponen terlebih dahulu');
+                return;
+            }
+
+            // Determine API endpoint based on component type
+            let apiEndpoint;
+            if (componentType === 'spice_level') {
+                apiEndpoint = 'api/menu/spice-levels.php';
+            } else {
+                apiEndpoint = 'api/menu/customization-options.php';
+            }
+
+            // Check if image file is selected
+            const imageFile = document.getElementById('componentImageFile').files[0];
+            let uploadedImageUrl = null;
+
+            // Upload image first if selected
+            if (imageFile) {
+                const imageFormData = new FormData();
+                imageFormData.append('image', imageFile);
+                imageFormData.append('folder', 'components');
+
+                const uploadResponse = await fetch('api/upload/image.php', {
+                    method: 'POST',
+                    body: imageFormData
+                });
+
+                const uploadResult = await uploadResponse.json();
+                console.log('Image upload response:', uploadResult);
+
+                if (uploadResult.success) {
+                    uploadedImageUrl = uploadResult.image_url;
+                } else {
+                    hideAlert();
+                    showError('Error', 'Gagal mengupload gambar: ' + (uploadResult.message || 'Unknown error'));
+                    return;
+                }
+            }
+
+            // Prepare data object
+            const data = {
+                name: formData.get('name'),
+                price: formData.get('price'),
+                is_available: formData.get('is_available') ? 1 : 0,
+                component_type: componentType
+            };
+
+            // Add image URL if uploaded
+            if (uploadedImageUrl) {
+                data.image_url = uploadedImageUrl;
+            }
+
+            // Add type-specific fields
+            if (componentType === 'spice_level') {
+                data.level = formData.get('level');
+                data.description = formData.get('description');
+            } else {
+                data.description = formData.get('description');
+                data.option_type = componentType; // egg_type, broth_flavor, or kencur_level
+            }
+
+            console.log('Submitting component data:', data);
+
+            // Determine method
+            const method = currentEditId ? 'PUT' : 'POST';
+            const url = currentEditId ? `${apiEndpoint}?id=${currentEditId}` : apiEndpoint;
+
+            // Make API request
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            console.log('API response:', result);
+
+            hideAlert();
+
+            if (result.success) {
+                showSuccess('Berhasil!', result.message, () => {
+                    showDataMenu();
+                });
+            } else {
+                showError('Error!', result.message || 'Gagal menyimpan komponen');
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            hideAlert();
+            showError('Error!', 'Terjadi kesalahan saat menyimpan data: ' + error.message);
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
     }
 
     // Handle form submit
@@ -1715,7 +2118,7 @@
         const originalText = submitBtn.innerHTML;
 
         // Show loading with SweetAlert
-        showLoading('Menyimpan...', 'Sedang memproses data menu, tunggu sebentar...');
+        showLoading('Menyimpan...', 'Sedang memproses data komponen, tunggu sebentar...');
 
         try {
             const formData = new FormData(e.target);
