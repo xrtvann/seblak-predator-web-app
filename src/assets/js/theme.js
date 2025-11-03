@@ -116,7 +116,6 @@ function font_change(name) {
 
   // Set the font stylesheet link
   const src = fontUrls[name] || '';
-  document.querySelector('#main-font-link').setAttribute('href', src);
 
   // Apply the font family to the body
   document.body.style.fontFamily = `"${name}", sans-serif`;

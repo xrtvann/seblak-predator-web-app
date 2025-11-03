@@ -402,15 +402,10 @@ if (isLoggedIn() && !canAccessPage($page)) {
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <!-- Custom Alert Functions -->
   <script src="src/assets/js/sweetalert/alert.js"></script>
-  <script src="dist/assets/js/icon/custom-font.js"></script>
   <script src="dist/assets/js/script.js"></script>
   <script src="dist/assets/js/theme.js"></script>
   <script src="dist/assets/js/plugins/feather.min.js"></script>
 
-
-  <script>
-    layout_change('light');
-  </script>
 
   <script>
     font_change('Roboto');
@@ -436,8 +431,6 @@ if (isLoggedIn() && !canAccessPage($page)) {
 
   <!-- [Page Specific JS] start -->
   <!-- Apex Chart -->
-  <script src="dist/assets/js/plugins/apexcharts.min.js"></script>
-  <script src="dist/assets/js/pages/dashboard-default.js"></script>
   <!-- [Page Specific JS] end -->
 
   <!-- Global SweetAlert Functions -->

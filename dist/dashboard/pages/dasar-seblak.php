@@ -379,7 +379,7 @@
             container.appendChild(option);
         });
 
-        console.log('Populated component type filters');
+
     }
 
     // Close dropdown when clicking outside
@@ -511,19 +511,7 @@
             statusBadge.className = 'badge bg-secondary';
         }
 
-        // Update spice level preview
-        const spiceLevelPreview = document.getElementById('previewSpiceLevel');
-        if (componentType === 'spice_level') {
-            const level = document.getElementById('spiceLevel')?.value || 0;
-            const levelBar = document.getElementById('previewSpiceLevelBar');
-            const percentage = (parseInt(level) / 5) * 100;
-            levelBar.style.width = percentage + '%';
-            levelBar.textContent = 'Level ' + level;
-            spiceLevelPreview.classList.remove('d-none');
-        } else {
-            spiceLevelPreview.classList.add('d-none');
-        }
-
+       
         // Update description
         let description = '';
         if (componentType === 'spice_level') {
@@ -750,7 +738,7 @@
             if (result.success) {
                 categories = result.data;
                 populateCategorySelect();
-                populateCategoryFilterOptions(); // Also populate filter options
+                populateCategoryFilterOptions(); 
             } else {
                 console.error('Failed to load categories:', result.message);
             }
@@ -815,9 +803,9 @@
 
     // Show data menu view
     function showDataMenu() {
-        console.log('showDataMenu called');
+      
         const mainContent = document.getElementById('mainContentArea');
-        console.log('Main content element:', mainContent);
+
 
         // Update header
         document.getElementById('pageTitleText').textContent = 'Dasar Seblak';
@@ -865,8 +853,6 @@
         // Apply active filters
         // Collect component type filters for OR logic
         const componentTypeFilters = Array.from(activeFilters.values()).filter(filter => filter.type === 'component_type');
-
-        console.log('Applying filters - Component type filters found:', componentTypeFilters.length);
 
         if (componentTypeFilters.length > 0) {
             // OR logic: show items that match ANY selected component type
@@ -1354,15 +1340,15 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-12 mb-2">
                                         <div class="mb-3">
                                             <label for="componentName" class="form-label">Nama Komponen <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="componentName" name="name" required
                                                    placeholder="Contoh: Level 1, Telur Ayam, dll" oninput="updateComponentPreview()">
-                                            <div class="form-text">Nama yang akan ditampilkan kepada pelanggan</div>
+                                           
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-12 mb-2">
                                         <div class="mb-3">
                                             <label for="componentPrice" class="form-label">Harga Tambahan <span class="text-danger">*</span></label>
                                             <div class="input-group">
@@ -1376,59 +1362,14 @@
                                 </div>
 
                                 <!-- Spice Level Specific Field -->
-                                <div id="spiceLevelFields" class="d-none">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="spiceLevel" class="form-label">Level Kepedasan <span class="text-danger">*</span></label>
-                                                <select class="form-select" id="spiceLevel" name="level">
-                                                    <option value="0">Level 0 - Tidak Pedas</option>
-                                                    <option value="1">Level 1 - Sedikit Pedas</option>
-                                                    <option value="2">Level 2 - Pedas Sedang</option>
-                                                    <option value="3">Level 3 - Pedas</option>
-                                                    <option value="4">Level 4 - Sangat Pedas</option>
-                                                    <option value="5">Level 5 - Extra Pedas</option>
-                                                </select>
-                                                <div class="form-text">Tingkat kepedasan komponen ini</div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="spiceDescription" class="form-label">Deskripsi Kepedasan</label>
-                                                <input type="text" class="form-control" id="spiceDescription" name="description"
-                                                       placeholder="Contoh: Pedas mantap untuk pemula">
-                                                <div class="form-text">Deskripsi singkat tingkat pedas</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                
 
-                                <!-- Customization Options Specific Field -->
-                                <div id="customizationFields" class="d-none">
-                                    <div class="mb-3">
-                                        <label for="optionDescription" class="form-label">Deskripsi</label>
-                                        <textarea class="form-control" id="optionDescription" name="description" rows="3"
-                                                  placeholder="Deskripsi opsi kustomisasi ini..."></textarea>
-                                        <div class="form-text">Jelaskan detail komponen untuk pelanggan</div>
-                                    </div>
-                                </div>
+                               
 
                                 <div class="row">
-                                    <div class="col-md-6">
+                                  <div class="col-md-12 mb-2">
                                         <div class="mb-3">
-                                            <label class="form-label">Status Ketersediaan</label>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="isAvailable" name="is_available" checked onchange="updateComponentPreview()">
-                                                <label class="form-check-label" for="isAvailable">
-                                                    Tersedia untuk dipesan
-                                                </label>
-                                            </div>
-                                            <div class="form-text">Nonaktifkan jika komponen sedang tidak tersedia</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">Gambar Komponen (Opsional)</label>
+                                            <label class="form-label">Gambar (Opsional)</label>
                                             <input type="file" class="form-control" id="componentImageFile" name="image_file" 
                                                    accept="image/*" onchange="handleComponentImageUpload(this)">
                                             <div class="form-text">Upload gambar (JPG, PNG, GIF - Max: 2MB)</div>
@@ -1438,6 +1379,29 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                     <!-- Customization Options Specific Field -->
+                                <div id="customizationFields" class="d-none">
+                                    <div class="mb-3">
+                                        <label for="optionDescription" class="form-label">Deskripsi</label>
+                                        <textarea class="form-control" id="optionDescription" name="description" rows="3"
+                                                  placeholder="Deskripsi opsi."></textarea>
+                              
+                                    </div>
+                                </div>
+                                    <div class="col-md-12 mb-2">
+                                        <div class="mb-3">
+                                            <label class="form-label">Status Ketersediaan</label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="isAvailable" name="is_available" checked onchange="updateComponentPreview()">
+                                                <label class="form-check-label" for="isAvailable">
+                                                    Tersedia untuk dipesan
+                                                </label>
+                                            </div>
+                                           
+                                        </div>
+                                    </div>
+                                  
                                 </div>
                             </div>
                         </div>
@@ -1487,7 +1451,7 @@
 
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h5 class="mb-0 text-primary" id="previewComponentPrice">Rp 0</h5>
-                                            <small class="text-muted">Harga Tambahan</small>
+                                        
                                         </div>
 
                                         <div id="previewDescription" class="mt-3 text-muted small">
@@ -1500,11 +1464,8 @@
                                 <div class="mt-3">
                                     <h6 class="mb-2"><i class="ti ti-bulb me-1"></i>Tips:</h6>
                                     <ul class="list-unstyled f-12 text-muted">
-                                        <li><i class="ti ti-check text-success me-1"></i>Gunakan nama yang jelas dan mudah dipahami</li>
-                                        <li><i class="ti ti-check text-success me-1"></i>Upload gambar berkualitas tinggi (opsional)</li>
-                                        <li><i class="ti ti-check text-success me-1"></i>Sesuaikan harga dengan biaya tambahan</li>
+                                        <li><i class="ti ti-check text-success me-1"></i>Gunakan nama yang jelas</li>
                                         <li><i class="ti ti-check text-success me-1"></i>Berikan deskripsi yang informatif</li>
-                                        <li><i class="ti ti-check text-success me-1"></i>Pastikan status ketersediaan sudah benar</li>
                                     </ul>
                                 </div>
                             </div>

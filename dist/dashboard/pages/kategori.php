@@ -1332,7 +1332,6 @@
         try {
             let url = 'api/menu/categories.php?per_page=1000&status=all';
 
-            console.log('Loading category data from:', url);
             const response = await fetch(url);
             const result = await response.json();
 
@@ -1348,8 +1347,7 @@
                 currentPage = 1;
                 currentViewMode = showDeleted ? 'deleted' : 'active';
 
-                console.log('Category data loaded:', allCategoriesData.length, 'items');
-                console.log('Current view mode:', currentViewMode);
+              
 
                 // Restore checkbox state after reload
                 restoreViewModeCheckbox();
@@ -1370,15 +1368,13 @@
         const checkbox = document.querySelector('input[data-filter="view_mode"][data-value="deleted"]');
         if (checkbox) {
             checkbox.checked = currentViewMode === 'deleted';
-            console.log('Checkbox state restored:', checkbox.checked, 'Current view mode:', currentViewMode);
+          
         }
     }
 
     // Show data kategori view
     function showDataKategori() {
-        console.log('showDataKategori called');
         const mainContent = document.getElementById('mainContentArea');
-        console.log('Main content element:', mainContent);
 
         document.getElementById('pageTitleText').textContent = 'Kategori';
         document.getElementById('breadcrumbText').textContent = 'Kategori';
