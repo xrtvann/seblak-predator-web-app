@@ -105,7 +105,7 @@ function getAllLevels()
 
         // Get paginated data
         $offset = ($page - 1) * $per_page;
-        $query = "SELECT * FROM spice_levels WHERE " . $whereClause . " ORDER BY level_number ASC, sort_order ASC LIMIT ? OFFSET ?";
+        $query = "SELECT * FROM spice_levels WHERE " . $whereClause . " ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?";
 
         $allParams = array_merge($params, [$per_page, $offset]);
         $allTypes = $types . "ii";
@@ -122,7 +122,6 @@ function getAllLevels()
         $levels = [];
         while ($row = mysqli_fetch_assoc($result)) {
             $row['price'] = floatval($row['price']);
-            $row['level_number'] = (int) $row['level_number'];
             $row['is_active'] = (bool) $row['is_active'];
             $row['sort_order'] = (int) $row['sort_order'];
             $levels[] = $row;
@@ -172,7 +171,6 @@ function getLevelById()
 
         if ($row = mysqli_fetch_assoc($result)) {
             $row['price'] = floatval($row['price']);
-            $row['level_number'] = (int) $row['level_number'];
             $row['is_active'] = (bool) $row['is_active'];
             $row['sort_order'] = (int) $row['sort_order'];
 
@@ -203,7 +201,7 @@ function createLevel()
     $input = json_decode(file_get_contents('php://input'), true);
 
     // Validate required fields
-    $required_fields = ['name', 'level_number', 'price'];
+    $required_fields = ['name', 'price'];
     foreach ($required_fields as $field) {
         if (!isset($input[$field]) && $field !== 'price') {
             http_response_code(400);
@@ -218,7 +216,6 @@ function createLevel()
 
         // Validate and set values
         $name = mysqli_real_escape_string($koneksi, trim($input['name']));
-        $level_number = (int) $input['level_number'];
         $price = isset($input['price']) ? floatval($input['price']) : 0.00;
 
         if ($price < 0) {
@@ -227,33 +224,14 @@ function createLevel()
             return;
         }
 
-        if ($level_number < 0) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Level number must be non-negative']);
-            return;
-        }
-
-        // Check if level_number already exists
-        $checkQuery = "SELECT id FROM spice_levels WHERE level_number = ? AND is_active = TRUE";
-        $checkStmt = mysqli_prepare($koneksi, $checkQuery);
-        mysqli_stmt_bind_param($checkStmt, "i", $level_number);
-        mysqli_stmt_execute($checkStmt);
-        $checkResult = mysqli_stmt_get_result($checkStmt);
-
-        if (mysqli_num_rows($checkResult) > 0) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Level number already exists']);
-            return;
-        }
-
         $image = isset($input['image']) ? mysqli_real_escape_string($koneksi, trim($input['image'])) : null;
-        $sort_order = isset($input['sort_order']) ? (int) $input['sort_order'] : $level_number;
+        $sort_order = isset($input['sort_order']) ? (int) $input['sort_order'] : 0;
 
         // Insert level
-        $insertQuery = "INSERT INTO spice_levels (id, name, level_number, price, image, is_active, sort_order, created_at, updated_at) 
-                        VALUES (?, ?, ?, ?, ?, TRUE, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        $insertQuery = "INSERT INTO spice_levels (id, name, price, image, is_active, sort_order, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, TRUE, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         $insertStmt = mysqli_prepare($koneksi, $insertQuery);
-        mysqli_stmt_bind_param($insertStmt, "ssidsi", $id, $name, $level_number, $price, $image, $sort_order);
+        mysqli_stmt_bind_param($insertStmt, "ssdsi", $id, $name, $price, $image, $sort_order);
 
         if (mysqli_stmt_execute($insertStmt)) {
             http_response_code(201);
@@ -262,7 +240,6 @@ function createLevel()
                 'data' => [
                     'id' => $id,
                     'name' => $name,
-                    'level_number' => $level_number,
                     'price' => $price,
                     'image' => $image,
                     'sort_order' => $sort_order
@@ -319,30 +296,10 @@ function updateLevel()
             $values[] = mysqli_real_escape_string($koneksi, trim($input['name']));
         }
 
-        if (isset($input['level_number'])) {
-            $level_number = (int) $input['level_number'];
-            if ($level_number < 0) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Level number must be non-negative']);
-                return;
-            }
-
-            // Check if level_number already exists (excluding current record)
-            $checkQuery = "SELECT id FROM spice_levels WHERE level_number = ? AND id != ? AND is_active = TRUE";
-            $checkStmt = mysqli_prepare($koneksi, $checkQuery);
-            mysqli_stmt_bind_param($checkStmt, "is", $level_number, $level_id);
-            mysqli_stmt_execute($checkStmt);
-            $checkResult = mysqli_stmt_get_result($checkStmt);
-
-            if (mysqli_num_rows($checkResult) > 0) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Level number already exists']);
-                return;
-            }
-
-            $updateFields[] = "level_number = ?";
-            $types .= "i";
-            $values[] = $level_number;
+        if (isset($input['name'])) {
+            $updateFields[] = "name = ?";
+            $types .= "s";
+            $values[] = mysqli_real_escape_string($koneksi, trim($input['name']));
         }
 
         if (isset($input['price'])) {

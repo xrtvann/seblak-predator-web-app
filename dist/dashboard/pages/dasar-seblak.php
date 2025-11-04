@@ -1,5 +1,5 @@
 <!-- [ breadcrumb ] start -->
-<div class="page-header">
+<div class="page-header mb-4">
     <div class="page-block">
         <div class="row align-items-center">
             <div class="col">
@@ -19,6 +19,13 @@
 </div>
 <!-- [ breadcrumb ] end -->
 
+<!-- Custom Styles -->
+<style>
+    #viewToggleTabs.force-hide {
+        display: none !important;
+    }
+</style>
+
 <!-- [ Main Content ] start -->
 <div class="row">
     <!-- [ Data Menu ] start -->
@@ -34,7 +41,7 @@
                     <div class="col-auto">
                         <div class="d-flex align-items-center" id="headerActions">
                             <!-- View Toggle Tabs -->
-                            <ul class="nav nav-pills me-3" id="viewToggleTabs">
+                            <ul class="nav nav-pills me-3" id="viewToggleTabs" style="display: none;">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="pills-table-tab" data-bs-toggle="pill"
                                         data-bs-target="#pills-table" type="button" role="tab"
@@ -755,7 +762,7 @@
                         component_type: 'spice_level',
                         component_type_label: 'Tingkat Pedas',
                         api_endpoint: 'spice-levels',
-                        extra_info: `Level ${item.level_number}`
+                        extra_info: item.description || '-'
                     });
                 });
 
@@ -801,7 +808,9 @@
         // Toggle buttons - Show them now for CRUD operations
         document.getElementById('btnTambahMenu').classList.remove('d-none');
         document.getElementById('btnKembali').classList.add('d-none');
-        document.getElementById('viewToggleTabs').classList.remove('d-none');
+        const viewToggleTabs = document.getElementById('viewToggleTabs');
+        viewToggleTabs.classList.remove('d-none', 'force-hide');
+        viewToggleTabs.style.display = ''; // Remove inline style to show tabs
 
         // Set content - Use same structure as topping page
         mainContent.innerHTML = getDataMenuHTML();
@@ -831,9 +840,23 @@
         // Start with all data
         filteredMenuData = [...allMenuData];
 
-        // Get search term
+        // Get search term from both table and card view inputs
         const searchInput = document.getElementById('searchInput');
-        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const cardSearchInput = document.getElementById('cardSearchInput');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() :
+            (cardSearchInput ? cardSearchInput.value.toLowerCase().trim() : '');
+
+        // Sync both search inputs
+        if (searchInput && cardSearchInput) {
+            if (searchInput.value !== cardSearchInput.value) {
+                const activeElement = document.activeElement;
+                if (activeElement === searchInput) {
+                    cardSearchInput.value = searchInput.value;
+                } else if (activeElement === cardSearchInput) {
+                    searchInput.value = cardSearchInput.value;
+                }
+            }
+        }
 
         // Apply active filters
         // Collect component type filters for OR logic
@@ -891,7 +914,23 @@
 
     function applySorting(triggerFilters = true) {
         const sortBy = document.getElementById('sortBy');
-        currentSort = sortBy ? sortBy.value : 'created_at_desc';
+        const cardSortBy = document.getElementById('cardSortBy');
+
+        // Sync both sort selects
+        if (sortBy && cardSortBy) {
+            const activeElement = document.activeElement;
+            if (activeElement === sortBy) {
+                cardSortBy.value = sortBy.value;
+                currentSort = sortBy.value;
+            } else if (activeElement === cardSortBy) {
+                sortBy.value = cardSortBy.value;
+                currentSort = cardSortBy.value;
+            } else {
+                currentSort = sortBy.value;
+            }
+        } else {
+            currentSort = sortBy ? sortBy.value : 'created_at_desc';
+        }
 
         if (triggerFilters) {
             applyFilters();
@@ -1085,7 +1124,9 @@
         // Toggle buttons
         document.getElementById('btnTambahMenu').classList.add('d-none');
         document.getElementById('btnKembali').classList.remove('d-none');
-        document.getElementById('viewToggleTabs').classList.add('d-none');
+        const viewToggleTabs = document.getElementById('viewToggleTabs');
+        viewToggleTabs.classList.add('d-none', 'force-hide');
+        viewToggleTabs.style.display = 'none'; // Force hide with inline style
 
         // Set content
         mainContent.innerHTML = getFormHTML();
@@ -1275,6 +1316,45 @@
                 <!-- Card View -->
                 <div class="tab-pane fade" id="pills-card" role="tabpanel" aria-labelledby="pills-card-tab"
                     tabindex="0">
+                    
+                    <!-- Card View Controls -->
+                    <div class="card-controls-section bg-light p-3 mb-3 border rounded">
+                        <div class="row g-3">
+                            <!-- Search Bar -->
+                            <div class="col-md-6">
+                                <div class="search-input-wrapper">
+                                    <i class="ti ti-search search-icon"></i>
+                                    <input type="text" class="form-control search-input" id="cardSearchInput" 
+                                           placeholder="Cari komponen..." onkeyup="applyFilters()"
+                                           onchange="applyFilters()">
+                                </div>
+                            </div>
+                            
+                            <!-- Filter & Sort -->
+                            <div class="col-md-6">
+                                <div class="d-flex gap-2">
+                                    <!-- Filter Button -->
+                                    <button type="button" class="btn btn-outline-secondary flex-fill" id="cardFilterButton" onclick="toggleFilterDropdown()">
+                                        <i class="ti ti-filter"></i>
+                                        <span>Filter</span>
+                                        <span class="badge bg-primary ms-1" id="cardFilterBadge" style="display: none;">0</span>
+                                    </button>
+                                    
+                                    <!-- Sort Dropdown -->
+                                    <select class="form-select" id="cardSortBy" onchange="applySorting()" style="max-width: 200px;">
+                                        <option value="created_at_desc">Terbaru</option>
+                                        <option value="updated_at_desc">Diperbarui</option>
+                                        <option value="name_asc">A-Z</option>
+                                        <option value="name_desc">Z-A</option>
+                                        <option value="price_asc">Harga Terendah</option>
+                                        <option value="price_desc">Harga Tertinggi</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cards Container -->
                     <div class="row" id="menuCardContainer">
                         <div class="col-12 text-center">
                             <div class="spinner-border" role="status">
@@ -1282,6 +1362,18 @@
                             </div>
                             <p class="mt-2">Loading menu data...</p>
                         </div>
+                    </div>
+                    
+                    <!-- Pagination for Card View -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="d-flex align-items-center">
+                            <small class="text-muted" id="cardPaginationInfo">Showing 0 - 0 of 0 entries</small>
+                        </div>
+                        <nav aria-label="Card pagination">
+                            <ul class="pagination pagination-sm mb-0" id="cardPaginationControls">
+                                <!-- Pagination buttons will be generated here -->
+                            </ul>
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -1404,6 +1496,9 @@
                                     <!-- Image Preview -->
                                     <div id="previewComponentImageContainer" class="position-relative" style="height: 150px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center;">
                                         <!-- Default placeholder icon -->
+                                        <div class="position-absolute top-0 end-0 m-2">
+                                            <span class="badge bg-success" id="previewComponentStatus">Tersedia</span>
+                                        </div>
                                         <div id="previewComponentPlaceholder" class="text-center">
                                             <i class="ti ti-photo text-muted" style="font-size: 2.5rem;"></i>
                                             <p class="text-muted mt-2 mb-0 small">Belum ada gambar</p>
@@ -1420,7 +1515,7 @@
                                                 <h6 class="mb-1" id="previewComponentName">Nama Komponen</h6>
                                                 <span class="badge" id="previewComponentType">Tipe Komponen</span>
                                             </div>
-                                            <span class="badge bg-success" id="previewComponentStatus">Tersedia</span>
+                                          
                                         </div>
                                         
                                         <div id="previewSpiceLevel" class="mb-3 d-none">
@@ -1507,7 +1602,6 @@
                                     <tr>
                                         <th width="50">#</th>
                                         <th>Nama</th>
-                                        <th width="100">Level</th>
                                         <th width="120">Harga</th>
                                         <th width="100">Status</th>
                                     </tr>
@@ -1517,7 +1611,6 @@
                                         <tr>
                                             <td>${index + 1}</td>
                                             <td><strong>${item.name}</strong></td>
-                                            <td><span class="badge ${getLevelBadgeClass(item.level_number)}">${item.level_number}</span></td>
                                             <td>Rp ${formatPrice(item.price)}</td>
                                             <td>
                                                 <span class="badge bg-light-${item.is_active ? 'success' : 'danger'} text-${item.is_active ? 'success' : 'danger'}">
@@ -1683,17 +1776,6 @@
         container.innerHTML = html;
     }
 
-    // Helper function to get badge class based on spice level
-    function getLevelBadgeClass(level) {
-        if (level === 0) return 'bg-secondary';
-        if (level === 1) return 'bg-success';
-        if (level === 2) return 'bg-info';
-        if (level === 3) return 'bg-warning';
-        if (level === 4) return 'bg-orange';
-        if (level === 5) return 'bg-danger';
-        return 'bg-dark';
-    }
-
     // Display menu data
     function displayMenuData(menuData, showDeleted = false) {
         allMenuData = menuData; // Store all data (already filtered for products only)
@@ -1793,62 +1875,123 @@
 
         if (menuData.length === 0) {
             cardContainer.innerHTML = `
-                <div class="col-12 text-center">
-                    <p class="mb-0">Tidak ada data menu</p>
+                <div class="col-12 text-center py-5">
+                    <i class="ti ti-file-off text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2 mb-0">Tidak ada data komponen</p>
                 </div>
             `;
             return;
         }
 
+        // Type labels and colors for badges
+        const typeLabels = {
+            'spice_level': '🌶️ Tingkat Pedas',
+            'egg_type': '🥚 Jenis Telur',
+            'broth_flavor': '🍲 Rasa Kuah',
+            'kencur_level': '🌿 Tingkat Kencur'
+        };
+        const typeColors = {
+            'spice_level': 'bg-danger',
+            'egg_type': 'bg-warning',
+            'broth_flavor': 'bg-info',
+            'kencur_level': 'bg-success'
+        };
+
         menuData.forEach(item => {
             const cardCol = document.createElement('div');
-            cardCol.className = 'col-xl-3 col-md-6 col-sm-12 mb-3';
+            cardCol.className = 'col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3';
+
+            // Determine component type and API endpoint
+            const componentType = item.component_type || item.type || 'customization';
+            const apiEndpoint = componentType === 'spice_level' ? 'spice-levels' : 'customization-options';
+            const typeBadgeText = typeLabels[componentType] || componentType;
+            const typeBadgeColor = typeColors[componentType] || 'bg-secondary';
+
             cardCol.innerHTML = `
-                <div class="card h-100 menu-card">
-                    <div class="card-image-container position-relative" style="height: 150px; overflow: hidden;">
-                        ${getImageHTML(item.image_url, item.name, 'medium')}
-                        <!-- Image overlay for better text readability -->
-                        <div class="image-overlay position-absolute top-0 end-0 p-2">
-                            <span class="badge bg-${item.is_active ? 'success' : 'danger'}">
-                                ${item.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-body d-flex flex-column">
-                        <h6 class="card-title">${item.name}</h6>
-                        <p class="card-text text-muted f-12 flex-grow-1">${item.description || 'No description'}</p>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-light-primary text-primary">
-                                ${item.category_name}
-                            </span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0 text-success">Rp ${formatPrice(item.price)}</h5>
-                            <div class="btn-group" role="group">
-                                ${currentViewMode === 'active' ? `
-                                    <!-- Active Items: Edit + Delete -->
-                                    <button type="button" class="btn btn-sm btn-outline-warning me-1" onclick="editMenu('${item.id}')" title="Edit Menu">
-                                        <i class="ti ti-edit"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Soft Delete">
-                                        <i class="ti ti-trash"></i>
-                                    </button>
-                                ` : `
-                                    <!-- Deleted Items: Restore + Permanent Delete -->
-                                    <button type="button" class="btn btn-sm btn-outline-success me-1" onclick="restoreMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Restore Item">
-                                        <i class="ti ti-refresh"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Permanent Delete">
-                                        <i class="ti ti-trash-x"></i>
-                                    </button>
-                                `}
+                <div class="card border h-100 component-card" style="transition: transform 0.2s, box-shadow 0.2s;">
+                    <!-- Image with Status Badge Overlay -->
+                    <div class="position-relative" style="height: 150px; background-color: #f8f9fa; overflow: hidden;">
+                        <!-- Status Badge - Top Left -->
+                        <span class="badge ${item.is_available || item.is_active ? 'bg-success' : 'bg-secondary'} position-absolute" 
+                              style="top: 8px; left: 8px; z-index: 10;">
+                            ${item.is_available || item.is_active ? 'Tersedia' : 'Tidak Tersedia'}
+                        </span>
+                        
+                        ${item.image_url ? `
+                            <img src="${item.image_url}" alt="${item.name}" 
+                                 style="width: 100%; height: 150px; object-fit: cover;">
+                        ` : `
+                            <div class="d-flex align-items-center justify-content-center h-100">
+                                <i class="ti ti-photo text-muted" style="font-size: 2.5rem;"></i>
                             </div>
+                        `}
+                    </div>
+                    
+                    <!-- Card Body -->
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6 class="mb-1 fw-bold">${item.name}</h6>
+                            <span class="badge ${typeBadgeColor}">${typeBadgeText}</span>
+                        </div>
+                        
+                        ${item.description ? `
+                            <p class="text-muted small mb-3" style="min-height: 40px; max-height: 60px; overflow: hidden;">
+                                ${item.description}
+                            </p>
+                        ` : ''}
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 text-primary">Rp ${formatPrice(item.price || 0)}</h5>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2">
+                            ${currentViewMode === 'active' ? `
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-warning" 
+                                            onclick="editComponent('${item.id}', '${componentType}', '${apiEndpoint}')" 
+                                            title="Edit Komponen">
+                                        <i class="ti ti-edit"></i> Edit
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="deleteComponent('${item.id}', '${item.name.replace(/'/g, "&apos;")}', '${apiEndpoint}')" 
+                                            title="Hapus">
+                                        <i class="ti ti-trash"></i> Hapus
+                                    </button>
+                                </div>
+                            ` : `
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-success" 
+                                            onclick="restoreComponent('${item.id}', '${item.name.replace(/'/g, "&apos;")}', '${apiEndpoint}')" 
+                                            title="Pulihkan">
+                                        <i class="ti ti-refresh"></i> Pulihkan
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="permanentDeleteComponent('${item.id}', '${item.name.replace(/'/g, "&apos;")}', '${apiEndpoint}')" 
+                                            title="Hapus Permanen">
+                                        <i class="ti ti-trash-x"></i> Hapus Permanen
+                                    </button>
+                                </div>
+                            `}
                         </div>
                     </div>
                 </div>
             `;
             cardContainer.appendChild(cardCol);
         });
+
+        // Add hover effect via CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            .component-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            }
+        `;
+        if (!document.getElementById('component-card-styles')) {
+            style.id = 'component-card-styles';
+            document.head.appendChild(style);
+        }
     }
 
     // Populate category select
@@ -1957,9 +2100,9 @@
             // Determine API endpoint based on component type
             let apiEndpoint;
             if (componentType === 'spice_level') {
-                apiEndpoint = 'api/menu/spice-levels.php';
+                apiEndpoint = 'api/spice-levels.php';
             } else {
-                apiEndpoint = 'api/menu/customization-options.php';
+                apiEndpoint = 'api/customization-options.php';
             }
 
             // Check if image file is selected
@@ -1993,8 +2136,7 @@
             const data = {
                 name: formData.get('name'),
                 price: formData.get('price'),
-                is_available: formData.get('is_available') ? 1 : 0,
-                component_type: componentType
+                is_available: formData.get('is_available') ? 1 : 0
             };
 
             // Add image URL if uploaded
@@ -2003,12 +2145,9 @@
             }
 
             // Add type-specific fields
-            if (componentType === 'spice_level') {
-                data.level = formData.get('level');
-                data.description = formData.get('description');
-            } else {
-                data.description = formData.get('description');
-                data.option_type = componentType; // egg_type, broth_flavor, or kencur_level
+            if (componentType !== 'spice_level') {
+                // For customization options
+                data.type = componentType; // egg_type, broth_flavor, or kencur_level
             }
 
             console.log('Submitting component data:', data);
@@ -2774,18 +2913,28 @@
         const totalItems = filteredMenuData.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-        // Update pagination info
+        // Update pagination info for both table and card view
         const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
         const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-        document.getElementById('paginationInfo').textContent =
-            `Showing ${startItem} - ${endItem} of ${totalItems} entries`;
+        const paginationText = `Showing ${startItem} - ${endItem} of ${totalItems} entries`;
 
-        // Generate pagination controls
-        generatePaginationControls(totalPages);
+        const paginationInfo = document.getElementById('paginationInfo');
+        const cardPaginationInfo = document.getElementById('cardPaginationInfo');
+
+        if (paginationInfo) {
+            paginationInfo.textContent = paginationText;
+        }
+        if (cardPaginationInfo) {
+            cardPaginationInfo.textContent = paginationText;
+        }
+
+        // Generate pagination controls for both views
+        generatePaginationControls(totalPages, 'paginationControls');
+        generatePaginationControls(totalPages, 'cardPaginationControls');
     }
 
-    function generatePaginationControls(totalPages) {
-        const paginationContainer = document.getElementById('paginationControls');
+    function generatePaginationControls(totalPages, containerId) {
+        const paginationContainer = document.getElementById(containerId);
         if (!paginationContainer) return;
 
         paginationContainer.innerHTML = '';
