@@ -366,27 +366,20 @@
             return;
         }
 
-        const componentTypes = [
-            { id: 'spice_level', name: 'Tingkat Pedas', icon: '🌶️' },
-            { id: 'egg_type', name: 'Jenis Telur', icon: '🥚' },
-            { id: 'broth_flavor', name: 'Rasa Kuah', icon: '🍲' },
-            { id: 'kencur_level', name: 'Tingkat Kencur', icon: '🌿' }
-        ];
+        // Filter only seblak base categories from loaded categories
+        const seblakBaseCategories = categories.filter(cat => cat.type === 'seblak_base');
 
         container.innerHTML = '';
 
-        componentTypes.forEach(type => {
+        seblakBaseCategories.forEach(category => {
             const option = document.createElement('label');
             option.className = 'filter-option';
             option.innerHTML = `
-                <input type="checkbox" class="filter-checkbox" data-filter="component_type" data-value="${type.id}" onchange="handleFilterChange(this)">
-                <span class="filter-icon">${type.icon}</span>
-                <span class="filter-label">${type.name}</span>
+                <input type="checkbox" class="filter-checkbox" data-filter="component_type" data-value="${category.id}" onchange="handleFilterChange(this)">
+                <span class="filter-label">${category.name}</span>
             `;
             container.appendChild(option);
         });
-
-
     }
 
     // Close dropdown when clicking outside
@@ -494,24 +487,37 @@
         // Update preview price
         document.getElementById('previewComponentPrice').textContent = 'Rp ' + formatPrice(price);
 
-        // Update preview type badge
+        // Update preview type badge - Get category name from categories array
         const typeBadge = document.getElementById('previewComponentType');
-        const typeLabels = {
-            'spice_level': '🌶️ Tingkat Pedas',
-            'egg_type': '🥚 Jenis Telur',
-            'broth_flavor': '🍲 Rasa Kuah',
-            'kencur_level': '🌿 Tingkat Kencur'
-        };
-        const typeColors = {
-            'spice_level': 'bg-danger',
-            'egg_type': 'bg-warning',
-            'broth_flavor': 'bg-info',
-            'kencur_level': 'bg-success'
-        };
 
-        if (componentType && typeLabels[componentType]) {
-            typeBadge.textContent = typeLabels[componentType];
-            typeBadge.className = 'badge ' + typeColors[componentType];
+        if (componentType) {
+            // Find the selected category from the categories array
+            const selectedCategory = categories.find(cat => cat.id == componentType);
+
+            if (selectedCategory) {
+                typeBadge.textContent = selectedCategory.name;
+
+                // Use different colors based on category name
+                let badgeColor = 'bg-secondary'; // default
+
+                // Match by category name (case-insensitive)
+                const categoryName = selectedCategory.name.toLowerCase();
+
+                if (categoryName.includes('pedas') || categoryName.includes('spice')) {
+                    badgeColor = 'bg-danger'; // Red for spice level
+                } else if (categoryName.includes('telur') || categoryName.includes('egg')) {
+                    badgeColor = 'bg-warning'; // Yellow for egg type
+                } else if (categoryName.includes('kuah') || categoryName.includes('broth')) {
+                    badgeColor = 'bg-info'; // Blue for broth flavor
+                } else if (categoryName.includes('kencur')) {
+                    badgeColor = 'bg-success'; // Green for kencur level
+                }
+
+                typeBadge.className = 'badge ' + badgeColor;
+            } else {
+                typeBadge.textContent = 'Pilih Tipe';
+                typeBadge.className = 'badge bg-secondary';
+            }
         } else {
             typeBadge.textContent = 'Pilih Tipe';
             typeBadge.className = 'badge bg-secondary';
@@ -749,6 +755,7 @@
             if (result.success) {
                 categories = result.data;
                 populateCategorySelect();
+                populateComponentTypeSelect();
                 populateCategoryFilterOptions();
             } else {
                 console.error('Failed to load categories:', result.message);
@@ -1160,7 +1167,7 @@
     }
 
     // Show form (for both add and edit)
-    function showForm(pageTitle, cardTitle, data = null) {
+    async function showForm(pageTitle, cardTitle, data = null) {
         const mainContent = document.getElementById('mainContentArea');
 
         // Update header
@@ -1186,7 +1193,7 @@
         }
 
         // Initialize form first (this loads categories)
-        initForm();
+        await initForm();
 
         // Populate form if editing (this should come after initForm)
         if (data) {
@@ -1448,10 +1455,7 @@
                                     <label for="componentType" class="form-label">Pilih Tipe Komponen <span class="text-danger">*</span></label>
                                     <select class="form-select" id="componentType" name="component_type" required onchange="handleComponentTypeChange()">
                                         <option value="">-- Pilih Tipe Komponen --</option>
-                                        <option value="spice_level">🌶️ Tingkat Pedas</option>
-                                        <option value="egg_type">🥚 Jenis Telur</option>
-                                        <option value="broth_flavor">🍲 Rasa Kuah</option>
-                                        <option value="kencur_level">🌿 Tingkat Kencur</option>
+                                        <!-- Options will be populated dynamically from categories with type 'seblak_base' -->
                                     </select>
                                     <div class="form-text">Tentukan jenis komponen dasar seblak yang akan ditambahkan</div>
                                 </div>
@@ -2059,6 +2063,27 @@
         });
     }
 
+    // Populate component type select with categories of type 'seblak_base'
+    function populateComponentTypeSelect() {
+        const select = document.getElementById('componentType');
+        if (!select) return;
+
+        // Clear existing options except first
+        select.innerHTML = '<option value="">-- Pilih Tipe Komponen --</option>';
+
+        // Filter only seblak base categories from the loaded categories
+        const seblakBaseCategories = categories.filter(cat => cat.type === 'seblak_base');
+
+        seblakBaseCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            // Store category data for later use in preview
+            option.dataset.categoryName = category.name;
+            select.appendChild(option);
+        });
+    }
+
     // Populate form for editing
     function populateForm(data) {
         console.log('Populating component form with data:', data);
@@ -2105,7 +2130,15 @@
     }
 
     // Initialize form
-    function initForm() {
+    async function initForm() {
+        // Load categories first if not already loaded
+        if (categories.length === 0) {
+            await loadCategories();
+        }
+
+        // Populate component type select from categories
+        populateComponentTypeSelect();
+
         // Component form doesn't need category select
         // Initialize form event listener
         const form = document.getElementById('componentForm');

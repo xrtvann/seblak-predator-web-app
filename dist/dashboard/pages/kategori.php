@@ -78,12 +78,12 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
                         <div class="avtar avtar-s bg-light-info">
-                            <i class="ti ti-meat f-20"></i>
+                            <i class="ti ti-bowl-rice f-20"></i>
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="mb-0">Kategori Topping</h6>
-                        <b class="text-info" id="toppingCategoriesCount">0</b>
+                        <h6 class="mb-0">Seblak Base</h6>
+                        <b class="text-info" id="seblakBaseCategoriesCount">0</b>
                     </div>
                 </div>
             </div>
@@ -1347,7 +1347,7 @@
                 currentPage = 1;
                 currentViewMode = showDeleted ? 'deleted' : 'active';
 
-              
+
 
                 // Restore checkbox state after reload
                 restoreViewModeCheckbox();
@@ -1368,7 +1368,7 @@
         const checkbox = document.querySelector('input[data-filter="view_mode"][data-value="deleted"]');
         if (checkbox) {
             checkbox.checked = currentViewMode === 'deleted';
-          
+
         }
     }
 
@@ -1527,9 +1527,9 @@
                                         <label class="filter-group-label">Type</label>
                                         <div class="filter-options">
                                             <label class="filter-option">
-                                                <input type="checkbox" class="filter-checkbox" data-filter="type" data-value="product" onchange="handleFilterChange(this)">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="type" data-value="seblak_base" onchange="handleFilterChange(this)">
                                                 <span class="filter-icon">🍽️</span>
-                                                <span class="filter-label">Product</span>
+                                                <span class="filter-label">Seblak Base</span>
                                             </label>
                                             <label class="filter-option">
                                                 <input type="checkbox" class="filter-checkbox" data-filter="type" data-value="topping" onchange="handleFilterChange(this)">
@@ -1624,7 +1624,7 @@
                                     <label for="categoryType" class="form-label">Type <span class="text-danger">*</span></label>
                                     <select class="form-select" id="categoryType" name="type" required>
                                         <option value="">Pilih Type</option>
-                                        <option value="product">Product</option>
+                                        <option value="seblak_base">Seblak Base</option>
                                         <option value="topping">Topping</option>
                                     </select>
                                     <div class="form-text">Pilih type kategori</div>
@@ -1678,8 +1678,8 @@
                     <h6 class="mb-0">${escapeHtml(item.name)}</h6>
                 </td>
                 <td>
-                    <span class="badge bg-light-${item.type === 'product' ? 'primary' : 'info'} text-${item.type === 'product' ? 'primary' : 'info'}">
-                        ${item.type}
+                    <span class="badge bg-light-${item.type === 'seblak_base' ? 'primary' : 'info'} text-${item.type === 'seblak_base' ? 'primary' : 'info'}">
+                        ${item.type === 'seblak_base' ? 'Seblak Base' : 'Topping'}
                     </span>
                 </td>
                 <td>
@@ -1701,7 +1701,7 @@
                                 <i class="ti ti-refresh"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteCategory('${item.id}', '${escapeHtml(item.name)}')" title="Permanent Delete">
-                                <i class="ti ti-trash-x"></i>
+                                <i class="ti ti-trash"></i>
                             </button>
                         `}
                     </div>
@@ -1716,12 +1716,12 @@
         const total = allCategoriesData.length;
         const active = allCategoriesData.filter(c => c.is_active).length;
         const deleted = allCategoriesData.filter(c => !c.is_active).length;
-        const topping = allCategoriesData.filter(c => c.type === 'topping' && c.is_active).length;
+        const seblakBase = allCategoriesData.filter(c => c.type === 'seblak_base' && c.is_active).length;
 
         document.getElementById('totalCategoriesCount').textContent = total;
         document.getElementById('activeCategoriesCount').textContent = active;
         document.getElementById('deletedCategoriesCount').textContent = deleted;
-        document.getElementById('toppingCategoriesCount').textContent = topping;
+        document.getElementById('seblakBaseCategoriesCount').textContent = seblakBase;
     }
 
     // Handle form submit

@@ -83,7 +83,7 @@ function getAllCategories()
             $types .= 's';
         }
 
-        if (!empty($type) && in_array($type, ['product', 'topping'])) {
+        if (!empty($type) && in_array($type, ['seblak_base', 'topping'])) {
             $whereConditions[] = "type = ?";
             $params[] = $type;
             $types .= 's';
@@ -186,11 +186,11 @@ function createCategory()
     try {
         $id = 'cat_' . uniqid();
         $name = mysqli_real_escape_string($koneksi, trim($input['name']));
-        $type = isset($input['type']) ? $input['type'] : 'product';
+        $type = isset($input['type']) ? $input['type'] : 'seblak_base';
 
         // Validate type
-        if (!in_array($type, ['product', 'topping'])) {
-            throw new Exception('Invalid category type. Must be product or topping');
+        if (!in_array($type, ['seblak_base', 'topping'])) {
+            throw new Exception('Invalid category type. Must be seblak_base or topping');
         }
 
         // Check if category name already exists
@@ -275,7 +275,7 @@ function updateCategory()
             $values[] = mysqli_real_escape_string($koneksi, trim($input['name']));
         }
 
-        if (isset($input['type']) && in_array($input['type'], ['product', 'topping'])) {
+        if (isset($input['type']) && in_array($input['type'], ['seblak_base', 'topping'])) {
             $updateFields[] = "type = ?";
             $types .= "s";
             $values[] = $input['type'];
@@ -326,24 +326,73 @@ function deleteCategory()
     }
 
     try {
-        // Check if category exists and has associated products
-        $checkQuery = "SELECT COUNT(*) as product_count FROM products WHERE category_id = ? AND is_active = TRUE";
-        $checkStmt = mysqli_prepare($koneksi, $checkQuery);
-        mysqli_stmt_bind_param($checkStmt, "s", $category_id);
-        mysqli_stmt_execute($checkStmt);
-        $checkResult = mysqli_stmt_get_result($checkStmt);
-        $row = mysqli_fetch_assoc($checkResult);
+        // Get category info first
+        $getCategoryQuery = "SELECT id, name FROM categories WHERE id = ?";
+        $getCategoryStmt = mysqli_prepare($koneksi, $getCategoryQuery);
+        mysqli_stmt_bind_param($getCategoryStmt, "s", $category_id);
+        mysqli_stmt_execute($getCategoryStmt);
+        $getCategoryResult = mysqli_stmt_get_result($getCategoryStmt);
 
-        if ($row['product_count'] > 0) {
+        if (mysqli_num_rows($getCategoryResult) === 0) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Category not found']);
+            return;
+        }
+
+        $category = mysqli_fetch_assoc($getCategoryResult);
+
+        // Check if category has associated active toppings
+        $toppingCheckQuery = "SELECT COUNT(*) as topping_count FROM toppings WHERE category = ? AND is_available = TRUE";
+        $toppingCheckStmt = mysqli_prepare($koneksi, $toppingCheckQuery);
+        mysqli_stmt_bind_param($toppingCheckStmt, "s", $category_id);
+        mysqli_stmt_execute($toppingCheckStmt);
+        $toppingCheckResult = mysqli_stmt_get_result($toppingCheckStmt);
+        $toppingRow = mysqli_fetch_assoc($toppingCheckResult);
+
+        if ($toppingRow['topping_count'] > 0) {
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'message' => 'Cannot delete category. It has associated products.'
+                'message' => "Cannot delete category '{$category['name']}'. It has {$toppingRow['topping_count']} active topping(s). Please deactivate or reassign all toppings first."
             ]);
             return;
         }
 
-        // Soft delete category
+        // Check if category has associated active customization options
+        $customizationCheckQuery = "SELECT COUNT(*) as customization_count FROM customization_options WHERE category_id = ? AND is_active = TRUE";
+        $customizationCheckStmt = mysqli_prepare($koneksi, $customizationCheckQuery);
+        mysqli_stmt_bind_param($customizationCheckStmt, "s", $category_id);
+        mysqli_stmt_execute($customizationCheckStmt);
+        $customizationCheckResult = mysqli_stmt_get_result($customizationCheckStmt);
+        $customizationRow = mysqli_fetch_assoc($customizationCheckResult);
+
+        if ($customizationRow['customization_count'] > 0) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => "Cannot delete category '{$category['name']}'. It has {$customizationRow['customization_count']} active customization option(s). Please deactivate or reassign them first."
+            ]);
+            return;
+        }
+
+        // Check if category has associated active spice levels
+        $spiceLevelCheckQuery = "SELECT COUNT(*) as spice_count FROM spice_levels WHERE category_id = ? AND is_active = TRUE";
+        $spiceLevelCheckStmt = mysqli_prepare($koneksi, $spiceLevelCheckQuery);
+        mysqli_stmt_bind_param($spiceLevelCheckStmt, "s", $category_id);
+        mysqli_stmt_execute($spiceLevelCheckStmt);
+        $spiceLevelCheckResult = mysqli_stmt_get_result($spiceLevelCheckStmt);
+        $spiceLevelRow = mysqli_fetch_assoc($spiceLevelCheckResult);
+
+        if ($spiceLevelRow['spice_count'] > 0) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => "Cannot delete category '{$category['name']}'. It has {$spiceLevelRow['spice_count']} active spice level(s). Please deactivate or reassign them first."
+            ]);
+            return;
+        }
+
+        // Soft delete category (set is_active to FALSE)
         $deleteQuery = "UPDATE categories SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
         $deleteStmt = mysqli_prepare($koneksi, $deleteQuery);
         mysqli_stmt_bind_param($deleteStmt, "s", $category_id);
@@ -353,11 +402,11 @@ function deleteCategory()
                 http_response_code(200);
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Category deleted successfully'
+                    'message' => "Category '{$category['name']}' has been deactivated successfully"
                 ]);
             } else {
                 http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Category not found']);
+                echo json_encode(['success' => false, 'message' => 'Category not found or already inactive']);
             }
         } else {
             throw new Exception('Failed to delete category: ' . mysqli_error($koneksi));
@@ -450,21 +499,46 @@ function permanentDeleteCategory()
 
         $category = mysqli_fetch_assoc($checkResult);
 
-        // Check if category has associated products (both active and inactive)
-        $productCheckQuery = "SELECT COUNT(*) as product_count FROM products WHERE category_id = ?";
-        $productCheckStmt = mysqli_prepare($koneksi, $productCheckQuery);
-        mysqli_stmt_bind_param($productCheckStmt, "s", $category_id);
-        mysqli_stmt_execute($productCheckStmt);
-        $productCheckResult = mysqli_stmt_get_result($productCheckStmt);
-        $productRow = mysqli_fetch_assoc($productCheckResult);
+        // Check if category has associated toppings (RESTRICT constraint)
+        $toppingCheckQuery = "SELECT COUNT(*) as topping_count FROM toppings WHERE category = ?";
+        $toppingCheckStmt = mysqli_prepare($koneksi, $toppingCheckQuery);
+        mysqli_stmt_bind_param($toppingCheckStmt, "s", $category_id);
+        mysqli_stmt_execute($toppingCheckStmt);
+        $toppingCheckResult = mysqli_stmt_get_result($toppingCheckStmt);
+        $toppingRow = mysqli_fetch_assoc($toppingCheckResult);
 
-        if ($productRow['product_count'] > 0) {
+        if ($toppingRow['topping_count'] > 0) {
             http_response_code(400);
             echo json_encode([
                 'success' => false,
-                'message' => 'Cannot permanently delete category. It has associated products. Please delete all products in this category first.'
+                'message' => "Cannot permanently delete category '{$category['name']}'. It has {$toppingRow['topping_count']} associated topping(s). Please delete or reassign all toppings in this category first."
             ]);
             return;
+        }
+
+        // Check if category has associated customization options
+        $customizationCheckQuery = "SELECT COUNT(*) as customization_count FROM customization_options WHERE category_id = ?";
+        $customizationCheckStmt = mysqli_prepare($koneksi, $customizationCheckQuery);
+        mysqli_stmt_bind_param($customizationCheckStmt, "s", $category_id);
+        mysqli_stmt_execute($customizationCheckStmt);
+        $customizationCheckResult = mysqli_stmt_get_result($customizationCheckStmt);
+        $customizationRow = mysqli_fetch_assoc($customizationCheckResult);
+
+        // Check if category has associated spice levels
+        $spiceLevelCheckQuery = "SELECT COUNT(*) as spice_count FROM spice_levels WHERE category_id = ?";
+        $spiceLevelCheckStmt = mysqli_prepare($koneksi, $spiceLevelCheckQuery);
+        mysqli_stmt_bind_param($spiceLevelCheckStmt, "s", $category_id);
+        mysqli_stmt_execute($spiceLevelCheckStmt);
+        $spiceLevelCheckResult = mysqli_stmt_get_result($spiceLevelCheckStmt);
+        $spiceLevelRow = mysqli_fetch_assoc($spiceLevelCheckResult);
+
+        // Warning message if there are related records that will be affected
+        $warnings = [];
+        if ($customizationRow['customization_count'] > 0) {
+            $warnings[] = "{$customizationRow['customization_count']} customization option(s) will have their category_id set to NULL";
+        }
+        if ($spiceLevelRow['spice_count'] > 0) {
+            $warnings[] = "{$spiceLevelRow['spice_count']} spice level(s) will have their category_id set to NULL";
         }
 
         // Permanently delete category
@@ -474,17 +548,33 @@ function permanentDeleteCategory()
 
         if (mysqli_stmt_execute($deleteStmt)) {
             if (mysqli_affected_rows($koneksi) > 0) {
+                $message = "Category '{$category['name']}' has been permanently deleted";
+                if (!empty($warnings)) {
+                    $message .= ". Note: " . implode('; ', $warnings);
+                }
+
                 http_response_code(200);
                 echo json_encode([
                     'success' => true,
-                    'message' => "Category '{$category['name']}' has been permanently deleted"
+                    'message' => $message,
+                    'warnings' => $warnings
                 ]);
             } else {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Category not found']);
             }
         } else {
-            throw new Exception('Failed to permanently delete category: ' . mysqli_error($koneksi));
+            // Check if it's a foreign key constraint error
+            $error = mysqli_error($koneksi);
+            if (strpos($error, 'foreign key constraint') !== false || strpos($error, 'RESTRICT') !== false) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'message' => "Cannot delete category '{$category['name']}' due to foreign key constraints. Please remove all associated records first."
+                ]);
+            } else {
+                throw new Exception('Failed to permanently delete category: ' . $error);
+            }
         }
 
     } catch (Exception $e) {
