@@ -532,11 +532,6 @@
             statusBadge.textContent = 'Tidak Tersedia';
             statusBadge.className = 'badge bg-secondary';
         }
-
-
-        // Update description (use the same field for all component types)
-        const description = document.getElementById('optionDescription')?.value || 'Deskripsi akan tampil di sini...';
-        document.getElementById('previewDescription').textContent = description;
     }
 
     // Handle component image upload
@@ -1482,7 +1477,7 @@
                                             <label for="componentPrice" class="form-label">Harga Tambahan <span class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class="ti ti-currency-rupiah"></i> Rp</span>
-                                                <input type="number" class="form-control" id="componentPrice" name="price" min="0" step="500" required
+                                                <input type="number" class="form-control" id="componentPrice" name="price" required
                                                        placeholder="0" oninput="updateComponentPreview()">
                                             </div>
                                             <div class="form-text">Harga tambahan untuk komponen ini (0 jika gratis)</div>
@@ -1510,14 +1505,7 @@
                                     </div>
 
                                      <!-- Customization Options Specific Field -->
-                                <div id="customizationFields" class="d-none">
-                                    <div class="mb-3">
-                                        <label for="optionDescription" class="form-label">Deskripsi</label>
-                                        <textarea class="form-control" id="optionDescription" name="description" rows="3"
-                                                  placeholder="Deskripsi opsi." oninput="updateComponentPreview()"></textarea>
-                              
-                                    </div>
-                                </div>
+                                
                                     <div class="col-md-12 mb-2">
                                         <div class="mb-3">
                                             <label class="form-label">Status Ketersediaan</label>
@@ -1586,9 +1574,6 @@
                                         
                                         </div>
 
-                                        <div id="previewDescription" class="mt-3 text-muted small">
-                                            Deskripsi akan tampil di sini...
-                                        </div>
                                     </div>
                                 </div>
 
@@ -2167,29 +2152,55 @@
 
         try {
             const formData = new FormData(e.target);
-            const componentType = formData.get('component_type');
+            const componentTypeId = formData.get('component_type');
 
             // Validate component type
-            if (!componentType) {
+            if (!componentTypeId) {
                 hideAlert();
                 showError('Error', 'Silakan pilih tipe komponen terlebih dahulu');
                 return;
             }
 
-            // Determine API endpoint based on component type
+            // Find the selected category to determine the type
+            const selectedCategory = categories.find(cat => cat.id == componentTypeId);
+            if (!selectedCategory) {
+                hideAlert();
+                showError('Error', 'Kategori tidak ditemukan');
+                return;
+            }
+
+            // Determine API endpoint and type based on category name
             let apiEndpoint;
-            if (componentType === 'spice_level') {
+            let componentType = null;
+            const categoryName = selectedCategory.name.toLowerCase();
+
+            if (categoryName.includes('pedas') || categoryName.includes('spice')) {
                 apiEndpoint = 'api/spice-levels.php';
-            } else {
+                componentType = 'spice_level';
+            } else if (categoryName.includes('telur') || categoryName.includes('egg')) {
                 apiEndpoint = 'api/customization-options.php';
+                componentType = 'egg_type';
+            } else if (categoryName.includes('kuah') || categoryName.includes('broth')) {
+                apiEndpoint = 'api/customization-options.php';
+                componentType = 'broth_flavor';
+            } else if (categoryName.includes('kencur')) {
+                apiEndpoint = 'api/customization-options.php';
+                componentType = 'kencur_level';
+            } else {
+                hideAlert();
+                showError('Error', 'Tipe komponen tidak dikenali: ' + selectedCategory.name);
+                return;
             }
 
             // Check if image file is selected
             const imageFile = document.getElementById('componentImageFile').files[0];
             let uploadedImageUrl = null;
 
+            console.log('Image file selected:', imageFile ? imageFile.name : 'No file');
+
             // Upload image first if selected
             if (imageFile) {
+                console.log('Starting image upload for file:', imageFile.name);
                 const imageFormData = new FormData();
                 imageFormData.append('image', imageFile);
                 imageFormData.append('folder', 'components');
@@ -2202,38 +2213,72 @@
                 const uploadResult = await uploadResponse.json();
                 console.log('Image upload response:', uploadResult);
 
-                if (uploadResult.success) {
-                    uploadedImageUrl = uploadResult.image_url;
+                if (uploadResult.success && uploadResult.data) {
+                    uploadedImageUrl = uploadResult.data.filename;
+                    console.log('✓ Image uploaded successfully! Filename:', uploadedImageUrl);
                 } else {
                     hideAlert();
                     showError('Error', 'Gagal mengupload gambar: ' + (uploadResult.message || 'Unknown error'));
                     return;
                 }
+            } else {
+                console.log('No image file selected, continuing without image');
             }
 
             // Prepare data object
+            const componentName = formData.get('name');
+            const componentPrice = formData.get('price');
+
+            console.log('Form data retrieved:', {
+                name: componentName,
+                price: componentPrice,
+                category_id: componentTypeId
+            });
+
+            // Validate name is not empty
+            if (!componentName || componentName.trim() === '') {
+                hideAlert();
+                showError('Error', 'Nama komponen harus diisi');
+                return;
+            }
+
             const data = {
-                name: formData.get('name'),
-                price: formData.get('price'),
-                is_available: formData.get('is_available') ? 1 : 0
+                name: componentName.trim(),
+                price: parseFloat(componentPrice) || 0,
+                category_id: componentTypeId  // Required: foreign key to categories table
             };
+
+            console.log('Data object before adding image:', JSON.parse(JSON.stringify(data)));
 
             // Add image URL if uploaded
             if (uploadedImageUrl) {
-                data.image_url = uploadedImageUrl;
+                data.image = uploadedImageUrl;
+                console.log('✓ Image added to data object:', uploadedImageUrl);
+            } else {
+                console.log('No uploadedImageUrl, image not added to data');
             }
 
-            // Add type-specific fields
-            if (componentType !== 'spice_level') {
-                // For customization options
-                data.type = componentType; // egg_type, broth_flavor, or kencur_level
+            console.log('Final data object:', JSON.parse(JSON.stringify(data)));
+
+            // For edit mode, include is_active status
+            if (currentEditId) {
+                const isAvailableCheckbox = document.getElementById('isAvailable');
+                if (isAvailableCheckbox) {
+                    data.is_active = isAvailableCheckbox.checked ? 1 : 0;
+                }
             }
 
             console.log('Submitting component data:', data);
+            console.log('API endpoint:', apiEndpoint);
+            console.log('Component type detected:', componentType);
+            console.log('Category name:', selectedCategory.name);
 
             // Determine method
             const method = currentEditId ? 'PUT' : 'POST';
             const url = currentEditId ? `${apiEndpoint}?id=${currentEditId}` : apiEndpoint;
+
+            console.log('Request URL:', url);
+            console.log('Request method:', method);
 
             // Make API request
             const response = await fetch(url, {
@@ -2244,7 +2289,21 @@
                 body: JSON.stringify(data)
             });
 
-            const result = await response.json();
+            console.log('Response status:', response.status);
+
+            // Try to get response as text first to debug
+            const responseText = await response.text();
+            console.log('Response text:', responseText);
+
+            // Parse as JSON
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                throw new Error('Server returned invalid JSON: ' + responseText.substring(0, 200));
+            }
+
             console.log('API response:', result);
 
             hideAlert();

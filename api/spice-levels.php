@@ -201,9 +201,9 @@ function createLevel()
     $input = json_decode(file_get_contents('php://input'), true);
 
     // Validate required fields
-    $required_fields = ['name', 'price'];
+    $required_fields = ['name', 'category_id'];
     foreach ($required_fields as $field) {
-        if (!isset($input[$field]) && $field !== 'price') {
+        if (empty($input[$field])) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => ucfirst($field) . ' is required']);
             return;
@@ -216,6 +216,7 @@ function createLevel()
 
         // Validate and set values
         $name = mysqli_real_escape_string($koneksi, trim($input['name']));
+        $category_id = mysqli_real_escape_string($koneksi, trim($input['category_id']));
         $price = isset($input['price']) ? floatval($input['price']) : 0.00;
 
         if ($price < 0) {
@@ -228,10 +229,10 @@ function createLevel()
         $sort_order = isset($input['sort_order']) ? (int) $input['sort_order'] : 0;
 
         // Insert level
-        $insertQuery = "INSERT INTO spice_levels (id, name, price, image, is_active, sort_order, created_at, updated_at) 
-                        VALUES (?, ?, ?, ?, TRUE, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        $insertQuery = "INSERT INTO spice_levels (id, name, price, image, category_id, is_active, sort_order, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, ?, TRUE, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         $insertStmt = mysqli_prepare($koneksi, $insertQuery);
-        mysqli_stmt_bind_param($insertStmt, "ssdsi", $id, $name, $price, $image, $sort_order);
+        mysqli_stmt_bind_param($insertStmt, "ssdssi", $id, $name, $price, $image, $category_id, $sort_order);
 
         if (mysqli_stmt_execute($insertStmt)) {
             http_response_code(201);
@@ -242,6 +243,7 @@ function createLevel()
                     'name' => $name,
                     'price' => $price,
                     'image' => $image,
+                    'category_id' => $category_id,
                     'sort_order' => $sort_order
                 ],
                 'message' => 'Spice level created successfully'
@@ -318,6 +320,12 @@ function updateLevel()
             $updateFields[] = "image = ?";
             $types .= "s";
             $values[] = $input['image'] ? mysqli_real_escape_string($koneksi, trim($input['image'])) : null;
+        }
+
+        if (isset($input['category_id'])) {
+            $updateFields[] = "category_id = ?";
+            $types .= "s";
+            $values[] = mysqli_real_escape_string($koneksi, trim($input['category_id']));
         }
 
         if (isset($input['is_active'])) {

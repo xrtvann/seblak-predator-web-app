@@ -209,21 +209,13 @@ function createOption()
     $input = json_decode(file_get_contents('php://input'), true);
 
     // Validate required fields
-    $required_fields = ['type', 'name'];
+    $required_fields = ['name', 'category_id'];
     foreach ($required_fields as $field) {
         if (empty($input[$field])) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => ucfirst($field) . ' is required']);
             return;
         }
-    }
-
-    // Validate type
-    $valid_types = ['egg_type', 'broth_flavor', 'kencur_level'];
-    if (!in_array($input['type'], $valid_types)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Invalid type. Must be one of: ' . implode(', ', $valid_types)]);
-        return;
     }
 
     try {
@@ -239,14 +231,15 @@ function createOption()
         }
 
         $name = mysqli_real_escape_string($koneksi, trim($input['name']));
-        $type = $input['type'];
+        $category_id = mysqli_real_escape_string($koneksi, trim($input['category_id']));
+        $image = isset($input['image']) ? mysqli_real_escape_string($koneksi, trim($input['image'])) : null;
         $sort_order = isset($input['sort_order']) ? (int) $input['sort_order'] : 0;
 
         // Insert option
-        $insertQuery = "INSERT INTO customization_options (id, type, name, price, is_active, sort_order, created_at, updated_at) 
-                        VALUES (?, ?, ?, ?, TRUE, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        $insertQuery = "INSERT INTO customization_options (id, name, price, image, category_id, is_active, sort_order, created_at, updated_at) 
+                        VALUES (?, ?, ?, ?, ?, TRUE, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         $insertStmt = mysqli_prepare($koneksi, $insertQuery);
-        mysqli_stmt_bind_param($insertStmt, "sssdi", $id, $type, $name, $price, $sort_order);
+        mysqli_stmt_bind_param($insertStmt, "ssdssi", $id, $name, $price, $image, $category_id, $sort_order);
 
         if (mysqli_stmt_execute($insertStmt)) {
             http_response_code(201);
@@ -254,9 +247,10 @@ function createOption()
                 'success' => true,
                 'data' => [
                     'id' => $id,
-                    'type' => $type,
+                    'category_id' => $category_id,
                     'name' => $name,
                     'price' => $price,
+                    'image' => $image,
                     'sort_order' => $sort_order
                 ],
                 'message' => 'Option created successfully'
@@ -311,16 +305,16 @@ function updateOption()
             $values[] = mysqli_real_escape_string($koneksi, trim($input['name']));
         }
 
-        if (isset($input['type'])) {
-            $valid_types = ['egg_type', 'broth_flavor', 'kencur_level'];
-            if (!in_array($input['type'], $valid_types)) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'message' => 'Invalid type']);
-                return;
-            }
-            $updateFields[] = "type = ?";
+        if (isset($input['category_id'])) {
+            $updateFields[] = "category_id = ?";
             $types .= "s";
-            $values[] = $input['type'];
+            $values[] = mysqli_real_escape_string($koneksi, trim($input['category_id']));
+        }
+
+        if (isset($input['image'])) {
+            $updateFields[] = "image = ?";
+            $types .= "s";
+            $values[] = $input['image'] ? mysqli_real_escape_string($koneksi, trim($input['image'])) : null;
         }
 
         if (isset($input['price'])) {
