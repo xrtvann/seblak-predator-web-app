@@ -410,8 +410,27 @@
 
     async function editMenu(id) {
         try {
-            const response = await fetch(`api/menu/products.php?id=${id}`);
-            const result = await response.json();
+            // Use absolute path from root to ensure correct API endpoint resolution
+            const apiPath = window.location.pathname.includes('index.php')
+                ? 'api/menu/products.php'
+                : '../../../api/menu/products.php';
+            const apiUrl = `${apiPath}?id=${id}`;
+            console.log('Fetching from URL:', apiUrl);
+
+            const response = await fetch(apiUrl);
+
+            // Get response text first to handle potential HTML errors
+            const responseText = await response.text();
+            console.log('Edit response (first 200 chars):', responseText.substring(0, 200));
+
+            // Try to parse as JSON
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('JSON parse error. Full response:', responseText);
+                throw new Error('Server mengembalikan respons yang tidak valid (bukan JSON)');
+            }
 
             if (result.success) {
                 currentEditId = id;
@@ -421,7 +440,7 @@
             }
         } catch (error) {
             console.error('Error:', error);
-            showNotification('Error menghubungkan ke server', 'error');
+            showNotification('Error menghubungkan ke server: ' + error.message, 'error');
         }
     }
 
@@ -599,7 +618,7 @@
         if (previewImage && previewPlaceholder) {
             previewImage.style.display = 'none';
             previewImage.src = '';
-            previewPlaceholder.style.display = 'flex';
+            // previewPlaceholder.style.display = 'flex';
         }
     }
 
@@ -942,9 +961,25 @@
         console.log('Editing component:', id, componentType, apiEndpoint);
 
         try {
+            // Construct the correct API URL
+            const apiUrl = `api/${apiEndpoint}.php?id=${id}`;
+            console.log('Fetching from URL:', apiUrl);
+
             // Fetch component data
-            const response = await fetch(`${apiEndpoint}?id=${id}`);
-            const result = await response.json();
+            const response = await fetch(apiUrl);
+
+            // Get response text first to handle potential HTML errors
+            const responseText = await response.text();
+            console.log('Edit component response (first 200 chars):', responseText.substring(0, 200));
+
+            // Try to parse as JSON
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('JSON parse error. Full response:', responseText);
+                throw new Error('Server mengembalikan respons yang tidak valid (bukan JSON)');
+            }
 
             if (result.success && result.data) {
                 currentEditId = id;
@@ -1064,11 +1099,7 @@
         }
     }
 
-    // Show form tambah menu
-    function showFormTambah() {
-        currentEditId = null;
-        showForm('Tambah Menu', 'Form Tambah Menu');
-    }
+
 
     // Show form edit menu
     async function editMenu(id) {
@@ -1076,18 +1107,35 @@
         currentEditId = id;
 
         try {
-            const apiUrl = `api/menu/products.php?id=${id}`;
+            // Use absolute path from root to ensure correct API endpoint resolution
+            const apiPath = window.location.pathname.includes('index.php')
+                ? 'api/menu/products.php'
+                : '../../../api/menu/products.php';
+            const apiUrl = `${apiPath}?id=${id}`;
             console.log('Fetching from URL:', apiUrl);
 
             const response = await fetch(apiUrl);
             console.log('Fetch response status:', response.status);
             console.log('Response headers:', [...response.headers.entries()]);
 
+            // Get the response text first to check what we're receiving
+            const responseText = await response.text();
+            console.log('Response text (first 200 chars):', responseText.substring(0, 200));
+
             if (!response.ok) {
+                console.error('Full error response:', responseText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const result = await response.json();
+            // Try to parse as JSON
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('JSON parse error. Response was:', responseText.substring(0, 500));
+                throw new Error('Server returned invalid JSON. Response: ' + responseText.substring(0, 100));
+            }
+
             console.log('Edit data received:', result);
 
             if (result.success) {
@@ -1103,8 +1151,8 @@
 
             if (error.message.includes('fetch')) {
                 showNotification('Error jaringan: Tidak dapat terhubung ke server. Pastikan server berjalan.', 'error');
-            } else if (error.message.includes('JSON')) {
-                showNotification('Error respons server: Format data tidak valid.', 'error');
+            } else if (error.message.includes('JSON') || error.message.includes('invalid JSON')) {
+                showNotification('Error: Server mengembalikan respons yang tidak valid. Periksa console untuk detail.', 'error');
             } else {
                 showNotification('Error menghubungkan ke server: ' + error.message, 'error');
             }
@@ -1279,7 +1327,7 @@
                                         <th style="min-width: 50px;">#</th>
                                         <th style="min-width: 200px;">Nama Komponen</th>
                                         <th style="min-width: 150px;">Tipe</th>
-                                        <th style="min-width: 120px;">Info</th>
+                                       
                                         <th style="min-width: 120px;">Harga</th>
                                         <th style="min-width: 100px;">Status</th>
                                         <th style="min-width: 120px;">Aksi</th>
@@ -1831,9 +1879,7 @@
                         ${item.component_type_label}
                     </span>
                 </td>
-                <td>
-                    <small class="text-muted">${item.extra_info || '-'}</small>
-                </td>
+          
                 <td><strong>Rp ${formatPrice(item.price)}</strong></td>
                 <td>
                     <span class="badge bg-light-${item.is_active ? 'success' : 'danger'} text-${item.is_active ? 'success' : 'danger'}">
