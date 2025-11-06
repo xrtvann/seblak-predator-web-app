@@ -1597,7 +1597,7 @@
                                 <div class="search-input-wrapper">
                                     <i class="ti ti-search search-icon"></i>
                                     <input type="text" class="form-control search-input" id="cardSearchInput" 
-                                           placeholder="Cari nama komponen..." 
+                                           placeholder="Cari" 
                                            onkeyup="applyFilters()"
                                            onchange="applyFilters()">
                                 </div>
@@ -1661,26 +1661,31 @@
                         </div>
                     </div>
                     
-                    <!-- Cards Container -->
-                    <div class="row" id="menuCardContainer">
-                        <div class="col-12 text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                    <!-- Card View Container - Wrapped like table -->
+                    <div class="card-view-wrapper">
+                        <!-- Cards Container -->
+                        <div class="cards-grid-container p-3">
+                            <div class="row" id="menuCardContainer">
+                                <div class="col-12 text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading menu data...</p>
+                                </div>
                             </div>
-                            <p class="mt-2">Loading menu data...</p>
                         </div>
-                    </div>
-                    
-                    <!-- Pagination for Card View -->
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div class="d-flex align-items-center">
-                            <small class="text-muted" id="cardPaginationInfo">Showing 0 - 0 of 0 entries</small>
+                        
+                        <!-- Pagination for Card View -->
+                        <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+                            <div class="d-flex align-items-center">
+                                <small class="text-muted" id="cardPaginationInfo">Showing 0 - 0 of 0 entries</small>
+                            </div>
+                            <nav aria-label="Card pagination">
+                                <ul class="pagination pagination-sm mb-0" id="cardPaginationControls">
+                                    <!-- Pagination buttons will be generated here -->
+                                </ul>
+                            </nav>
                         </div>
-                        <nav aria-label="Card pagination">
-                            <ul class="pagination pagination-sm mb-0" id="cardPaginationControls">
-                                <!-- Pagination buttons will be generated here -->
-                            </ul>
-                        </nav>
                     </div>
                 </div>
             </div>
@@ -3692,6 +3697,23 @@
         overflow: hidden;
     }
 
+    /* Card View Wrapper - Same styling as table */
+    .card-view-wrapper {
+        position: relative;
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 0.375rem 0.375rem;
+        border-top: none;
+        overflow: hidden;
+        background: white;
+    }
+
+    /* Cards Grid Container */
+    .cards-grid-container {
+        min-height: 400px;
+        background: white;
+    }
+
+
     /* Scrollable table container */
     .table-responsive {
         border: none;
@@ -3751,6 +3773,22 @@
         border-radius: 0.375rem 0.375rem 0 0 !important;
     }
 
+    /* Controls row layout - horizontal arrangement */
+    .controls-row {
+        display: flex;
+        align-items: center;
+        justify-content: start;
+        gap: 1rem;
+        padding: 1rem;
+        flex-wrap: nowrap;
+    }
+
+    @media (max-width: 992px) {
+        .controls-row {
+            flex-wrap: wrap;
+        }
+    }
+
     /* Custom scrollbar styling */
     .table-responsive::-webkit-scrollbar {
         width: 8px;
@@ -3782,9 +3820,8 @@
 
     /* Search section */
     .search-section {
-        flex: 1;
-        min-width: 200px;
-        max-width: 300px;
+        flex: 1 1 auto;
+        min-width: 250px;
     }
 
     .search-input-wrapper {
@@ -3805,6 +3842,7 @@
         border: 1px solid #dee2e6;
         border-radius: 0.375rem;
         transition: all 0.15s ease-in-out;
+        width: 100%;
     }
 
     .search-input:focus {
@@ -3815,6 +3853,7 @@
     /* Filter section */
     .filter-section {
         flex: 0 0 auto;
+        min-width: 120px;
     }
 
     .filter-btn {
@@ -3977,7 +4016,8 @@
     /* Sort section */
     .sort-section {
         flex: 0 0 auto;
-        min-width: 150px;
+        min-width: 200px;
+        max-width: 220px;
     }
 
     .sort-wrapper {
@@ -4003,6 +4043,7 @@
         background: white;
         font-size: 0.875rem;
         transition: all 0.15s ease-in-out;
+        width: 100%;
     }
 
     .sort-select:focus {
@@ -4012,8 +4053,7 @@
 
     /* Active filters */
     .active-filters-container {
-        margin-top: 1rem;
-        padding-top: 1rem;
+        padding: 0 1rem 1rem 1rem;
         border-top: 1px solid #e9ecef;
     }
 
@@ -4022,6 +4062,7 @@
         align-items: center;
         gap: 0.75rem;
         flex-wrap: wrap;
+        padding-top: 1rem;
     }
 
     .active-filters-label {
@@ -4082,7 +4123,9 @@
 
     /* Responsive design */
     @media (max-width: 768px) {
-        .table-header-controls {
+
+        .table-header-controls,
+        .controls-row {
             flex-direction: column;
             align-items: stretch;
             gap: 0.75rem;
@@ -4092,10 +4135,17 @@
         .sort-section {
             min-width: unset;
             max-width: unset;
+            width: 100%;
         }
 
         .filter-section {
             align-self: center;
+            width: 100%;
+        }
+
+        .filter-btn {
+            width: 100%;
+            justify-content: center;
         }
 
         .filter-dropdown-menu {
@@ -4615,6 +4665,10 @@
     }
 
     #paginationInfo {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+     #cardPaginationInfo {
         font-size: 0.875rem;
         color: #6c757d;
     }
