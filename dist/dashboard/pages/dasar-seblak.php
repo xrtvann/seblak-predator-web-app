@@ -462,16 +462,14 @@
     // Handle component type change
     function handleComponentTypeChange() {
         const componentType = document.getElementById('componentType').value;
-        const customizationFields = document.getElementById('customizationFields');
 
-        // Show description field for all component types
-        if (componentType) {
-            customizationFields.classList.remove('d-none');
-        } else {
-            customizationFields.classList.add('d-none');
-        }
+        console.log('handleComponentTypeChange called, componentType:', componentType);
+        console.log('Categories available:', categories.length);
 
-        updateComponentPreview();
+        // Force immediate preview update
+        setTimeout(() => {
+            updateComponentPreview();
+        }, 0);
     }
 
     // Update component preview
@@ -479,22 +477,37 @@
         const componentType = document.getElementById('componentType')?.value || '';
         const name = document.getElementById('componentName')?.value || 'Nama Komponen';
         const price = document.getElementById('componentPrice')?.value || 0;
-        const isAvailable = document.getElementById('isAvailable')?.checked || true;
+        const isAvailable = document.getElementById('isAvailable')?.checked !== false;
+
+        console.log('updateComponentPreview called:', { componentType, name, price, isAvailable, categoriesLoaded: categories.length });
 
         // Update preview name
-        document.getElementById('previewComponentName').textContent = name;
+        const nameElement = document.getElementById('previewComponentName');
+        if (nameElement) {
+            nameElement.textContent = name;
+        }
 
         // Update preview price
         const priceValue = parseFloat(price) || 0;
         const priceDisplay = priceValue === 0 ? 'Gratis' : 'Rp ' + formatPrice(priceValue);
-        document.getElementById('previewComponentPrice').textContent = priceDisplay;
+        const priceElement = document.getElementById('previewComponentPrice');
+        if (priceElement) {
+            priceElement.textContent = priceDisplay;
+        }
 
         // Update preview type badge - Get category name from categories array
         const typeBadge = document.getElementById('previewComponentType');
 
+        if (!typeBadge) {
+            console.warn('previewComponentType element not found');
+            return;
+        }
+
         if (componentType) {
             // Find the selected category from the categories array
             const selectedCategory = categories.find(cat => cat.id == componentType);
+
+            console.log('Selected category:', selectedCategory);
 
             if (selectedCategory) {
                 // Use different colors and icons based on category name
@@ -523,6 +536,7 @@
 
                 console.log('Preview updated - Type:', selectedCategory.name, 'Badge color:', badgeColor);
             } else {
+                console.warn('Category not found for ID:', componentType);
                 typeBadge.textContent = 'Pilih Tipe';
                 typeBadge.className = 'badge bg-secondary';
             }
@@ -533,12 +547,14 @@
 
         // Update status badge
         const statusBadge = document.getElementById('previewComponentStatus');
-        if (isAvailable) {
-            statusBadge.textContent = '✓ Tersedia';
-            statusBadge.className = 'badge bg-success';
-        } else {
-            statusBadge.textContent = '✗ Tidak Tersedia';
-            statusBadge.className = 'badge bg-secondary';
+        if (statusBadge) {
+            if (isAvailable) {
+                statusBadge.textContent = '✓ Tersedia';
+                statusBadge.className = 'badge bg-success';
+            } else {
+                statusBadge.textContent = '✗ Tidak Tersedia';
+                statusBadge.className = 'badge bg-danger';
+            }
         }
     }
 
@@ -1909,7 +1925,7 @@
             // Get image URL or use placeholder
             const imageUrl = item.image
                 ? `uploads/menu-images/${item.image}`
-                : 'src/assets/images/backgrounds/no-image.jpg';
+                : '';
 
             // Get category name from API response (already included via JOIN)
             const categoryName = item.category_name || 'N/A';
@@ -1921,8 +1937,7 @@
                         <img src="uploads/menu-images/${item.image}" 
                              alt="${item.name}" 
                              class="rounded" 
-                             style="width: 50px; height: 50px; object-fit: cover;"
-                             onerror="this.src='src/assets/images/backgrounds/no-image.jpg'">
+                             style="width: 50px; height: 50px; object-fit: cover;">
                     ` : `
                         <div class="d-flex align-items-center justify-content-center rounded bg-light" 
                              style="width: 50px; height: 50px;">
@@ -3073,16 +3088,21 @@
             }, 100);
 
             // Store interval ID for cleanup
-            progressContainer.setAttribute('data-interval', interval);
+            if (progressContainer) {
+                progressContainer.setAttribute('data-interval', interval);
+            }
         }
     }
 
     // Hide upload progress
     function hideUploadProgress() {
         const progressContainer = document.getElementById('uploadProgress');
+
+        if (!progressContainer) return;
+
         const progressBar = progressContainer.querySelector('.progress-bar');
 
-        if (progressContainer && progressBar) {
+        if (progressBar) {
             // Clear any running interval
             const interval = progressContainer.getAttribute('data-interval');
             if (interval) {
