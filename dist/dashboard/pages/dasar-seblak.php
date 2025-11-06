@@ -485,7 +485,9 @@
         document.getElementById('previewComponentName').textContent = name;
 
         // Update preview price
-        document.getElementById('previewComponentPrice').textContent = 'Rp ' + formatPrice(price);
+        const priceValue = parseFloat(price) || 0;
+        const priceDisplay = priceValue === 0 ? 'Gratis' : 'Rp ' + formatPrice(priceValue);
+        document.getElementById('previewComponentPrice').textContent = priceDisplay;
 
         // Update preview type badge - Get category name from categories array
         const typeBadge = document.getElementById('previewComponentType');
@@ -495,25 +497,31 @@
             const selectedCategory = categories.find(cat => cat.id == componentType);
 
             if (selectedCategory) {
-                typeBadge.textContent = selectedCategory.name;
-
-                // Use different colors based on category name
+                // Use different colors and icons based on category name
                 let badgeColor = 'bg-secondary'; // default
+                let iconEmoji = '📦'; // default icon
 
                 // Match by category name (case-insensitive)
                 const categoryName = selectedCategory.name.toLowerCase();
 
                 if (categoryName.includes('pedas') || categoryName.includes('spice')) {
-                    badgeColor = 'bg-danger'; // Red for spice level
+                    badgeColor = 'bg-danger text-white'; // Red for spice level
+                    iconEmoji = '🌶️';
                 } else if (categoryName.includes('telur') || categoryName.includes('egg')) {
-                    badgeColor = 'bg-warning'; // Yellow for egg type
+                    badgeColor = 'bg-warning text-dark'; // Yellow for egg type
+                    iconEmoji = '🥚';
                 } else if (categoryName.includes('kuah') || categoryName.includes('broth')) {
-                    badgeColor = 'bg-info'; // Blue for broth flavor
+                    badgeColor = 'bg-info text-white'; // Blue for broth flavor
+                    iconEmoji = '🍲';
                 } else if (categoryName.includes('kencur')) {
-                    badgeColor = 'bg-success'; // Green for kencur level
+                    badgeColor = 'bg-success text-white'; // Green for kencur level
+                    iconEmoji = '🌿';
                 }
 
+                typeBadge.textContent = iconEmoji + ' ' + selectedCategory.name;
                 typeBadge.className = 'badge ' + badgeColor;
+
+                console.log('Preview updated - Type:', selectedCategory.name, 'Badge color:', badgeColor);
             } else {
                 typeBadge.textContent = 'Pilih Tipe';
                 typeBadge.className = 'badge bg-secondary';
@@ -526,10 +534,10 @@
         // Update status badge
         const statusBadge = document.getElementById('previewComponentStatus');
         if (isAvailable) {
-            statusBadge.textContent = 'Tersedia';
+            statusBadge.textContent = '✓ Tersedia';
             statusBadge.className = 'badge bg-success';
         } else {
-            statusBadge.textContent = 'Tidak Tersedia';
+            statusBadge.textContent = '✗ Tidak Tersedia';
             statusBadge.className = 'badge bg-secondary';
         }
     }
@@ -736,9 +744,10 @@
     }
 
     // Initialize page
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', async function () {
+        // Load categories first, then show data menu
+        await loadCategories();
         showDataMenu();
-        // Categories not needed for components view
     });
 
     // Load categories from API
@@ -763,14 +772,21 @@
     // Load menu data from API - Now loads ALL seblak components in one unified list
     async function loadMenuData(showDeleted = false) {
         try {
+            console.log('Loading menu data... showDeleted:', showDeleted);
+            console.log('Categories loaded:', categories.length);
+
             // Load all base components in parallel
+            const statusParam = showDeleted ? 'inactive' : 'active';
             const [spiceLevelsRes, customOptionsRes] = await Promise.all([
-                fetch(`api/spice-levels.php?is_active=${!showDeleted}`),
-                fetch(`api/customization-options.php?is_active=${!showDeleted}`)
+                fetch(`api/spice-levels.php?status=${statusParam}`),
+                fetch(`api/customization-options.php?status=${statusParam}`)
             ]);
 
             const spiceLevels = await spiceLevelsRes.json();
             const customOptions = await customOptionsRes.json();
+
+            console.log('Spice levels response:', spiceLevels);
+            console.log('Custom options response:', customOptions);
 
             if (spiceLevels.success && customOptions.success) {
                 // Combine all components into single array with type labels
@@ -789,20 +805,33 @@
 
                 // Add customization options
                 (customOptions.data || []).forEach(item => {
-                    let typeLabel = '';
-                    if (item.type === 'egg_type') typeLabel = 'Jenis Telur';
-                    else if (item.type === 'broth_flavor') typeLabel = 'Rasa Kuah';
-                    else if (item.type === 'kencur_level') typeLabel = 'Tingkat Kencur';
+                    // Determine type based on category_name from JOIN query
+                    const categoryName = item.category_name ? item.category_name.toLowerCase() : '';
+
+                    let componentType = 'customization';
+                    let typeLabel = 'Customization';
+
+                    if (categoryName.includes('telur') || categoryName.includes('egg')) {
+                        componentType = 'egg_type';
+                        typeLabel = 'Jenis Telur';
+                    } else if (categoryName.includes('kuah') || categoryName.includes('broth')) {
+                        componentType = 'broth_flavor';
+                        typeLabel = 'Rasa Kuah';
+                    } else if (categoryName.includes('kencur')) {
+                        componentType = 'kencur_level';
+                        typeLabel = 'Tingkat Kencur';
+                    }
 
                     allComponents.push({
                         ...item,
-                        component_type: item.type,
+                        component_type: componentType,
                         component_type_label: typeLabel,
                         api_endpoint: 'customization-options',
-                        extra_info: item.type
+                        extra_info: componentType
                     });
                 });
 
+                console.log('Total components loaded:', allComponents.length);
                 displayMenuData(allComponents, showDeleted);
             } else {
                 console.error('Failed to load components data', spiceLevels, customOptions);
@@ -1327,17 +1356,18 @@
                                 <thead class="table-light table-header-sticky">
                                     <tr class="column-headers">
                                         <th style="min-width: 50px;">#</th>
+                                        <th style="min-width: 80px;">Gambar</th>
                                         <th style="min-width: 200px;">Nama Komponen</th>
-                                        <th style="min-width: 150px;">Tipe</th>
-                                       
+                                        <th style="min-width: 150px;">Kategori</th>
                                         <th style="min-width: 120px;">Harga</th>
+                                        <th style="min-width: 150px;">Tanggal Dibuat</th>
                                         <th style="min-width: 100px;">Status</th>
                                         <th style="min-width: 120px;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody id="menuTableBody">
                                     <tr>
-                                        <td colspan="7" class="text-center">
+                                        <td colspan="8" class="text-center">
                                             <div class="spinner-border spinner-border-sm" role="status">
                                                 <span class="visually-hidden">Loading...</span>
                                             </div>
@@ -1834,7 +1864,7 @@
             const message = allMenuData.length === 0 ? 'Tidak ada data komponen' : 'Tidak ada data yang sesuai dengan filter';
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center">
+                    <td colspan="8" class="text-center">
                         <p class="mb-0">${message}</p>
                     </td>
                 </tr>
@@ -1853,23 +1883,65 @@
 
             // Determine badge color based on component type
             let badgeColor = 'primary';
-            if (item.component_type === 'spice_level') badgeColor = 'danger';
-            else if (item.component_type === 'egg_type') badgeColor = 'warning';
-            else if (item.component_type === 'broth_flavor') badgeColor = 'info';
-            else if (item.component_type === 'kencur_level') badgeColor = 'success';
+            let iconEmoji = '📦';
+            if (item.component_type === 'spice_level') {
+                badgeColor = 'danger';
+                iconEmoji = '🌶️';
+            } else if (item.component_type === 'egg_type') {
+                badgeColor = 'warning';
+                iconEmoji = '🥚';
+            } else if (item.component_type === 'broth_flavor') {
+                badgeColor = 'info';
+                iconEmoji = '🍲';
+            } else if (item.component_type === 'kencur_level') {
+                badgeColor = 'success';
+                iconEmoji = '🌿';
+            }
+
+            // Format date
+            const createdDate = new Date(item.created_at);
+            const formattedDate = createdDate.toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+
+            // Get image URL or use placeholder
+            const imageUrl = item.image
+                ? `uploads/menu-images/${item.image}`
+                : 'src/assets/images/backgrounds/no-image.jpg';
+
+            // Get category name from API response (already included via JOIN)
+            const categoryName = item.category_name || 'N/A';
 
             row.innerHTML = `
                 <td>${actualIndex}</td>
+                <td>
+                    ${item.image ? `
+                        <img src="uploads/menu-images/${item.image}" 
+                             alt="${item.name}" 
+                             class="rounded" 
+                             style="width: 50px; height: 50px; object-fit: cover;"
+                             onerror="this.src='src/assets/images/backgrounds/no-image.jpg'">
+                    ` : `
+                        <div class="d-flex align-items-center justify-content-center rounded bg-light" 
+                             style="width: 50px; height: 50px;">
+                            <i class="ti ti-photo text-muted" style="font-size: 24px;"></i>
+                        </div>
+                    `}
+                </td>
                 <td>
                     <h6 class="mb-1">${item.name}</h6>
                 </td>
                 <td>
                     <span class="badge bg-light-${badgeColor} text-${badgeColor}">
-                        ${item.component_type_label}
+                        ${iconEmoji} ${categoryName}
                     </span>
                 </td>
-          
-                <td><strong>Rp ${formatPrice(item.price)}</strong></td>
+                <td><h6>Rp ${formatPrice(item.price)}</h6></td>
+                <td>
+                    <h6>${formattedDate}</h6>
+                </td>
                 <td>
                     <span class="badge bg-light-${item.is_active ? 'success' : 'danger'} text-${item.is_active ? 'success' : 'danger'}">
                         ${item.is_active ? 'Active' : 'Inactive'}

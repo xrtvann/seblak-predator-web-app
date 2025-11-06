@@ -74,13 +74,13 @@ function getAllLevels()
         $types = '';
 
         if ($status === 'active') {
-            $whereConditions[] = "is_active = TRUE";
+            $whereConditions[] = "s.is_active = TRUE";
         } elseif ($status === 'inactive') {
-            $whereConditions[] = "is_active = FALSE";
+            $whereConditions[] = "s.is_active = FALSE";
         }
 
         if (!empty($search)) {
-            $whereConditions[] = "name LIKE ?";
+            $whereConditions[] = "s.name LIKE ?";
             $searchTerm = "%{$search}%";
             $params[] = $searchTerm;
             $types .= "s";
@@ -89,7 +89,7 @@ function getAllLevels()
         $whereClause = empty($whereConditions) ? "1=1" : implode(" AND ", $whereConditions);
 
         // Get total count
-        $countQuery = "SELECT COUNT(*) as total FROM spice_levels WHERE " . $whereClause;
+        $countQuery = "SELECT COUNT(*) as total FROM spice_levels s WHERE " . $whereClause;
         if (!empty($params)) {
             $countStmt = mysqli_prepare($koneksi, $countQuery);
             mysqli_stmt_bind_param($countStmt, $types, ...$params);
@@ -103,9 +103,14 @@ function getAllLevels()
         $total = $totalRow['total'];
         $last_page = ceil($total / $per_page);
 
-        // Get paginated data
+        // Get paginated data with category information using JOIN
         $offset = ($page - 1) * $per_page;
-        $query = "SELECT * FROM spice_levels WHERE " . $whereClause . " ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?";
+        $query = "SELECT s.*, c.name as category_name, c.type as category_type 
+                  FROM spice_levels s 
+                  LEFT JOIN categories c ON s.category_id = c.id 
+                  WHERE " . $whereClause . " 
+                  ORDER BY s.sort_order ASC, s.created_at DESC 
+                  LIMIT ? OFFSET ?";
 
         $allParams = array_merge($params, [$per_page, $offset]);
         $allTypes = $types . "ii";

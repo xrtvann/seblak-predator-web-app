@@ -75,19 +75,19 @@ function getAllOptions()
         $types = '';
 
         if ($status === 'active') {
-            $whereConditions[] = "is_active = TRUE";
+            $whereConditions[] = "co.is_active = TRUE";
         } elseif ($status === 'inactive') {
-            $whereConditions[] = "is_active = FALSE";
+            $whereConditions[] = "co.is_active = FALSE";
         }
 
         if (!empty($type)) {
-            $whereConditions[] = "type = ?";
+            $whereConditions[] = "c.type = ?";
             $params[] = $type;
             $types .= "s";
         }
 
         if (!empty($search)) {
-            $whereConditions[] = "(name LIKE ? OR type LIKE ?)";
+            $whereConditions[] = "(co.name LIKE ? OR c.name LIKE ?)";
             $searchTerm = "%{$search}%";
             $params[] = $searchTerm;
             $params[] = $searchTerm;
@@ -97,7 +97,7 @@ function getAllOptions()
         $whereClause = empty($whereConditions) ? "1=1" : implode(" AND ", $whereConditions);
 
         // Get total count
-        $countQuery = "SELECT COUNT(*) as total FROM customization_options WHERE " . $whereClause;
+        $countQuery = "SELECT COUNT(*) as total FROM customization_options co LEFT JOIN categories c ON co.category_id = c.id WHERE " . $whereClause;
         if (!empty($params)) {
             $countStmt = mysqli_prepare($koneksi, $countQuery);
             mysqli_stmt_bind_param($countStmt, $types, ...$params);
@@ -111,9 +111,14 @@ function getAllOptions()
         $total = $totalRow['total'];
         $last_page = ceil($total / $per_page);
 
-        // Get paginated data
+        // Get paginated data with category information using JOIN
         $offset = ($page - 1) * $per_page;
-        $query = "SELECT * FROM customization_options WHERE " . $whereClause . " ORDER BY type ASC, sort_order ASC, name ASC LIMIT ? OFFSET ?";
+        $query = "SELECT co.*, c.name as category_name, c.type as category_type 
+                  FROM customization_options co 
+                  LEFT JOIN categories c ON co.category_id = c.id 
+                  WHERE " . $whereClause . " 
+                  ORDER BY co.sort_order ASC, co.name ASC 
+                  LIMIT ? OFFSET ?";
 
         $allParams = array_merge($params, [$per_page, $offset]);
         $allTypes = $types . "ii";
