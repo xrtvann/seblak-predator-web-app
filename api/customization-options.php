@@ -1,10 +1,28 @@
 <?php
+// Start output buffering to prevent unwanted output
+ob_start();
+
+// Set error handling to prevent HTML errors from breaking JSON
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-require_once '../config/koneksi.php';
+try {
+    require_once '../config/koneksi.php';
+} catch (Exception $e) {
+    ob_clean();
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database connection failed: ' . $e->getMessage()
+    ]);
+    exit;
+}
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -170,13 +188,17 @@ function getOptionById()
 
     $option_id = $_GET['id'] ?? '';
     if (empty($option_id)) {
+        ob_clean();
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Option ID is required']);
         return;
     }
 
     try {
-        $query = "SELECT * FROM customization_options WHERE id = ?";
+        $query = "SELECT co.*, c.name as category_name, c.type as category_type 
+                  FROM customization_options co 
+                  LEFT JOIN categories c ON co.category_id = c.id 
+                  WHERE co.id = ?";
         $stmt = mysqli_prepare($koneksi, $query);
         mysqli_stmt_bind_param($stmt, "s", $option_id);
         mysqli_stmt_execute($stmt);
@@ -187,6 +209,7 @@ function getOptionById()
             $row['is_active'] = (bool) $row['is_active'];
             $row['sort_order'] = (int) $row['sort_order'];
 
+            ob_clean();
             http_response_code(200);
             echo json_encode([
                 'success' => true,
@@ -194,11 +217,13 @@ function getOptionById()
                 'message' => 'Option retrieved successfully'
             ]);
         } else {
+            ob_clean();
             http_response_code(404);
             echo json_encode(['success' => false, 'message' => 'Option not found']);
         }
 
     } catch (Exception $e) {
+        ob_clean();
         http_response_code(500);
         echo json_encode([
             'success' => false,
@@ -224,8 +249,10 @@ function createOption()
     }
 
     try {
-        // Generate ID
-        $id = 'opt_' . uniqid();
+        // Generate ID or use provided ID (for table migration)
+        $id = isset($input['id']) && !empty($input['id'])
+            ? mysqli_real_escape_string($koneksi, trim($input['id']))
+            : 'opt_' . uniqid();
 
         // Validate and set price
         $price = isset($input['price']) ? floatval($input['price']) : 0.00;
@@ -247,6 +274,7 @@ function createOption()
         mysqli_stmt_bind_param($insertStmt, "ssdssi", $id, $name, $price, $image, $category_id, $sort_order);
 
         if (mysqli_stmt_execute($insertStmt)) {
+            ob_clean();
             http_response_code(201);
             echo json_encode([
                 'success' => true,
@@ -265,6 +293,7 @@ function createOption()
         }
 
     } catch (Exception $e) {
+        ob_clean();
         http_response_code(500);
         echo json_encode([
             'success' => false,

@@ -183,6 +183,7 @@
 <!-- JavaScript untuk CRUD Menu -->
 <script>
     let currentEditId = null;
+    let currentEditApiEndpoint = null; // Store original API endpoint for table migration
     let categories = [];
     let allMenuData = []; // Store all menu data
     let filteredMenuData = []; // Store filtered data
@@ -247,6 +248,9 @@
         } else {
             badge.style.display = 'none';
         }
+
+        // Also update card filter badge
+        updateCardFilterBadge();
     }
 
     // Update active filters display
@@ -256,23 +260,25 @@
 
         if (activeFilters.size === 0) {
             container.style.display = 'none';
-            return;
+        } else {
+            container.style.display = 'block';
+            tagsContainer.innerHTML = '';
+
+            activeFilters.forEach((filter, key) => {
+                const tag = document.createElement('div');
+                tag.className = 'active-filter-tag';
+                tag.innerHTML = `
+                    <span>${filter.label}</span>
+                    <button class="remove-filter" onclick="removeFilter('${key}')">
+                        ×
+                    </button>
+                `;
+                tagsContainer.appendChild(tag);
+            });
         }
 
-        container.style.display = 'block';
-        tagsContainer.innerHTML = '';
-
-        activeFilters.forEach((filter, key) => {
-            const tag = document.createElement('div');
-            tag.className = 'active-filter-tag';
-            tag.innerHTML = `
-                <span>${filter.label}</span>
-                <button class="remove-filter" onclick="removeFilter('${key}')">
-                    ×
-                </button>
-            `;
-            tagsContainer.appendChild(tag);
-        });
+        // Also update card active filters display
+        updateCardActiveFiltersDisplay();
     }
 
     // Remove specific filter
@@ -328,6 +334,74 @@
         updateActiveFiltersDisplay();
     }
 
+    // Card View Filter Dropdown Management
+    function toggleCardFilterDropdown() {
+        const dropdown = document.getElementById('cardFilterDropdown');
+        const button = document.getElementById('cardFilterButton');
+
+        if (dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
+            button.classList.remove('active');
+        } else {
+            dropdown.classList.add('show');
+            button.classList.add('active');
+        }
+    }
+
+    // Update card filter badge count (uses same activeFilters Map)
+    function updateCardFilterBadge() {
+        const badge = document.getElementById('cardFilterBadge');
+        // Only count category filters, not view_mode filters
+        let count = 0;
+        activeFilters.forEach((filter, key) => {
+            if (filter.type === 'category') {
+                count++;
+            }
+        });
+
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    // Update active filters display for card view
+    function updateCardActiveFiltersDisplay() {
+        const container = document.getElementById('cardActiveFiltersContainer');
+        const tagsContainer = document.getElementById('cardActiveFiltersTags');
+
+        // Only show category filters, not view_mode
+        const categoryFilters = new Map();
+        activeFilters.forEach((filter, key) => {
+            if (filter.type === 'category') {
+                categoryFilters.set(key, filter);
+            }
+        });
+
+        if (categoryFilters.size === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        tagsContainer.innerHTML = '';
+
+        categoryFilters.forEach((filter, key) => {
+            const tag = document.createElement('div');
+            tag.className = 'active-filter-tag';
+            tag.innerHTML = `
+                <span>${filter.label}</span>
+                <button class="remove-filter" onclick="removeFilter('${key}')">
+                    ×
+                </button>
+            `;
+            tagsContainer.appendChild(tag);
+        });
+    }
+
+
     // Populate category filter options
     function populateCategoryFilterOptions() {
         const container = document.getElementById('categoryFilterOptions');
@@ -360,6 +434,7 @@
     // Populate component type filter options
     function populateComponentTypeFilterOptions() {
         const container = document.getElementById('categoryFilterOptions');
+        const cardContainer = document.getElementById('cardCategoryFilterOptions');
 
         if (!container) {
             console.log('Component type filter container not found');
@@ -369,17 +444,59 @@
         // Filter only seblak base categories from loaded categories
         const seblakBaseCategories = categories.filter(cat => cat.type === 'seblak_base');
 
+        console.log('Populating filter with seblak_base categories:', seblakBaseCategories.length);
+        console.log('Categories:', seblakBaseCategories);
+
         container.innerHTML = '';
+        if (cardContainer) {
+            cardContainer.innerHTML = '';
+        }
+
+        if (seblakBaseCategories.length === 0) {
+            console.warn('No seblak_base categories found!');
+            return;
+        }
 
         seblakBaseCategories.forEach(category => {
+            console.log('Adding filter option:', category.name, category.id);
+
+            // Determine icon based on category name
+            let icon = '📋';
+            const categoryName = category.name.toLowerCase();
+            if (categoryName.includes('pedas') || categoryName.includes('spice')) {
+                icon = '🌶️';
+            } else if (categoryName.includes('telur') || categoryName.includes('egg')) {
+                icon = '🥚';
+            } else if (categoryName.includes('kuah') || categoryName.includes('broth')) {
+                icon = '🍲';
+            } else if (categoryName.includes('kencur')) {
+                icon = '🌿';
+            }
+
+            // Create option for table view filter
             const option = document.createElement('label');
             option.className = 'filter-option';
             option.innerHTML = `
-                <input type="checkbox" class="filter-checkbox" data-filter="component_type" data-value="${category.id}" onchange="handleFilterChange(this)">
+                <input type="checkbox" class="filter-checkbox" data-filter="category" data-value="${category.id}" onchange="handleFilterChange(this)">
+                <span class="filter-icon">${icon}</span>
                 <span class="filter-label">${category.name}</span>
             `;
             container.appendChild(option);
+
+            // Create option for card view filter
+            if (cardContainer) {
+                const cardOption = document.createElement('label');
+                cardOption.className = 'filter-option';
+                cardOption.innerHTML = `
+                    <input type="checkbox" class="filter-checkbox" data-filter="category" data-value="${category.id}" onchange="handleFilterChange(this)">
+                    <span class="filter-icon">${icon}</span>
+                    <span class="filter-label">${category.name}</span>
+                `;
+                cardContainer.appendChild(cardOption);
+            }
         });
+
+        console.log('✓ Filter options populated successfully');
     }
 
     // Close dropdown when clicking outside
@@ -392,22 +509,37 @@
                 toggleFilterDropdown();
             }
         }
+
+        // Close card filter dropdown when clicking outside
+        const cardDropdown = document.getElementById('cardFilterDropdown');
+        const cardButton = document.getElementById('cardFilterButton');
+
+        if (cardDropdown && cardDropdown.classList.contains('show')) {
+            if (!cardDropdown.contains(e.target) && !cardButton.contains(e.target)) {
+                toggleCardFilterDropdown();
+            }
+        }
     });
 
     // Show form for adding new menu
     function showFormTambah() {
         currentEditId = null;
+        currentEditApiEndpoint = null; // Clear for new component
+
+        // Clear existing image data attribute when creating new component
+        const fileInput = document.getElementById('componentImageFile');
+        if (fileInput) {
+            fileInput.removeAttribute('data-existing-image');
+        }
+
         showForm('Tambah Komponen', 'Form Tambah Komponen Dasar Seblak');
     }
 
 
     async function editMenu(id) {
         try {
-            // Use absolute path from root to ensure correct API endpoint resolution
-            const apiPath = window.location.pathname.includes('index.php')
-                ? 'api/menu/products.php'
-                : '../../../api/menu/products.php';
-            const apiUrl = `${apiPath}?id=${id}`;
+            // Construct correct API path from dist/dashboard/pages/ to root/api/menu/
+            const apiUrl = `../../../api/menu/products.php?id=${id}`;
             console.log('Fetching from URL:', apiUrl);
 
             const response = await fetch(apiUrl);
@@ -442,6 +574,16 @@
         const form = document.getElementById('componentForm');
         if (form) {
             form.reset();
+
+            // Clear existing image data attribute
+            const fileInput = document.getElementById('componentImageFile');
+            if (fileInput) {
+                fileInput.removeAttribute('data-existing-image');
+            }
+
+            // Reset image preview
+            showImagePlaceholder();
+
             updateComponentPreview();
         }
     }
@@ -764,6 +906,24 @@
         // Load categories first, then show data menu
         await loadCategories();
         showDataMenu();
+
+        // Add event listeners for tab switching
+        const tableTab = document.getElementById('pills-table-tab');
+        const cardTab = document.getElementById('pills-card-tab');
+
+        if (tableTab) {
+            tableTab.addEventListener('shown.bs.tab', function () {
+                displayTableView();
+                updatePagination();
+            });
+        }
+
+        if (cardTab) {
+            cardTab.addEventListener('shown.bs.tab', function () {
+                displayCardView();
+                updatePagination();
+            });
+        }
     });
 
     // Load categories from API
@@ -774,9 +934,11 @@
 
             if (result.success) {
                 categories = result.data;
+                console.log('Categories loaded:', categories);
                 populateCategorySelect();
                 populateComponentTypeSelect();
-                populateCategoryFilterOptions();
+                // Populate filter options after categories loaded
+                populateComponentTypeFilterOptions();
             } else {
                 console.error('Failed to load categories:', result.message);
             }
@@ -814,7 +976,7 @@
                         ...item,
                         component_type: 'spice_level',
                         component_type_label: 'Tingkat Pedas',
-                        api_endpoint: 'spice-levels',
+                        api_endpoint: 'api/spice-levels.php',
                         extra_info: item.description || '-'
                     });
                 });
@@ -842,7 +1004,7 @@
                         ...item,
                         component_type: componentType,
                         component_type_label: typeLabel,
-                        api_endpoint: 'customization-options',
+                        api_endpoint: 'api/customization-options.php',
                         extra_info: componentType
                     });
                 });
@@ -925,24 +1087,25 @@
         }
 
         // Apply active filters
-        // Collect component type filters for OR logic
-        const componentTypeFilters = Array.from(activeFilters.values()).filter(filter => filter.type === 'component_type');
+        // Collect category filters for OR logic
+        const categoryFilters = Array.from(activeFilters.values()).filter(filter => filter.type === 'category');
 
-        if (componentTypeFilters.length > 0) {
-            // OR logic: show items that match ANY selected component type
-            const selectedTypes = componentTypeFilters.map(filter => filter.value);
-            console.log('Selected component types:', selectedTypes);
+        if (categoryFilters.length > 0) {
+            // OR logic: show items that match ANY selected category
+            const selectedCategoryIds = categoryFilters.map(filter => filter.value);
+            console.log('Selected category IDs:', selectedCategoryIds);
             console.log('Total items before filtering:', filteredMenuData.length);
 
             filteredMenuData = filteredMenuData.filter(item => {
-                const matches = selectedTypes.includes(item.component_type);
+                // Match based on category_id from database
+                const matches = selectedCategoryIds.includes(item.category_id);
                 if (matches) {
-                    console.log('Item matches filter:', item.name, item.component_type);
+                    console.log('Item matches filter:', item.name, 'category_id:', item.category_id);
                 }
                 return matches;
             });
 
-            console.log('Total items after component type filtering:', filteredMenuData.length);
+            console.log('Total items after category filtering:', filteredMenuData.length);
         }
 
         // Apply search filter
@@ -972,10 +1135,23 @@
             }
         });
 
-        // Update display
+        // Update display based on active view (table or card)
         currentPage = 1;
-        displayTableView();
+        updateActiveView();
         updatePagination();
+    }
+
+    // Update display based on which view tab is active
+    function updateActiveView() {
+        const tableTab = document.getElementById('pills-table');
+        const cardTab = document.getElementById('pills-card');
+
+        // Check which tab is currently active
+        if (cardTab && cardTab.classList.contains('show') && cardTab.classList.contains('active')) {
+            displayCardView();
+        } else {
+            displayTableView();
+        }
     }
 
     function applySorting(triggerFilters = true) {
@@ -1008,8 +1184,8 @@
         console.log('Editing component:', id, componentType, apiEndpoint);
 
         try {
-            // Construct the correct API URL
-            const apiUrl = `api/${apiEndpoint}.php?id=${id}`;
+            // Construct the correct API URL - apiEndpoint already includes path from root
+            const apiUrl = `${apiEndpoint}?id=${id}`;
             console.log('Fetching from URL:', apiUrl);
 
             // Fetch component data
@@ -1060,7 +1236,7 @@
 
         if (result.isConfirmed) {
             try {
-                const response = await fetch(`api/${apiEndpoint}.php?id=${id}`, {
+                const response = await fetch(`${apiEndpoint}?id=${id}`, {
                     method: 'DELETE'
                 });
                 const data = await response.json();
@@ -1091,7 +1267,7 @@
 
         if (result.isConfirmed) {
             try {
-                const response = await fetch(`api/${apiEndpoint}.php?id=${id}&action=restore`, {
+                const response = await fetch(`${apiEndpoint}?id=${id}&action=restore`, {
                     method: 'PATCH'
                 });
                 const data = await response.json();
@@ -1129,7 +1305,7 @@
 
         if (result.isConfirmed) {
             try {
-                const response = await fetch(`api/${apiEndpoint}.php?id=${id}&action=permanent_delete`, {
+                const response = await fetch(`${apiEndpoint}?id=${id}&action=permanent-delete`, {
                     method: 'PATCH'
                 });
                 const data = await response.json();
@@ -1413,31 +1589,56 @@
                 <div class="tab-pane fade" id="pills-card" role="tabpanel" aria-labelledby="pills-card-tab"
                     tabindex="0">
                     
-                    <!-- Card View Controls -->
-                    <div class="card-controls-section bg-light p-3 mb-3 border rounded">
-                        <div class="row g-3">
-                            <!-- Search Bar -->
-                            <div class="col-md-6">
+                    <!-- Card View Controls - Same style as Table View -->
+                    <div class="table-controls-section">
+                        <div class="controls-row">
+                            <!-- Left side: Search -->
+                            <div class="search-section">
                                 <div class="search-input-wrapper">
                                     <i class="ti ti-search search-icon"></i>
                                     <input type="text" class="form-control search-input" id="cardSearchInput" 
-                                           placeholder="Cari komponen..." onkeyup="applyFilters()"
+                                           placeholder="Cari nama komponen..." 
+                                           onkeyup="applyFilters()"
                                            onchange="applyFilters()">
                                 </div>
                             </div>
                             
-                            <!-- Filter & Sort -->
-                            <div class="col-md-6">
-                                <div class="d-flex gap-2">
-                                    <!-- Filter Button -->
-                                    <button type="button" class="btn btn-outline-secondary flex-fill" id="cardFilterButton" onclick="toggleFilterDropdown()">
+                            <!-- Center: Filter Button -->
+                            <div class="filter-section">
+                                <div class="filter-dropdown position-relative">
+                                    <button type="button" class="btn filter-btn" id="cardFilterButton" onclick="toggleCardFilterDropdown()">
                                         <i class="ti ti-filter"></i>
-                                        <span>Filter</span>
-                                        <span class="badge bg-primary ms-1" id="cardFilterBadge" style="display: none;">0</span>
+                                        <span class="filter-text">Filter</span>
+                                        <span class="filter-badge" id="cardFilterBadge" style="display: none;">0</span>
                                     </button>
                                     
-                                    <!-- Sort Dropdown -->
-                                    <select class="form-select" id="cardSortBy" onchange="applySorting()" style="max-width: 200px;">
+                                    <!-- Filter Dropdown for Card View -->
+                                    <div class="filter-dropdown-menu" id="cardFilterDropdown">
+                                        <div class="filter-dropdown-header">
+                                            <h6 class="mb-0">Filter Options</h6>
+                                            <button type="button" class="btn-close-filter" onclick="toggleCardFilterDropdown()">
+                                                <i class="ti ti-x"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="filter-dropdown-body">
+                                            <!-- Category Filters Only (No Deleted Items) -->
+                                            <div class="filter-group">
+                                                <label class="filter-group-label">Categories</label>
+                                                <div class="filter-options" id="cardCategoryFilterOptions">
+                                                    <!-- Category options will be populated dynamically -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right side: Sort -->
+                            <div class="sort-section">
+                                <div class="sort-wrapper">
+                                    <i class="ti ti-sort-descending sort-icon"></i>
+                                    <select class="form-select sort-select" id="cardSortBy" onchange="applySorting()">
                                         <option value="created_at_desc">Terbaru</option>
                                         <option value="updated_at_desc">Diperbarui</option>
                                         <option value="name_asc">A-Z</option>
@@ -1445,6 +1646,16 @@
                                         <option value="price_asc">Harga Terendah</option>
                                         <option value="price_desc">Harga Tertinggi</option>
                                     </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Filters Row for Card View -->
+                        <div class="active-filters-container" id="cardActiveFiltersContainer" style="display: none;">
+                            <div class="active-filters-wrapper">
+                                <span class="active-filters-label">🏷️ Active:</span>
+                                <div class="active-filters-tags" id="cardActiveFiltersTags">
+                                    <!-- Active filter tags will appear here -->
                                 </div>
                             </div>
                         </div>
@@ -1552,7 +1763,7 @@
 
                                      <!-- Customization Options Specific Field -->
                                 
-                                    <div class="col-md-12 mb-2">
+                                    <div class="col-md-12 mb-2 d-none">
                                         <div class="mb-3">
                                             <label class="form-label">Status Ketersediaan</label>
                                             <div class="form-check form-switch">
@@ -1866,7 +2077,6 @@
         currentPage = 1; // Reset to first page
         currentViewMode = showDeleted ? 'deleted' : 'active'; // Store current view mode
         applyFilters(); // Apply current filters and sorting
-        displayCardView(menuData);
     }
 
     // Display table view with pagination
@@ -1989,21 +2199,27 @@
     }
 
     // Display card view
-    function displayCardView(menuData) {
+    function displayCardView() {
         const cardContainer = document.getElementById('menuCardContainer');
         if (!cardContainer) return;
 
         cardContainer.innerHTML = '';
 
-        if (menuData.length === 0) {
+        if (filteredMenuData.length === 0) {
+            const message = allMenuData.length === 0 ? 'Tidak ada data komponen' : 'Tidak ada data yang sesuai dengan filter';
             cardContainer.innerHTML = `
                 <div class="col-12 text-center py-5">
                     <i class="ti ti-file-off text-muted" style="font-size: 3rem;"></i>
-                    <p class="text-muted mt-2 mb-0">Tidak ada data komponen</p>
+                    <p class="text-muted mt-2 mb-0">${message}</p>
                 </div>
             `;
             return;
         }
+
+        // Calculate pagination using filtered data (same as table view)
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedData = filteredMenuData.slice(startIndex, endIndex);
 
         // Type labels and colors for badges
         const typeLabels = {
@@ -2019,15 +2235,17 @@
             'kencur_level': 'bg-success'
         };
 
-        menuData.forEach(item => {
+        paginatedData.forEach(item => {
             const cardCol = document.createElement('div');
             cardCol.className = 'col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3';
 
-            // Determine component type and API endpoint
+            // Determine component type
             const componentType = item.component_type || item.type || 'customization';
-            const apiEndpoint = componentType === 'spice_level' ? 'spice-levels' : 'customization-options';
             const typeBadgeText = typeLabels[componentType] || componentType;
             const typeBadgeColor = typeColors[componentType] || 'bg-secondary';
+
+            // Get category name
+            const categoryName = item.category_name || typeBadgeText;
 
             cardCol.innerHTML = `
                 <div class="card border h-100 component-card" style="transition: transform 0.2s, box-shadow 0.2s;">
@@ -2039,8 +2257,8 @@
                             ${item.is_available || item.is_active ? 'Tersedia' : 'Tidak Tersedia'}
                         </span>
                         
-                        ${item.image_url ? `
-                            <img src="${item.image_url}" alt="${item.name}" 
+                        ${item.image ? `
+                            <img src="uploads/menu-images/${item.image}" alt="${item.name}" 
                                  style="width: 100%; height: 150px; object-fit: cover;">
                         ` : `
                             <div class="d-flex align-items-center justify-content-center h-100">
@@ -2053,7 +2271,7 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <h6 class="mb-1 fw-bold">${item.name}</h6>
-                            <span class="badge ${typeBadgeColor}">${typeBadgeText}</span>
+                            <span class="badge ${typeBadgeColor}">${categoryName}</span>
                         </div>
                         
                         ${item.description ? `
@@ -2062,39 +2280,8 @@
                             </p>
                         ` : ''}
                         
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0 text-primary">Rp ${formatPrice(item.price || 0)}</h5>
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <div class="d-grid gap-2">
-                            ${currentViewMode === 'active' ? `
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-sm btn-outline-warning" 
-                                            onclick="editComponent('${item.id}', '${componentType}', '${apiEndpoint}')" 
-                                            title="Edit Komponen">
-                                        <i class="ti ti-edit"></i> Edit
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                            onclick="deleteComponent('${item.id}', '${item.name.replace(/'/g, "&apos;")}', '${apiEndpoint}')" 
-                                            title="Hapus">
-                                        <i class="ti ti-trash"></i> Hapus
-                                    </button>
-                                </div>
-                            ` : `
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-sm btn-outline-success" 
-                                            onclick="restoreComponent('${item.id}', '${item.name.replace(/'/g, "&apos;")}', '${apiEndpoint}')" 
-                                            title="Pulihkan">
-                                        <i class="ti ti-refresh"></i> Pulihkan
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                            onclick="permanentDeleteComponent('${item.id}', '${item.name.replace(/'/g, "&apos;")}', '${apiEndpoint}')" 
-                                            title="Hapus Permanen">
-                                        <i class="ti ti-trash-x"></i> Hapus Permanen
-                                    </button>
-                                </div>
-                            `}
                         </div>
                     </div>
                 </div>
@@ -2160,44 +2347,77 @@
     function populateForm(data) {
         console.log('Populating component form with data:', data);
 
-        // Populate component type
+        // Set currentEditId and store original API endpoint
+        currentEditId = data.id;
+        currentEditApiEndpoint = data.api_endpoint || null;
+
+        console.log('✓ Edit mode - ID:', currentEditId, 'Original API:', currentEditApiEndpoint);
+
+        // Populate component type (use category_id from database)
         const componentTypeSelect = document.getElementById('componentType');
-        if (componentTypeSelect && data.component_type) {
-            componentTypeSelect.value = data.component_type;
-            handleComponentTypeChange();
+        if (componentTypeSelect && data.category_id) {
+            componentTypeSelect.value = data.category_id;
         }
 
         // Basic fields
-        document.getElementById('componentName').value = data.name || '';
-        document.getElementById('componentPrice').value = data.price || '';
+        const nameInput = document.getElementById('componentName');
+        if (nameInput) {
+            nameInput.value = data.name || '';
+        }
+
+        const priceInput = document.getElementById('componentPrice');
+        if (priceInput) {
+            priceInput.value = data.price || 0;
+        }
 
         // Availability status
         const isAvailableCheck = document.getElementById('isAvailable');
         if (isAvailableCheck) {
-            isAvailableCheck.checked = data.is_available !== undefined ? data.is_available : true;
+            // Handle both boolean and number (0/1) values
+            isAvailableCheck.checked = data.is_active == 1 || data.is_active === true;
         }
 
-        // Populate description field (same field for all component types)
-        document.getElementById('optionDescription').value = data.description || '';
-
         // Handle existing image
-        if (data.image_url) {
+        const fileInput = document.getElementById('componentImageFile');
+
+        if (data.image) {
+            // Store existing image filename in data attribute for later use
+            if (fileInput) {
+                fileInput.setAttribute('data-existing-image', data.image);
+                console.log('✓ Stored existing image in data attribute:', data.image);
+            }
+
             const previewImage = document.getElementById('previewComponentImage');
             const previewPlaceholder = document.getElementById('previewComponentPlaceholder');
 
             if (previewImage && previewPlaceholder) {
-                previewImage.src = data.image_url;
+                // Construct image URL from filename
+                const imageUrl = `uploads/menu-images/${data.image}`;
+                previewImage.src = imageUrl;
                 previewImage.style.display = 'block';
                 previewPlaceholder.style.display = 'none';
+
+                // Handle image load error
+                previewImage.onerror = function () {
+                    console.warn('Failed to load image:', imageUrl);
+                    showImagePlaceholder();
+                };
             }
         } else {
+            // No existing image - clear data attribute
+            if (fileInput) {
+                fileInput.removeAttribute('data-existing-image');
+            }
             showImagePlaceholder();
         }
 
         // Update submit button text
-        document.getElementById('submitText').textContent = 'Update Komponen';
+        const submitTextElement = document.getElementById('submitText');
+        if (submitTextElement) {
+            submitTextElement.textContent = 'Update Komponen';
+        }
 
-        // Update preview
+        // Update preview with loaded data
         updateComponentPreview();
     }
 
@@ -2238,8 +2458,16 @@
         showLoading('Menyimpan...', 'Sedang memproses data komponen, tunggu sebentar...');
 
         try {
+            // Ensure categories are loaded
+            if (categories.length === 0) {
+                console.warn('Categories not loaded, loading now...');
+                await loadCategories();
+            }
+
             const formData = new FormData(e.target);
             const componentTypeId = formData.get('component_type');
+
+            console.log('Form submitted with component_type:', componentTypeId);
 
             // Validate component type
             if (!componentTypeId) {
@@ -2250,17 +2478,26 @@
 
             // Find the selected category to determine the type
             const selectedCategory = categories.find(cat => cat.id == componentTypeId);
+
+            console.log('Looking for category with ID:', componentTypeId);
+            console.log('Available categories:', categories);
+            console.log('Selected category:', selectedCategory);
+
             if (!selectedCategory) {
                 hideAlert();
-                showError('Error', 'Kategori tidak ditemukan');
+                showError('Error', 'Kategori tidak ditemukan. ID: ' + componentTypeId + '. Available categories: ' + categories.map(c => c.id + ':' + c.name).join(', '));
                 return;
             }
 
             // Determine API endpoint and type based on category name
             let apiEndpoint;
             let componentType = null;
+            let needsMigration = false;
             const categoryName = selectedCategory.name.toLowerCase();
 
+            console.log('Category name (lowercase):', categoryName);
+
+            // Determine the target API endpoint based on current category selection
             if (categoryName.includes('pedas') || categoryName.includes('spice')) {
                 apiEndpoint = 'api/spice-levels.php';
                 componentType = 'spice_level';
@@ -2275,9 +2512,25 @@
                 componentType = 'kencur_level';
             } else {
                 hideAlert();
-                showError('Error', 'Tipe komponen tidak dikenali: ' + selectedCategory.name);
+                showError('Error', 'Tipe komponen tidak dikenali: "' + selectedCategory.name + '". Pastikan nama kategori mengandung: pedas, telur, kuah, atau kencur');
                 return;
             }
+
+            // Check if table migration is needed (category changed requiring different table)
+            if (currentEditId && currentEditApiEndpoint) {
+                const oldEndpoint = currentEditApiEndpoint.replace('.php', '');
+                const newEndpoint = apiEndpoint.replace('.php', '');
+
+                if (oldEndpoint !== newEndpoint) {
+                    needsMigration = true;
+                    console.log('⚠️ Table migration needed!');
+                    console.log('From:', currentEditApiEndpoint, '→ To:', apiEndpoint);
+                }
+            }
+
+            console.log('API Endpoint determined:', apiEndpoint);
+            console.log('Component type:', componentType);
+            console.log('Needs migration:', needsMigration);
 
             // Check if image file is selected
             const imageFile = document.getElementById('componentImageFile').files[0];
@@ -2337,12 +2590,24 @@
 
             console.log('Data object before adding image:', JSON.parse(JSON.stringify(data)));
 
-            // Add image URL if uploaded
+            // Handle image - either new upload or keep existing
             if (uploadedImageUrl) {
+                // New image uploaded
                 data.image = uploadedImageUrl;
-                console.log('✓ Image added to data object:', uploadedImageUrl);
+                console.log('✓ New image added to data object:', uploadedImageUrl);
+            } else if (currentEditId) {
+                // Edit mode: check if there's an existing image to preserve
+                const fileInput = document.getElementById('componentImageFile');
+                const existingImage = fileInput ? fileInput.getAttribute('data-existing-image') : null;
+
+                if (existingImage && existingImage !== '0' && existingImage !== 'null' && existingImage.trim() !== '') {
+                    data.image = existingImage;
+                    console.log('✓ Keeping existing image:', existingImage);
+                } else {
+                    console.log('No existing image found in edit mode');
+                }
             } else {
-                console.log('No uploadedImageUrl, image not added to data');
+                console.log('No image uploaded (create mode)');
             }
 
             console.log('Final data object:', JSON.parse(JSON.stringify(data)));
@@ -2352,6 +2617,7 @@
                 const isAvailableCheckbox = document.getElementById('isAvailable');
                 if (isAvailableCheckbox) {
                     data.is_active = isAvailableCheckbox.checked ? 1 : 0;
+                    console.log('✓ is_active status set to:', data.is_active);
                 }
             }
 
@@ -2360,35 +2626,86 @@
             console.log('Component type detected:', componentType);
             console.log('Category name:', selectedCategory.name);
 
-            // Determine method
-            const method = currentEditId ? 'PUT' : 'POST';
-            const url = currentEditId ? `${apiEndpoint}?id=${currentEditId}` : apiEndpoint;
-
-            console.log('Request URL:', url);
-            console.log('Request method:', method);
-
-            // Make API request
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-
-            console.log('Response status:', response.status);
-
-            // Try to get response as text first to debug
-            const responseText = await response.text();
-            console.log('Response text:', responseText);
-
-            // Parse as JSON
             let result;
-            try {
-                result = JSON.parse(responseText);
-            } catch (parseError) {
-                console.error('JSON parse error:', parseError);
-                throw new Error('Server returned invalid JSON: ' + responseText.substring(0, 200));
+
+            // Handle table migration if needed
+            if (needsMigration) {
+                console.log('🔄 Starting table migration process...');
+
+                // Step 1: Permanent delete from old table (not soft delete)
+                console.log('Step 1: Permanently deleting from old table:', currentEditApiEndpoint);
+                const deleteResponse = await fetch(`${currentEditApiEndpoint}?id=${currentEditId}&action=permanent-delete`, {
+                    method: 'PATCH'
+                });
+
+                const deleteResult = await deleteResponse.json();
+                console.log('Permanent delete result:', deleteResult);
+
+                if (!deleteResult.success) {
+                    throw new Error('Gagal menghapus data dari tabel lama: ' + deleteResult.message);
+                }
+
+                // Step 2: Create in new table with same ID
+                console.log('Step 2: Creating in new table:', apiEndpoint);
+                data.id = currentEditId; // Preserve the ID
+
+                const createResponse = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Create response status:', createResponse.status);
+                console.log('Create response headers:', createResponse.headers);
+
+                const createText = await createResponse.text();
+                console.log('Create response text (full):', createText);
+
+                try {
+                    result = JSON.parse(createText);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    console.error('Failed to parse response:', createText);
+                    throw new Error('Server returned invalid JSON during migration. Response: ' + createText.substring(0, 500));
+                }
+
+                console.log('✓ Migration completed successfully!');
+
+            } else {
+                // Normal create or update (no migration needed)
+                const method = currentEditId ? 'PUT' : 'POST';
+                const url = currentEditId ? `${apiEndpoint}?id=${currentEditId}` : apiEndpoint;
+
+                console.log('Request URL:', url);
+                console.log('Request method:', method);
+                console.log('Request body:', JSON.stringify(data));
+
+                // Make API request
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+
+                // Try to get response as text first to debug
+                const responseText = await response.text();
+                console.log('Response text (first 500 chars):', responseText.substring(0, 500));
+
+                // Parse as JSON
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    console.error('Full response text:', responseText);
+                    throw new Error('Server returned invalid JSON. Response: ' + responseText.substring(0, 500));
+                }
             }
 
             console.log('API response:', result);
@@ -2396,7 +2713,25 @@
             hideAlert();
 
             if (result.success) {
-                showSuccess('Berhasil!', result.message, () => {
+                // Save current edit mode state before showing success
+                const wasEditing = currentEditId !== null;
+                const editedId = currentEditId;
+
+                // Reset edit state
+                currentEditId = null;
+
+                // Clear existing image data attribute
+                const fileInput = document.getElementById('componentImageFile');
+                if (fileInput) {
+                    fileInput.removeAttribute('data-existing-image');
+                }
+
+                // Show success message with appropriate text
+                const successMessage = wasEditing
+                    ? `Komponen "${data.name}" berhasil diperbarui!`
+                    : result.message;
+
+                showSuccess('Berhasil!', successMessage, () => {
                     showDataMenu();
                 });
             } else {
@@ -3239,11 +3574,18 @@
         }
 
         currentPage = page;
-        displayTableView();
+        updateActiveView(); // Update based on active view (table or card)
         updatePagination();
 
-        // Scroll to top of table
-        document.getElementById('pills-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Scroll to top of active view
+        const tablePane = document.getElementById('pills-table');
+        const cardPane = document.getElementById('pills-card');
+
+        if (cardPane && cardPane.classList.contains('show') && cardPane.classList.contains('active')) {
+            cardPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (tablePane) {
+            tablePane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     // Image handling functions

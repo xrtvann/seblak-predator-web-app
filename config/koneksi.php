@@ -11,11 +11,12 @@ $koneksi = DatabaseConnection::getInstance();
 
 // Verify connection is working
 if (!DatabaseConnection::testConnection()) {
-    if (!EnvLoader::isProduction()) {
-        die("Database connection test failed. Please check your .env configuration.");
-    } else {
-        die("Database connection failed.");
-    }
+    $errorMessage = EnvLoader::isProduction()
+        ? "Database connection failed."
+        : "Database connection test failed. Please check your .env configuration.";
+
+    // Throw exception instead of die() to allow proper JSON error handling in APIs
+    throw new Exception($errorMessage);
 }
 
 /**

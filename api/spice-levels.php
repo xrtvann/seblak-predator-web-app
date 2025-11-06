@@ -1,10 +1,28 @@
 <?php
+// Start output buffering to prevent unwanted output
+ob_start();
+
+// Set error handling to prevent HTML errors from breaking JSON
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-require_once '../config/koneksi.php';
+try {
+    require_once '../config/koneksi.php';
+} catch (Exception $e) {
+    ob_clean();
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database connection failed: ' . $e->getMessage()
+    ]);
+    exit;
+}
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -162,13 +180,17 @@ function getLevelById()
 
     $level_id = $_GET['id'] ?? '';
     if (empty($level_id)) {
+        ob_clean();
         http_response_code(400);
         echo json_encode(['success' => false, 'message' => 'Level ID is required']);
         return;
     }
 
     try {
-        $query = "SELECT * FROM spice_levels WHERE id = ?";
+        $query = "SELECT s.*, c.name as category_name, c.type as category_type 
+                  FROM spice_levels s 
+                  LEFT JOIN categories c ON s.category_id = c.id 
+                  WHERE s.id = ?";
         $stmt = mysqli_prepare($koneksi, $query);
         mysqli_stmt_bind_param($stmt, "s", $level_id);
         mysqli_stmt_execute($stmt);
@@ -179,6 +201,7 @@ function getLevelById()
             $row['is_active'] = (bool) $row['is_active'];
             $row['sort_order'] = (int) $row['sort_order'];
 
+            ob_clean();
             http_response_code(200);
             echo json_encode([
                 'success' => true,
@@ -186,11 +209,13 @@ function getLevelById()
                 'message' => 'Spice level retrieved successfully'
             ]);
         } else {
+            ob_clean();
             http_response_code(404);
             echo json_encode(['success' => false, 'message' => 'Spice level not found']);
         }
 
     } catch (Exception $e) {
+        ob_clean();
         http_response_code(500);
         echo json_encode([
             'success' => false,
@@ -216,8 +241,10 @@ function createLevel()
     }
 
     try {
-        // Generate ID
-        $id = 'lvl_' . uniqid();
+        // Generate ID or use provided ID (for table migration)
+        $id = isset($input['id']) && !empty($input['id'])
+            ? mysqli_real_escape_string($koneksi, trim($input['id']))
+            : 'lvl_' . uniqid();
 
         // Validate and set values
         $name = mysqli_real_escape_string($koneksi, trim($input['name']));
@@ -240,6 +267,7 @@ function createLevel()
         mysqli_stmt_bind_param($insertStmt, "ssdssi", $id, $name, $price, $image, $category_id, $sort_order);
 
         if (mysqli_stmt_execute($insertStmt)) {
+            ob_clean();
             http_response_code(201);
             echo json_encode([
                 'success' => true,
@@ -258,6 +286,7 @@ function createLevel()
         }
 
     } catch (Exception $e) {
+        ob_clean();
         http_response_code(500);
         echo json_encode([
             'success' => false,

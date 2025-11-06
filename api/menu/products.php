@@ -1,10 +1,28 @@
 <?php
+// Start output buffering to prevent any unwanted output
+ob_start();
+
+// Set error handling to prevent HTML errors from breaking JSON
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-require_once '../../config/koneksi.php';
+try {
+    require_once '../../config/koneksi.php';
+} catch (Exception $e) {
+    ob_clean();
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database connection failed: ' . $e->getMessage()
+    ]);
+    exit;
+}
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -290,6 +308,8 @@ function getProductById()
 
             $row['toppings'] = $toppings;
 
+            // Clean output buffer before sending JSON
+            ob_clean();
             http_response_code(200);
             echo json_encode([
                 'success' => true,
@@ -297,11 +317,13 @@ function getProductById()
                 'message' => 'Produk berhasil diambil'
             ]);
         } else {
+            ob_clean();
             http_response_code(404);
             echo json_encode(['success' => false, 'message' => 'Produk tidak ditemukan']);
         }
 
     } catch (Exception $e) {
+        ob_clean();
         http_response_code(500);
         echo json_encode([
             'success' => false,
