@@ -172,6 +172,22 @@
         background-color: rgba(255, 193, 7, 0.1) !important;
         border: 1px solid rgba(255, 193, 7, 0.2);
     }
+
+    /* Cards Grid Container */
+    .cards-grid-container {
+        min-height: 400px;
+        background: white;
+    }
+
+    /* Card View Wrapper */
+    .card-view-wrapper {
+        position: relative;
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 0.375rem 0.375rem;
+        border-top: none;
+        overflow: hidden;
+        background: white;
+    }
 </style>
 
 <!-- JavaScript untuk CRUD Menu -->
@@ -242,6 +258,9 @@
         } else {
             badge.style.display = 'none';
         }
+
+        // Also update card filter badge
+        updateCardFilterBadge();
     }
 
     // Update active filters display
@@ -251,23 +270,25 @@
 
         if (activeFilters.size === 0) {
             container.style.display = 'none';
-            return;
+        } else {
+            container.style.display = 'block';
+            tagsContainer.innerHTML = '';
+
+            activeFilters.forEach((filter, key) => {
+                const tag = document.createElement('div');
+                tag.className = 'active-filter-tag';
+                tag.innerHTML = `
+                    <span>${filter.label}</span>
+                    <button class="remove-filter" onclick="removeFilter('${key}')">
+                        ×
+                    </button>
+                `;
+                tagsContainer.appendChild(tag);
+            });
         }
 
-        container.style.display = 'block';
-        tagsContainer.innerHTML = '';
-
-        activeFilters.forEach((filter, key) => {
-            const tag = document.createElement('div');
-            tag.className = 'active-filter-tag';
-            tag.innerHTML = `
-                <span>${filter.label}</span>
-                <button class="remove-filter" onclick="removeFilter('${key}')">
-                    ×
-                </button>
-            `;
-            tagsContainer.appendChild(tag);
-        });
+        // Also update card active filters display
+        updateCardActiveFiltersDisplay();
     }
 
     // Remove specific filter
@@ -355,6 +376,100 @@
             `;
             container.appendChild(option);
         });
+
+        // Also populate card view category filter options
+        populateCardCategoryFilterOptions();
+    }
+
+    // Populate card category filter options
+    function populateCardCategoryFilterOptions() {
+        const container = document.getElementById('cardCategoryFilterOptions');
+
+        if (!container) {
+            console.log('Card category filter container not found');
+            return;
+        }
+
+        // Filter only active topping categories
+        const toppingCategories = categories.filter(cat => cat.type === 'topping' && cat.is_active);
+
+        if (toppingCategories.length === 0) {
+            container.innerHTML = '<p class="text-muted small">No categories available</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+
+        toppingCategories.forEach(category => {
+            const option = document.createElement('label');
+            option.className = 'filter-option';
+            option.innerHTML = `
+                <input type="checkbox" class="filter-checkbox" data-filter="category" data-value="${category.id}" onchange="handleFilterChange(this)">
+                <span class="filter-icon">📂</span>
+                <span class="filter-label">${category.name}</span>
+            `;
+            container.appendChild(option);
+        });
+    }
+
+    // Toggle card filter dropdown
+    function toggleCardFilterDropdown() {
+        const dropdown = document.getElementById('cardFilterDropdown');
+        const button = document.getElementById('cardFilterButton');
+
+        if (dropdown && button) {
+            const isOpen = dropdown.classList.contains('show');
+
+            if (isOpen) {
+                dropdown.classList.remove('show');
+                button.classList.remove('active');
+            } else {
+                dropdown.classList.add('show');
+                button.classList.add('active');
+            }
+        }
+    }
+
+    // Update card filter badge
+    function updateCardFilterBadge() {
+        const badge = document.getElementById('cardFilterBadge');
+        if (badge) {
+            const filterCount = activeFilters.size;
+            if (filterCount > 0) {
+                badge.textContent = filterCount;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    }
+
+    // Update card active filters display
+    function updateCardActiveFiltersDisplay() {
+        const container = document.getElementById('cardActiveFiltersContainer');
+        const tagsContainer = document.getElementById('cardActiveFiltersTags');
+
+        if (!container || !tagsContainer) return;
+
+        if (activeFilters.size === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        tagsContainer.innerHTML = '';
+
+        activeFilters.forEach((filter, key) => {
+            const tag = document.createElement('span');
+            tag.className = 'filter-tag';
+            tag.innerHTML = `
+                ${filter.label}
+                <button type="button" class="btn-remove-filter" onclick="removeFilter('${key}')">
+                    <i class="ti ti-x"></i>
+                </button>
+            `;
+            tagsContainer.appendChild(tag);
+        });
     }
 
     // Close dropdown when clicking outside
@@ -365,6 +480,16 @@
         if (dropdown && dropdown.classList.contains('show')) {
             if (!dropdown.contains(e.target) && !button.contains(e.target)) {
                 toggleFilterDropdown();
+            }
+        }
+
+        // Also handle card filter dropdown
+        const cardDropdown = document.getElementById('cardFilterDropdown');
+        const cardButton = document.getElementById('cardFilterButton');
+
+        if (cardDropdown && cardDropdown.classList.contains('show')) {
+            if (!cardDropdown.contains(e.target) && !cardButton.contains(e.target)) {
+                toggleCardFilterDropdown();
             }
         }
     });
@@ -409,7 +534,7 @@
 
         // Update preview elements
         document.getElementById('previewName').textContent = name || 'Nama Menu';
-        document.getElementById('previewDescription').textContent = description || 'Deskripsi menu akan tampil di sini...';
+        document.getElementById('previewDescription').textContent = description || '';
         document.getElementById('previewPrice').textContent = 'Rp ' + formatPrice(price || 0);
 
         // Update category
@@ -619,9 +744,23 @@
         // Start with all data (already filtered for toppings only from API)
         filteredMenuData = [...allMenuData];
 
-        // Get search term
+        // Get search term from both table and card view inputs
         const searchInput = document.getElementById('searchInput');
-        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const cardSearchInput = document.getElementById('cardSearchInput');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() :
+            (cardSearchInput ? cardSearchInput.value.toLowerCase().trim() : '');
+
+        // Sync both search inputs
+        if (searchInput && cardSearchInput) {
+            if (searchInput.value !== cardSearchInput.value) {
+                const activeElement = document.activeElement;
+                if (activeElement === searchInput) {
+                    cardSearchInput.value = searchInput.value;
+                } else if (activeElement === cardSearchInput) {
+                    searchInput.value = cardSearchInput.value;
+                }
+            }
+        }
 
         // Apply active filters
         // Collect category filters for OR logic
@@ -665,6 +804,8 @@
                     return parseFloat(a.price) - parseFloat(b.price);
                 case 'price_desc':
                     return parseFloat(b.price) - parseFloat(a.price);
+                case 'updated_at_desc':
+                    return new Date(b.updated_at) - new Date(a.updated_at);
                 case 'created_at_asc':
                     return new Date(a.created_at) - new Date(b.created_at);
                 case 'created_at_desc':
@@ -673,15 +814,47 @@
             }
         });
 
-        // Update display
+        // Update display based on active view (table or card)
         currentPage = 1;
-        displayTableView();
+        updateActiveView();
         updatePagination();
+    }
+
+    // Update display based on which view tab is active
+    function updateActiveView() {
+        const tableTab = document.getElementById('pills-table');
+        const cardTab = document.getElementById('pills-card');
+
+        // Check which tab is currently active
+        if (cardTab && cardTab.classList.contains('show') && cardTab.classList.contains('active')) {
+            displayCardView();
+        } else {
+            displayTableView();
+        }
     }
 
     function applySorting(triggerFilters = true) {
         const sortBy = document.getElementById('sortBy');
-        currentSort = sortBy ? sortBy.value : 'created_at_desc';
+        const cardSortBy = document.getElementById('cardSortBy');
+
+        // Determine which sort select triggered the change
+        const activeElement = document.activeElement;
+        let sortValue;
+
+        if (activeElement === sortBy || !cardSortBy) {
+            sortValue = sortBy ? sortBy.value : 'created_at_desc';
+            // Sync card sort select
+            if (cardSortBy) cardSortBy.value = sortValue;
+        } else if (activeElement === cardSortBy || !sortBy) {
+            sortValue = cardSortBy ? cardSortBy.value : 'created_at_desc';
+            // Sync table sort select
+            if (sortBy) sortBy.value = sortValue;
+        } else {
+            // Default to sortBy value
+            sortValue = sortBy ? sortBy.value : 'created_at_desc';
+        }
+
+        currentSort = sortValue;
 
         if (triggerFilters) {
             applyFilters();
@@ -794,7 +967,7 @@
                                 <div class="search-input-wrapper">
                                     <i class="ti ti-search search-icon"></i>
                                     <input type="text" class="form-control search-input" id="searchInput" 
-                                           placeholder="Search toppings..." onkeyup="applyFilters()"
+                                           placeholder="Cari" onkeyup="applyFilters()"
                                            onchange="applyFilters()">
                                 </div>
                             </div>
@@ -915,12 +1088,103 @@
                 <!-- Card View -->
                 <div class="tab-pane fade" id="pills-card" role="tabpanel" aria-labelledby="pills-card-tab"
                     tabindex="0">
-                    <div class="row" id="menuCardContainer">
-                        <div class="col-12 text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                    
+                    <!-- Card View Controls - Same style as Table View -->
+                    <div class="table-controls-section">
+                        <div class="controls-row">
+                            <!-- Left side: Search -->
+                            <div class="search-section">
+                                <div class="search-input-wrapper">
+                                    <i class="ti ti-search search-icon"></i>
+                                    <input type="text" class="form-control search-input" id="cardSearchInput" 
+                                           placeholder="Cari" 
+                                           onkeyup="applyFilters()"
+                                           onchange="applyFilters()">
+                                </div>
                             </div>
-                            <p class="mt-2">Loading menu data...</p>
+                            
+                            <!-- Center: Filter Button -->
+                            <div class="filter-section">
+                                <div class="filter-dropdown position-relative">
+                                    <button type="button" class="btn filter-btn" id="cardFilterButton" onclick="toggleCardFilterDropdown()">
+                                        <i class="ti ti-filter"></i>
+                                        <span class="filter-text">Filter</span>
+                                        <span class="filter-badge" id="cardFilterBadge" style="display: none;">0</span>
+                                    </button>
+                                    
+                                    <!-- Filter Dropdown for Card View -->
+                                    <div class="filter-dropdown-menu" id="cardFilterDropdown">
+                                        <div class="filter-dropdown-header">
+                                            <h6 class="mb-0">Filter Options</h6>
+                                            <button type="button" class="btn-close-filter" onclick="toggleCardFilterDropdown()">
+                                                <i class="ti ti-x"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="filter-dropdown-body">
+                                            <!-- Category Filters Only (No Deleted Items) -->
+                                            <div class="filter-group">
+                                                <label class="filter-group-label">Categories</label>
+                                                <div class="filter-options" id="cardCategoryFilterOptions">
+                                                    <!-- Category options will be populated dynamically -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right side: Sort -->
+                            <div class="sort-section">
+                                <div class="sort-wrapper">
+                                    <i class="ti ti-sort-descending sort-icon"></i>
+                                    <select class="form-select sort-select" id="cardSortBy" onchange="applySorting()">
+                                        <option value="created_at_desc">Terbaru</option>
+                                        <option value="updated_at_desc">Diperbarui</option>
+                                        <option value="name_asc">A-Z</option>
+                                        <option value="name_desc">Z-A</option>
+                                        <option value="price_asc">Harga Terendah</option>
+                                        <option value="price_desc">Harga Tertinggi</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Active Filters Row for Card View -->
+                        <div class="active-filters-container" id="cardActiveFiltersContainer" style="display: none;">
+                            <div class="active-filters-wrapper">
+                                <span class="active-filters-label">🏷️ Active:</span>
+                                <div class="active-filters-tags" id="cardActiveFiltersTags">
+                                    <!-- Active filter tags will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card View Container - Wrapped like table -->
+                    <div class="card-view-wrapper">
+                        <!-- Cards Container -->
+                        <div class="cards-grid-container p-3">
+                            <div class="row" id="menuCardContainer">
+                                <div class="col-12 text-center">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading menu data...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pagination for Card View -->
+                        <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light">
+                            <div class="d-flex align-items-center">
+                                <small class="text-muted" id="cardPaginationInfo">Showing 0 - 0 of 0 entries</small>
+                            </div>
+                            <nav aria-label="Card pagination">
+                                <ul class="pagination pagination-sm mb-0" id="cardPaginationControls">
+                                    <!-- Pagination buttons will be generated here -->
+                                </ul>
+                            </nav>
                         </div>
                     </div>
                 </div>
@@ -945,7 +1209,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <div class="mb-3">
                                             <label for="menuName" class="form-label">Nama Topping <span class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="menuName" name="name" required
@@ -953,7 +1217,7 @@
                                             <div class="form-text">Nama topping akan tampil di aplikasi</div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <div class="mb-3">
                                             <label for="menuCategory" class="form-label">Kategori</label>
                                             <select class="form-select" id="menuCategory" name="category">
@@ -966,7 +1230,7 @@
                                 </div>
                                 
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <div class="mb-3">
                                             <label for="menuPrice" class="form-label">Harga <span class="text-danger">*</span></label>
                                             <div class="input-group">
@@ -977,7 +1241,7 @@
                                             <div class="form-text">Harga dalam Rupiah</div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <div class="mb-3">
                                             <label class="form-label">Gambar Menu</label>
                                             
@@ -993,7 +1257,7 @@
                                     </div>
                                 </div>
 
-                                <div class="mb-3">
+                                <div class="mb-3 d-none">
                                     <label for="menuDescription" class="form-label">Deskripsi (Opsional)</label>
                                     <textarea class="form-control" id="menuDescription" name="description" rows="4" 
                                               placeholder="Deskripsi menu yang menarik untuk pelanggan..."></textarea>
@@ -1010,7 +1274,7 @@
                     <div class="col-lg-4">
                         <div class="card sticky-top" style="top: 20px;">
                             <div class="card-header">
-                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-eye me-2"></i>Preview Menu</h6>
+                                <h6 class="mb-0 text-light fw-bold"><i class="ti ti-eye me-2"></i>Preview Topping</h6>
                             </div>
                             <div class="card-body">
                                 <!-- Menu Preview Card -->
@@ -1034,14 +1298,14 @@
                                     </div>
                                     <div class="card-body">
                                         <h6 class="card-title mb-1" id="previewName">Nama Menu</h6>
-                                        <p class="card-text text-muted f-12 mb-2" id="previewDescription">Deskripsi menu akan tampil di sini...</p>
+                                        <p class="card-text text-muted f-12 mb-2" id="previewDescription"></p>
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <span class="badge bg-light-primary text-primary" id="previewCategory">Kategori</span>
                                             <span class="badge bg-light-info text-info d-none" id="previewTopping">Topping</span>
                                         </div>
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h5 class="mb-0" id="previewPrice">Rp 0</h5>
-                                            <small class="text-muted">Preview</small>
+                                 
                                         </div>
                                     </div>
                                 </div>
@@ -1135,7 +1399,7 @@
                 </td>
                 <td>
                     <h6 class="mb-1">${item.name}</h6>
-                    <p class="text-muted f-12 mb-0">${item.category_name || 'No category'}</p>
+                   
                 </td>
                 <td>
                     <span class="badge bg-light-warning text-warning">
@@ -1175,70 +1439,83 @@
     }
 
     // Display card view
-    function displayCardView(menuData) {
+    function displayCardView() {
         const cardContainer = document.getElementById('menuCardContainer');
         if (!cardContainer) return;
 
         cardContainer.innerHTML = '';
 
-        if (menuData.length === 0) {
+        if (filteredMenuData.length === 0) {
+            const message = allMenuData.length === 0 ? 'Tidak ada data topping' : 'Tidak ada data yang sesuai dengan filter';
             cardContainer.innerHTML = `
-                <div class="col-12 text-center">
-                    <p class="mb-0">Tidak ada data menu</p>
+                <div class="col-12 text-center py-5">
+                    <i class="ti ti-file-off text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-2 mb-0">${message}</p>
                 </div>
             `;
             return;
         }
 
-        menuData.forEach(item => {
+        // Calculate pagination using filtered data (same as table view)
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedData = filteredMenuData.slice(startIndex, endIndex);
+
+        paginatedData.forEach(item => {
             const cardCol = document.createElement('div');
-            cardCol.className = 'col-xl-3 col-md-6 col-sm-12 mb-3';
+            cardCol.className = 'col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-3';
+
+            // Get category name
+            const categoryName = item.category_name || 'Tanpa Kategori';
+
             cardCol.innerHTML = `
-                <div class="card h-100 menu-card">
-                    <div class="card-image-container position-relative" style="height: 150px; overflow: hidden;">
-                        ${getImageHTML(item.image_url, item.name, 'medium')}
-                        <!-- Image overlay for better text readability -->
-                        <div class="image-overlay position-absolute top-0 end-0 p-2">
-                            <span class="badge bg-${item.is_active ? 'success' : 'danger'}">
-                                ${item.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="card-body d-flex flex-column">
-                        <h6 class="card-title">${item.name}</h6>
-                        <p class="card-text text-muted f-12 flex-grow-1">${item.category_name || 'No category'}</p>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-light-warning text-warning">
-                                ${item.category_name || 'No category'}
-                            </span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0 text-success">Rp ${formatPrice(item.price)}</h5>
-                            <div class="btn-group" role="group">
-                                ${currentViewMode === 'active' ? `
-                                    <!-- Active Items: Edit + Delete -->
-                                    <button type="button" class="btn btn-sm btn-outline-warning me-1" onclick="editMenu('${item.id}')" title="Edit Menu">
-                                        <i class="ti ti-edit"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Soft Delete">
-                                        <i class="ti ti-trash"></i>
-                                    </button>
-                                ` : `
-                                    <!-- Deleted Items: Restore + Permanent Delete -->
-                                    <button type="button" class="btn btn-sm btn-outline-success me-1" onclick="restoreMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Restore Item">
-                                        <i class="ti ti-refresh"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteMenu('${item.id}', '${item.name.replace(/'/g, "&apos;")}')" title="Permanent Delete">
-                                        <i class="ti ti-trash-x"></i>
-                                    </button>
-                                `}
+                <div class="card border h-100 topping-card" style="transition: transform 0.2s, box-shadow 0.2s;">
+                    <!-- Image with Status Badge Overlay -->
+                    <div class="position-relative" style="height: 150px; background-color: #f8f9fa; overflow: hidden;">
+                        <!-- Status Badge - Top Left -->
+                        <span class="badge ${item.is_available ? 'bg-success' : 'bg-secondary'} position-absolute" 
+                              style="top: 8px; left: 8px; z-index: 10;">
+                            ${item.is_available ? 'Tersedia' : 'Tidak Tersedia'}
+                        </span>
+                        
+                        ${item.image ? `
+                            <img src="uploads/menu-images/${item.image}" alt="${item.name}" 
+                                 style="width: 100%; height: 150px; object-fit: cover;">
+                        ` : `
+                            <div class="d-flex align-items-center justify-content-center h-100">
+                                <i class="ti ti-photo text-muted" style="font-size: 2.5rem;"></i>
                             </div>
+                        `}
+                    </div>
+                    
+                    <!-- Card Body -->
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6 class="mb-1 fw-bold">${item.name}</h6>
+                            <span class="badge bg-light-warning text-warning">${categoryName}</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 text-primary">Rp ${formatPrice(item.price || 0)}</h5>
                         </div>
                     </div>
                 </div>
             `;
             cardContainer.appendChild(cardCol);
         });
+
+        // Add hover effect via CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            .topping-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+            }
+        `;
+        if (!document.getElementById('topping-card-styles')) {
+            style.id = 'topping-card-styles';
+            document.head.appendChild(style);
+        }
     }
 
     // Populate category select
@@ -1805,7 +2082,6 @@
             <div class="image-placeholder text-center" 
                  style="width: ${width}; height: ${height}; background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
                 <i class="ti ti-photo text-muted" style="font-size: ${iconSize};"></i>
-                <p class="text-muted mt-1 mb-0" style="font-size: ${textSize};">No Image</p>
             </div>
         `;
     }
@@ -2029,18 +2305,30 @@
         const totalItems = filteredMenuData.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-        // Update pagination info
+        // Update pagination info for both table and card views
         const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
         const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-        document.getElementById('paginationInfo').textContent =
-            `Showing ${startItem} - ${endItem} of ${totalItems} entries`;
+        const paginationText = `Showing ${startItem} - ${endItem} of ${totalItems} entries`;
 
-        // Generate pagination controls
-        generatePaginationControls(totalPages);
+        // Update table view pagination info
+        const tablePaginationInfo = document.getElementById('paginationInfo');
+        if (tablePaginationInfo) {
+            tablePaginationInfo.textContent = paginationText;
+        }
+
+        // Update card view pagination info
+        const cardPaginationInfo = document.getElementById('cardPaginationInfo');
+        if (cardPaginationInfo) {
+            cardPaginationInfo.textContent = paginationText;
+        }
+
+        // Generate pagination controls for both views
+        generatePaginationControls(totalPages, 'paginationControls'); // Table view
+        generatePaginationControls(totalPages, 'cardPaginationControls'); // Card view
     }
 
-    function generatePaginationControls(totalPages) {
-        const paginationContainer = document.getElementById('paginationControls');
+    function generatePaginationControls(totalPages, containerId) {
+        const paginationContainer = document.getElementById(containerId);
         if (!paginationContainer) return;
 
         paginationContainer.innerHTML = '';
@@ -2051,7 +2339,7 @@
         const prevLi = document.createElement('li');
         prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
         prevLi.innerHTML = `
-            <a class="page-link" href="#" onclick="changePage(${currentPage - 1})" aria-label="Previous">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;" aria-label="Previous">
                 <span aria-hidden="true">&laquo;</span>
             </a>
         `;
@@ -2064,7 +2352,7 @@
         if (startPage > 1) {
             const firstLi = document.createElement('li');
             firstLi.className = 'page-item';
-            firstLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(1)">1</a>`;
+            firstLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(1); return false;">1</a>`;
             paginationContainer.appendChild(firstLi);
 
             if (startPage > 2) {
@@ -2078,7 +2366,7 @@
         for (let i = startPage; i <= endPage; i++) {
             const li = document.createElement('li');
             li.className = `page-item ${i === currentPage ? 'active' : ''}`;
-            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>`;
             paginationContainer.appendChild(li);
         }
 
@@ -2092,7 +2380,7 @@
 
             const lastLi = document.createElement('li');
             lastLi.className = 'page-item';
-            lastLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages})">${totalPages}</a>`;
+            lastLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>`;
             paginationContainer.appendChild(lastLi);
         }
 
@@ -2100,7 +2388,7 @@
         const nextLi = document.createElement('li');
         nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
         nextLi.innerHTML = `
-            <a class="page-link" href="#" onclick="changePage(${currentPage + 1})" aria-label="Next">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;" aria-label="Next">
                 <span aria-hidden="true">&raquo;</span>
             </a>
         `;
@@ -2285,6 +2573,22 @@
         border-radius: 0.375rem 0.375rem 0 0 !important;
     }
 
+    /* Controls row layout - horizontal arrangement */
+    .controls-row {
+        display: flex;
+        align-items: center;
+        justify-content: start;
+        gap: 1rem;
+        padding: 1rem;
+        flex-wrap: nowrap;
+    }
+
+    @media (max-width: 992px) {
+        .controls-row {
+            flex-wrap: wrap;
+        }
+    }
+
     /* Custom scrollbar styling */
     .table-responsive::-webkit-scrollbar {
         width: 8px;
@@ -2316,9 +2620,8 @@
 
     /* Search section */
     .search-section {
-        flex: 1;
-        min-width: 200px;
-        max-width: 300px;
+        flex: 1 1 auto;
+        min-width: 250px;
     }
 
     .search-input-wrapper {
@@ -2339,6 +2642,7 @@
         border: 1px solid #dee2e6;
         border-radius: 0.375rem;
         transition: all 0.15s ease-in-out;
+        width: 100%;
     }
 
     .search-input:focus {
@@ -2349,6 +2653,7 @@
     /* Filter section */
     .filter-section {
         flex: 0 0 auto;
+        min-width: 120px;
     }
 
     .filter-btn {
@@ -2511,7 +2816,8 @@
     /* Sort section */
     .sort-section {
         flex: 0 0 auto;
-        min-width: 150px;
+        min-width: 200px;
+        max-width: 220px;
     }
 
     .sort-wrapper {
@@ -2537,6 +2843,7 @@
         background: white;
         font-size: 0.875rem;
         transition: all 0.15s ease-in-out;
+        width: 100%;
     }
 
     .sort-select:focus {
@@ -2546,8 +2853,7 @@
 
     /* Active filters */
     .active-filters-container {
-        margin-top: 1rem;
-        padding-top: 1rem;
+        padding: 0 1rem 1rem 1rem;
         border-top: 1px solid #e9ecef;
     }
 
@@ -2556,6 +2862,7 @@
         align-items: center;
         gap: 0.75rem;
         flex-wrap: wrap;
+        padding-top: 1rem;
     }
 
     .active-filters-label {
@@ -3153,6 +3460,11 @@
         color: #6c757d;
     }
 
+    #cardPaginationInfo {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
     /* Pagination container responsive */
     @media (max-width: 576px) {
         .pagination-sm .page-link {
@@ -3286,7 +3598,6 @@
 
     /* Preview image placeholder styling */
     #previewImageContainer {
-        border: 2px dashed #dee2e6;
         border-radius: 0.375rem;
         transition: border-color 0.3s ease;
     }

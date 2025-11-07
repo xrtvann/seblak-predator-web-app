@@ -56,7 +56,7 @@ function getAllToppings()
         $types = "";
 
         if (isset($_GET['category']) && $_GET['category'] !== '') {
-            $whereConditions[] = "t.category = ?";
+            $whereConditions[] = "t.category_id = ?";
             $params[] = $_GET['category'];
             $types .= "s";
         }
@@ -83,7 +83,7 @@ function getAllToppings()
         $whereClause = implode(' AND ', $whereConditions);
 
         $countQuery = "SELECT COUNT(*) as total FROM toppings t 
-                       LEFT JOIN categories c ON t.category = c.id 
+                       LEFT JOIN categories c ON t.category_id = c.id 
                        WHERE " . $whereClause;
         if (!empty($params)) {
             $countStmt = mysqli_prepare($koneksi, $countQuery);
@@ -99,10 +99,10 @@ function getAllToppings()
         $total = $totalRow['total'];
         $last_page = ceil($total / $per_page);
 
-        $query = "SELECT t.id, t.name, t.price, t.image, t.category, c.name as category_name, 
+        $query = "SELECT t.id, t.name, t.price, t.image, t.category_id, c.name as category_name, 
                          t.is_available, t.sort_order, t.created_at, t.updated_at 
                   FROM toppings t
-                  LEFT JOIN categories c ON t.category = c.id
+                  LEFT JOIN categories c ON t.category_id = c.id
                   WHERE " . $whereClause . " 
                   ORDER BY t.sort_order ASC, t.name ASC 
                   LIMIT ? OFFSET ?";
@@ -125,9 +125,15 @@ function getAllToppings()
             $row['is_available'] = (bool) $row['is_available'];
             // Backwards compatibility with pages that expect is_active
             $row['is_active'] = $row['is_available'];
-            // For backwards compatibility with old UI that used category_id
-            $row['category_id'] = $row['category'];
             $row['sort_order'] = (int) $row['sort_order'];
+
+            // Add image_url for frontend compatibility
+            if (!empty($row['image'])) {
+                $row['image_url'] = 'uploads/menu-images/' . $row['image'];
+            } else {
+                $row['image_url'] = null;
+            }
+
             $items[] = $row;
         }
 
@@ -163,10 +169,10 @@ function getToppingById()
     }
 
     try {
-        $query = "SELECT t.id, t.name, t.price, t.image, t.category, c.name as category_name, 
+        $query = "SELECT t.id, t.name, t.price, t.image, t.category_id, c.name as category_name, 
                          t.is_available, t.sort_order, t.created_at, t.updated_at 
                   FROM toppings t
-                  LEFT JOIN categories c ON t.category = c.id
+                  LEFT JOIN categories c ON t.category_id = c.id
                   WHERE t.id = ?";
         $stmt = mysqli_prepare($koneksi, $query);
         mysqli_stmt_bind_param($stmt, 's', $id);
@@ -178,9 +184,15 @@ function getToppingById()
             $row['is_available'] = (bool) $row['is_available'];
             // Backwards compatibility
             $row['is_active'] = $row['is_available'];
-            // For backwards compatibility with old UI that used category_id
-            $row['category_id'] = $row['category'];
             $row['sort_order'] = (int) $row['sort_order'];
+
+            // Add image_url for frontend compatibility
+            if (!empty($row['image'])) {
+                $row['image_url'] = 'uploads/menu-images/' . $row['image'];
+            } else {
+                $row['image_url'] = null;
+            }
+
             http_response_code(200);
             echo json_encode(['success' => true, 'data' => $row, 'message' => 'Topping retrieved successfully']);
         } else {
@@ -216,14 +228,28 @@ function createTopping()
             echo json_encode(['success' => false, 'message' => 'Price must be non-negative']);
             return;
         }
-        $image = isset($input['image']) ? mysqli_real_escape_string($koneksi, trim($input['image'])) : null;
-        $category = isset($input['category']) ? mysqli_real_escape_string($koneksi, trim($input['category'])) : null;
+
+        // Handle image_url (from upload) or image (direct path)
+        $image = null;
+        if (isset($input['image_url']) && !empty($input['image_url'])) {
+            // Extract filename from uploads/menu-images/filename.jpg
+            $image = basename($input['image_url']);
+        } elseif (isset($input['image']) && !empty($input['image'])) {
+            $image = mysqli_real_escape_string($koneksi, trim($input['image']));
+        }
+
+        $category_id = isset($input['category_id']) ? mysqli_real_escape_string($koneksi, trim($input['category_id'])) : null;
+        // Also support old 'category' key for backwards compatibility
+        if (!$category_id && isset($input['category'])) {
+            $category_id = mysqli_real_escape_string($koneksi, trim($input['category']));
+        }
+
         $is_available = isset($input['is_available']) ? ($input['is_available'] ? 1 : 0) : 1;
         $sort_order = isset($input['sort_order']) ? (int) $input['sort_order'] : 0;
 
-        $insert = "INSERT INTO toppings (id, name, price, image, category, is_available, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        $insert = "INSERT INTO toppings (id, name, price, image, category_id, is_available, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         $stmt = mysqli_prepare($koneksi, $insert);
-        mysqli_stmt_bind_param($stmt, 'ssdssii', $id, $name, $price, $image, $category, $is_available, $sort_order);
+        mysqli_stmt_bind_param($stmt, 'ssdssii', $id, $name, $price, $image, $category_id, $is_available, $sort_order);
 
         if (mysqli_stmt_execute($stmt)) {
             http_response_code(201);
@@ -275,16 +301,34 @@ function updateTopping()
             $types .= 'd';
             $values[] = floatval($input['price']);
         }
-        if (array_key_exists('image', $input)) {
+
+        // Handle image_url (from upload) or image (direct path)
+        if (array_key_exists('image_url', $input)) {
+            $updateFields[] = 'image = ?';
+            $types .= 's';
+            if (!empty($input['image_url'])) {
+                // Extract filename from uploads/menu-images/filename.jpg
+                $values[] = basename($input['image_url']);
+            } else {
+                $values[] = null;
+            }
+        } elseif (array_key_exists('image', $input)) {
             $updateFields[] = 'image = ?';
             $types .= 's';
             $values[] = $input['image'] ? mysqli_real_escape_string($koneksi, trim($input['image'])) : null;
         }
-        if (array_key_exists('category', $input)) {
-            $updateFields[] = 'category = ?';
+
+        // Handle category_id (new) or category (old) for backwards compatibility
+        if (array_key_exists('category_id', $input)) {
+            $updateFields[] = 'category_id = ?';
+            $types .= 's';
+            $values[] = $input['category_id'] ? mysqli_real_escape_string($koneksi, trim($input['category_id'])) : null;
+        } elseif (array_key_exists('category', $input)) {
+            $updateFields[] = 'category_id = ?';
             $types .= 's';
             $values[] = $input['category'] ? mysqli_real_escape_string($koneksi, trim($input['category'])) : null;
         }
+
         if (isset($input['is_available'])) {
             $updateFields[] = 'is_available = ?';
             $types .= 'i';
