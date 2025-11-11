@@ -61,10 +61,13 @@ function getAllCategories()
         $params = [];
         $types = "";
 
+        // Filter by is_deleted (inverse of is_active)
         if (isset($_GET['is_active'])) {
-            $whereConditions[] = "is_active = ?";
+            $whereConditions[] = "is_deleted = ?";
+            // If requesting active items (is_active=true), filter where is_deleted=0
             $is_active_value = ($_GET['is_active'] === 'true' || $_GET['is_active'] === '1' || $_GET['is_active'] === 1) ? 1 : 0;
-            $params[] = $is_active_value;
+            $is_deleted_value = $is_active_value === 1 ? 0 : 1; // Invert the logic
+            $params[] = $is_deleted_value;
             $types .= "i";
         }
 
@@ -92,7 +95,9 @@ function getAllCategories()
         $total = $totalRow['total'];
 
         // Get categories
-        $query = "SELECT id, name, description, color, icon, is_active, created_at, updated_at
+        $query = "SELECT id, name, description, color, icon, 
+                  (CASE WHEN is_deleted = 0 THEN 1 ELSE 0 END) as is_active,
+                  created_at, updated_at
                   FROM expense_categories
                   WHERE " . $whereClause . "
                   ORDER BY created_at DESC
@@ -147,7 +152,9 @@ function getCategoryById()
     $category_id = $_GET['id'];
 
     try {
-        $query = "SELECT id, name, description, color, icon, is_active, created_at, updated_at
+        $query = "SELECT id, name, description, color, icon,
+                  (CASE WHEN is_deleted = 0 THEN 1 ELSE 0 END) as is_active,
+                  created_at, updated_at
                   FROM expense_categories
                   WHERE id = ?";
 
@@ -206,19 +213,19 @@ function createCategory()
     }
 
     try {
-        $id = 'cat_' . uniqid();
         $name = mysqli_real_escape_string($koneksi, trim($input['name']));
         $description = isset($input['description']) ? mysqli_real_escape_string($koneksi, trim($input['description'])) : null;
         $color = isset($input['color']) ? mysqli_real_escape_string($koneksi, trim($input['color'])) : '#A8A8A8';
         $icon = isset($input['icon']) ? mysqli_real_escape_string($koneksi, trim($input['icon'])) : 'ti ti-dots';
 
-        // Insert category
-        $insertQuery = "INSERT INTO expense_categories (id, name, description, color, icon, is_active, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        // Insert category (is_deleted = 0 means active)
+        $insertQuery = "INSERT INTO expense_categories (name, description, color, icon, is_deleted, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         $insertStmt = mysqli_prepare($koneksi, $insertQuery);
-        mysqli_stmt_bind_param($insertStmt, "sssss", $id, $name, $description, $color, $icon);
+        mysqli_stmt_bind_param($insertStmt, "ssss", $name, $description, $color, $icon);
 
         if (mysqli_stmt_execute($insertStmt)) {
+            $id = mysqli_insert_id($koneksi);
             http_response_code(201);
             echo json_encode([
                 'success' => true,
@@ -345,9 +352,9 @@ function deleteCategory()
 
     try {
         // Check if category is being used by expenses
-        $checkQuery = "SELECT COUNT(*) as count FROM expenses WHERE category_id = ? AND is_active = TRUE";
+        $checkQuery = "SELECT COUNT(*) as count FROM expenses WHERE category_id = ? AND is_deleted = 0";
         $checkStmt = mysqli_prepare($koneksi, $checkQuery);
-        mysqli_stmt_bind_param($checkStmt, "s", $category_id);
+        mysqli_stmt_bind_param($checkStmt, "i", $category_id);
         mysqli_stmt_execute($checkStmt);
         $checkResult = mysqli_stmt_get_result($checkStmt);
         $checkRow = mysqli_fetch_assoc($checkResult);
@@ -358,10 +365,10 @@ function deleteCategory()
             return;
         }
 
-        // Soft delete category
-        $deleteQuery = "UPDATE expense_categories SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        // Soft delete category (set is_deleted = 1)
+        $deleteQuery = "UPDATE expense_categories SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
         $deleteStmt = mysqli_prepare($koneksi, $deleteQuery);
-        mysqli_stmt_bind_param($deleteStmt, "s", $category_id);
+        mysqli_stmt_bind_param($deleteStmt, "i", $category_id);
 
         if (mysqli_stmt_execute($deleteStmt)) {
             if (mysqli_affected_rows($koneksi) > 0) {
@@ -399,10 +406,10 @@ function restoreCategory()
     }
 
     try {
-        // Check if category exists and is inactive
-        $checkQuery = "SELECT id, is_active FROM expense_categories WHERE id = ?";
+        // Check if category exists and is deleted
+        $checkQuery = "SELECT id, is_deleted FROM expense_categories WHERE id = ?";
         $checkStmt = mysqli_prepare($koneksi, $checkQuery);
-        mysqli_stmt_bind_param($checkStmt, "s", $category_id);
+        mysqli_stmt_bind_param($checkStmt, "i", $category_id);
         mysqli_stmt_execute($checkStmt);
         $checkResult = mysqli_stmt_get_result($checkStmt);
 
@@ -413,16 +420,16 @@ function restoreCategory()
         }
 
         $category = mysqli_fetch_assoc($checkResult);
-        if ($category['is_active']) {
+        if ($category['is_deleted'] == 0) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Kategori pengeluaran sudah aktif']);
             return;
         }
 
-        // Restore category (set is_active = TRUE)
-        $restoreQuery = "UPDATE expense_categories SET is_active = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        // Restore category (set is_deleted = 0)
+        $restoreQuery = "UPDATE expense_categories SET is_deleted = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
         $restoreStmt = mysqli_prepare($koneksi, $restoreQuery);
-        mysqli_stmt_bind_param($restoreStmt, "s", $category_id);
+        mysqli_stmt_bind_param($restoreStmt, "i", $category_id);
 
         if (mysqli_stmt_execute($restoreStmt)) {
             if (mysqli_affected_rows($koneksi) > 0) {

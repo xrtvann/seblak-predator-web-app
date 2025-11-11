@@ -9,7 +9,7 @@
             </div>
             <div class="col-auto">
                 <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="index.php">Beranda</a></li>
+                    <li class="breadcrumb-item"><a href="index.php">Home</a></li>
                     <li class="breadcrumb-item" aria-current="page">Dashboard</li>
                 </ul>
             </div>

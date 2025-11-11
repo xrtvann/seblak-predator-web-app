@@ -1,5 +1,5 @@
 <!-- [ breadcrumb ] start -->
-<div class="page-header">
+<div class="page-header mb-4">
     <div class="page-block">
         <div class="row align-items-center">
             <div class="col">
@@ -19,6 +19,12 @@
 </div>
 <!-- [ breadcrumb ] end -->
 
+<style>
+    #viewToggleTabs.force-hide {
+        display: none !important;
+    }
+</style>
+
 <!-- [ Main Content ] start -->
 <div class="row">
     <!-- [ Data Menu ] start -->
@@ -35,7 +41,7 @@
                     <div class="col-auto">
                         <div class="d-flex align-items-center" id="headerActions">
                             <!-- View Toggle Tabs -->
-                            <ul class="nav nav-pills me-3" id="viewToggleTabs">
+                            <ul class="nav nav-pills me-3" id="viewToggleTabs" style="display: none;">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="pills-table-tab" data-bs-toggle="pill"
                                         data-bs-target="#pills-table" type="button" role="tab"
@@ -701,9 +707,7 @@
 
     // Show data topping view
     function showDataMenu() {
-        console.log('showDataMenu called');
         const mainContent = document.getElementById('mainContentArea');
-        console.log('Main content element:', mainContent);
 
         // Update header
         document.getElementById('pageTitleText').textContent = 'Topping';
@@ -714,7 +718,9 @@
         // Toggle buttons
         document.getElementById('btnTambahMenu').classList.remove('d-none');
         document.getElementById('btnKembali').classList.add('d-none');
-        document.getElementById('viewToggleTabs').classList.remove('d-none');
+        const viewToggleTabs = document.getElementById('viewToggleTabs');
+        viewToggleTabs.classList.remove('d-none', 'force-hide');
+        viewToggleTabs.style.display = ''; // Remove inline style to show tabs
 
         // Set content
         mainContent.innerHTML = getDataMenuHTML();
@@ -890,7 +896,7 @@
             console.log('Edit data received:', result);
 
             if (result.success) {
-                showForm('Edit Menu', 'Form Edit Menu', result.data);
+                showForm('Edit Topping', 'Form Edit Topping', result.data);
             } else {
                 showNotification('Error loading menu data: ' + result.message, 'error');
             }
@@ -923,7 +929,9 @@
         // Toggle buttons
         document.getElementById('btnTambahMenu').classList.add('d-none');
         document.getElementById('btnKembali').classList.remove('d-none');
-        document.getElementById('viewToggleTabs').classList.add('d-none');
+        const viewToggleTabs = document.getElementById('viewToggleTabs');
+        viewToggleTabs.classList.add('d-none', 'force-hide');
+        viewToggleTabs.style.display = 'none'; // Force hide with inline style
 
         // Set content
         mainContent.innerHTML = getFormHTML();
@@ -1402,7 +1410,7 @@
                    
                 </td>
                 <td>
-                    <span class="badge bg-light-warning text-warning">
+                    <span class="badge bg-light-amazon">
                         ${item.category_name || 'No category'}
                     </span>
                 </td>

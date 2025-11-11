@@ -37,14 +37,14 @@ $PageTitle = [
   'topping' => 'Topping',
   'kategori' => 'Kategori',
   'transaksi' => 'Transaksi',
-  'expenses' => 'Pengeluaran',
+  'laporan-keuangan' => 'Laporan Keuangan',
   'user' => 'User',
   'role' => 'Role'
 ];
 $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
 
 // Validate page to prevent unauthorized access
-$allowed_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'expenses', 'user', 'role'];
+$allowed_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'laporan-keuangan', 'user', 'role'];
 if (!in_array($page, $allowed_pages)) {
   $page = 'dashboard';
 }
@@ -140,6 +140,8 @@ if (isLoggedIn() && !canAccessPage($page)) {
           <?php
           // Get accessible pages for current user
           $accessible_pages = getAccessiblePages();
+          // Debug: uncomment to see accessible pages
+          // echo '<!-- Accessible pages: ' . implode(', ', $accessible_pages) . ' -->';
           ?>
 
           <?php if (in_array('dashboard', $accessible_pages)): ?>
@@ -182,9 +184,9 @@ if (isLoggedIn() && !canAccessPage($page)) {
             </li>
           <?php endif; ?>
 
-          <?php if (in_array('transaksi', $accessible_pages) || in_array('expenses', $accessible_pages)): ?>
+          <?php if (in_array('transaksi', $accessible_pages) || in_array('laporan-keuangan', $accessible_pages)): ?>
             <li class="pc-item pc-caption">
-              <label>Transaksi</label>
+              <label>Transaksi & Keuangan</label>
             </li>
             <li class="pc-item <?php echo ($page === 'transaksi') ? 'active' : ''; ?>">
               <a href="?page=transaksi" class="pc-link">
@@ -192,11 +194,11 @@ if (isLoggedIn() && !canAccessPage($page)) {
                 <span class="pc-mtext">Transaksi</span>
               </a>
             </li>
-            <?php if (in_array('expenses', $accessible_pages)): ?>
-              <li class="pc-item <?php echo ($page === 'expenses') ? 'active' : ''; ?>">
-                <a href="?page=expenses" class="pc-link">
-                  <span class="pc-micon"><i class="ti ti-cash"></i></span>
-                  <span class="pc-mtext">Pengeluaran</span>
+            <?php if (in_array('laporan-keuangan', $accessible_pages)): ?>
+              <li class="pc-item <?php echo ($page === 'laporan-keuangan') ? 'active' : ''; ?>">
+                <a href="?page=laporan-keuangan" class="pc-link">
+                  <span class="pc-micon"><i class="ti ti-report-money"></i></span>
+                  <span class="pc-mtext">Laporan Keuangan</span>
                 </a>
               </li>
             <?php endif; ?>
@@ -218,7 +220,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
           <?php endif; ?>
 
           <?php if (in_array('role', $accessible_pages)): ?>
-            <li class="pc-item <?php echo ($page === 'role') ? 'active' : ''; ?>">
+            <li class="pc-item d-none <?php echo ($page === 'role') ? 'active' : ''; ?>">
               <a href="?page=role" class="pc-link">
                 <span class="pc-micon"><i class="ti ti-shield-lock"></i></span>
                 <span class="pc-mtext">Role</span>
@@ -380,7 +382,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
       <!-- [ Main Content ] start -->
       <?php
       // Daftar halaman yang diizinkan
-      $allowed_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'expenses', 'user', 'role'];
+      $allowed_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'laporan-keuangan', 'user', 'role'];
 
       if (in_array($page, $allowed_pages)) {
         include("dist/dashboard/pages/" . $page . ".php");

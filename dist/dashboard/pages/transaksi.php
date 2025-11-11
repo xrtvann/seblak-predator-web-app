@@ -139,6 +139,8 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     let allOrders = [];
     let allProducts = [];
     let allToppings = [];
+    let allSpiceLevels = [];
+    let allCustomizationOptions = [];
     let selectedItemId = '';
     let currentOrder = {
         customer_name: '',
@@ -153,6 +155,8 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     document.addEventListener('DOMContentLoaded', function () {
         loadProducts();
         loadToppings();
+        loadSpiceLevels();
+        loadCustomizationOptions();
         showOrderList();
     });
 
@@ -180,7 +184,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     // Load toppings
     async function loadToppings() {
         try {
-            const response = await fetch('api/menu/products.php?is_active=1&is_topping=1');
+            const response = await fetch('api/menu/toppings.php?is_available=1');
 
             if (!response.ok) {
                 console.error('Toppings API error:', response.status);
@@ -195,6 +199,48 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             }
         } catch (error) {
             console.error('Error loading toppings:', error);
+        }
+    }
+
+    // Load spice levels
+    async function loadSpiceLevels() {
+        try {
+            const response = await fetch('api/spice-levels.php?status=active');
+
+            if (!response.ok) {
+                console.error('Spice levels API error:', response.status);
+                return;
+            }
+
+            const result = await response.json();
+            console.log('Spice levels loaded:', result.data?.length || 0);
+
+            if (result.success) {
+                allSpiceLevels = result.data || [];
+            }
+        } catch (error) {
+            console.error('Error loading spice levels:', error);
+        }
+    }
+
+    // Load customization options
+    async function loadCustomizationOptions() {
+        try {
+            const response = await fetch('api/customization-options.php?is_active=1');
+
+            if (!response.ok) {
+                console.error('Customization options API error:', response.status);
+                return;
+            }
+
+            const result = await response.json();
+            console.log('Customization options loaded:', result.data?.length || 0);
+
+            if (result.success) {
+                allCustomizationOptions = result.data || [];
+            }
+        } catch (error) {
+            console.error('Error loading customization options:', error);
         }
     }
 
@@ -397,7 +443,12 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 break;
             case 2:
                 stepContent.innerHTML = getStep2HTML();
-                renderProductsAndToppings();
+                // Auto-add first seblak order if empty
+                if (currentOrder.items.length === 0) {
+                    addNewSeblakOrder();
+                } else {
+                    renderProductsAndToppings();
+                }
                 break;
             case 3:
                 stepContent.innerHTML = getStep3HTML();
@@ -562,52 +613,153 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         return true;
     }
 
-    // STEP 2: Informasi Pesanan (Products & Toppings Combined)
+    // STEP 2: Informasi Pesanan (Multiple Seblak Orders with Levels, Customizations & Toppings)
     function getStep2HTML() {
         return `
+            <style>
+                .spice-card {
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    border: 2px solid #dee2e6;
+                    background-color: #fff;
+                }
+                
+                .spice-card:hover {
+                    background-color: rgba(13, 110, 253, 0.05);
+                    transform: translateY(-2px);
+                }
+                
+                .spice-card.active {
+                    border-color: #0d6efd;
+                    background-color: rgba(13, 110, 253, 0.1);
+                }
+                
+                .spice-card.active .card-body {
+                    color: #0d6efd;
+                }
+                
+                .option-card {
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    border: 2px solid #dee2e6;
+                }
+                
+                .option-card:hover {
+                    background-color: rgba(13, 110, 253, 0.05);
+                }
+                
+                .option-card.active {
+                    border-color: #0d6efd;
+                    background-color: rgba(13, 110, 253, 0.1);
+                }
+                
+                .topping-card {
+                    position: relative;
+                    overflow: hidden;
+                    border: 2px solid #dee2e6;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                
+                .topping-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                }
+                
+                .topping-card.selected {
+                    border-color: #0d6efd;
+                    background-color: rgba(13, 110, 253, 0.05);
+                }
+                
+                .topping-card img {
+                    width: 100%;
+                    aspect-ratio: 1;
+                    object-fit: cover;
+                }
+                
+                .topping-checkbox {
+                    position: absolute;
+                    top: 0.5rem;
+                    right: 0.5rem;
+                    width: 24px;
+                    height: 24px;
+                    cursor: pointer;
+                }
+                
+                .filter-btn {
+                    border-radius: 50px;
+                    border: 1px solid #dee2e6;
+                    background-color: transparent;
+                    color: #6c757d;
+                    transition: all 0.2s;
+                }
+                
+                .filter-btn.active {
+                    background-color: rgba(13, 110, 253, 0.1);
+                    color: #0d6efd;
+                    border-color: #0d6efd;
+                }
+                
+                .filter-btn:hover {
+                    background-color: rgba(0, 0, 0, 0.05);
+                }
+
+                .seblak-order-card {
+                    border: 2px solid #dee2e6;
+                    border-radius: 12px;
+                    margin-bottom: 1.5rem;
+                }
+
+                .seblak-order-card.first-order {
+                    border-color: #0d6efd;
+                }
+
+                .qty-control {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    background: #f8f9fa;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 50px;
+                }
+            </style>
+
             <div class="row">
-                <!-- Left Column: Product & Topping Selection -->
+                <!-- Left Column: Seblak Configuration -->
                 <div class="col-lg-8">
-                    <!-- Products Section -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h6 class="mb-0">Pilih Produk</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row mb-3">
-                                <div class="col-12">
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="ti ti-search"></i></span>
-                                        <input type="text" class="form-control" id="searchProduct" placeholder="Cari produk..." onkeyup="filterProducts()">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row" id="productsList">
-                                <div class="col-12 text-center">
-                                    <div class="spinner-border spinner-border-sm" role="status"></div>
-                                    <p class="mt-2">Memuat produk...</p>
-                                </div>
-                            </div>
+                    <div id="seblakOrdersList">
+                        <div class="text-center text-muted py-4">
+                            <i class="ti ti-shopping-cart" style="font-size: 48px;"></i>
+                            <p class="mt-2">Memuat pesanan...</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Column: Selected Items with Toppings -->
+                <!-- Right Column: Order Summary -->
                 <div class="col-lg-4">
                     <div class="card sticky-top" style="top: 20px;">
-                        <div class="card-header">
-                            <h6 class="mb-0">Pesanan Anda</h6>
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="ti ti-file-invoice me-2"></i>Ringkasan Pesanan</h6>
                         </div>
                         <div class="card-body" style="max-height: 600px; overflow-y: auto;">
-                            <div id="selectedItemsList">
-                                <div class="text-center text-muted">
-                                    <i class="ti ti-shopping-cart" style="font-size: 48px;"></i>
-                                    <p class="mt-2">Belum ada produk dipilih</p>
+                            <div id="orderSummary">
+                                <div class="text-center text-muted py-4">
+                                    <i class="ti ti-file-invoice" style="font-size: 48px;"></i>
+                                    <p class="mt-2">Belum ada item dipilih</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-footer">
-                            <div class="d-flex justify-content-between align-items-center">
+                        <div class="card-footer bg-light">
+                            <!-- Add Seblak Button -->
+                            <button type="button" class="btn btn-outline-primary w-100 mb-3" onclick="addNewSeblakOrder()">
+                                <i class="ti ti-plus me-2"></i>Tambah Seblak
+                            </button>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Subtotal:</span>
+                                <strong id="orderSubtotal">Rp 0</strong>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
                                 <strong>Total:</strong>
                                 <h5 class="mb-0 text-success" id="orderTotalPrice">Rp 0</h5>
                             </div>
@@ -618,10 +770,349 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         `;
     }
 
-    // Render products and manage toppings in the new Step 2
+    // Render products and manage items in Step 2
     function renderProductsAndToppings() {
-        renderProducts();
-        updateSelectedItemsList();
+        renderSeblakOrdersList();
+        updateOrderSummary();
+    }
+
+    // Add new seblak order
+    function addNewSeblakOrder() {
+        const newOrder = {
+            id: 'order_' + Date.now(),
+            quantity: 1,
+            spice_level: null,
+            customizations: {},
+            toppings: [],
+            base_price: 15000, // Base price untuk seblak dasar
+            notes: ''
+        };
+
+        currentOrder.items.push(newOrder);
+        renderSeblakOrdersList();
+        updateOrderSummary();
+    }
+
+    // Render seblak orders list
+    function renderSeblakOrdersList() {
+        const container = document.getElementById('seblakOrdersList');
+        if (!container) return;
+
+        if (currentOrder.items.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <i class="ti ti-shopping-cart" style="font-size: 64px; opacity: 0.3;"></i>
+                    <p class="mt-3">Gunakan tombol "Tambah Seblak" di keranjang untuk menambah pesanan</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = currentOrder.items.map((order, index) => {
+            const spiceLevel = order.spice_level ? allSpiceLevels.find(sl => sl.id === order.spice_level) : null;
+            const spiceLevelPrice = spiceLevel ? parseFloat(spiceLevel.price) : 0;
+
+            let customizationsPrice = 0;
+            const customizationsByType = {};
+
+            // Group customizations by type
+            Object.entries(order.customizations || {}).forEach(([type, optionId]) => {
+                const option = allCustomizationOptions.find(c => c.id === optionId);
+                if (option) {
+                    customizationsByType[type] = option;
+                    customizationsPrice += parseFloat(option.price || 0);
+                }
+            });
+
+            const toppingsPrice = order.toppings.reduce((sum, t) => sum + (t.unit_price * t.quantity), 0);
+            const orderTotal = (order.base_price + spiceLevelPrice + customizationsPrice + toppingsPrice) * order.quantity;
+
+            // Get icon for spice level
+            const getSpiceIcon = (levelName) => {
+                if (!levelName) return 'ti-flame';
+                const name = levelName.toLowerCase();
+                if (name.includes('0') || name.includes('tidak')) return 'ti-mood-smile';
+                if (name.includes('1')) return 'ti-mood-happy';
+                if (name.includes('2')) return 'ti-mood-neutral';
+                if (name.includes('3')) return 'ti-mood-sad';
+                if (name.includes('4')) return 'ti-mood-cry';
+                if (name.includes('predator') || name.includes('5')) return 'ti-flame';
+                return 'ti-flame';
+            };
+
+            return `
+                <div class="seblak-order-card ${index === 0 ? 'first-order' : ''} p-4 mb-4">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="ti ti-soup me-2"></i>Seblak #${index + 1}
+                        </h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="qty-control">
+                                <button type="button" class="btn btn-sm btn-link p-0" onclick="updateOrderQuantity('${order.id}', -1)">
+                                    <i class="ti ti-minus"></i>
+                                </button>
+                                <span class="fw-bold px-2">${order.quantity}</span>
+                                <button type="button" class="btn btn-sm btn-link p-0" onclick="updateOrderQuantity('${order.id}', 1)">
+                                    <i class="ti ti-plus"></i>
+                                </button>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSeblakOrder('${order.id}')">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pilih Level Pedas -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3"><i class="ti ti-flame me-2 text-danger"></i>Pilih Level Pedas <span class="text-danger">*</span></h6>
+                        <div class="row g-2">
+                            ${allSpiceLevels.map(level => {
+                const isSelected = order.spice_level === level.id;
+                const icon = getSpiceIcon(level.name);
+                return `
+                                    <div class="col-6 col-sm-4 col-md-2">
+                                        <label class="spice-card card h-100 text-center ${isSelected ? 'active' : ''}" onclick="selectSpiceLevel('${order.id}', '${level.id}')">
+                                            <input type="radio" name="spiceLevel_${order.id}" value="${level.id}" class="d-none" ${isSelected ? 'checked' : ''}>
+                                            <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                                <i class="${icon} fs-2 mb-2"></i>
+                                                <span class="fw-medium small">${level.name}</span>
+                                                <small class="text-muted">+ Rp ${formatPrice(level.price)}</small>
+                                            </div>
+                                        </label>
+                                    </div>
+                                `;
+            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Customization Options (Grouped by Type) -->
+                    ${renderCustomizationOptions(order)}
+
+                    <!-- Pilih Topping Tambahan -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3"><i class="ti ti-cheese me-2 text-warning"></i>Pilih Topping Tambahan</h6>
+                        ${order.toppings.length > 0 ? `
+                            <div class="row g-2 mb-3">
+                                ${order.toppings.map(t => `
+                                    <div class="col-auto">
+                                        <span class="badge bg-primary px-3 py-2">
+                                            ${t.topping_name} (${t.quantity}x) - Rp ${formatPrice(t.unit_price * t.quantity)}
+                                            <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.7rem;" onclick="removeToppingFromOrder('${order.id}', '${t.topping_id}')"></button>
+                                        </span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <button type="button" class="btn btn-outline-primary" onclick="showToppingsModal('${order.id}')">
+                            <i class="ti ti-plus me-2"></i>Tambah Topping
+                        </button>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="ti ti-note me-2"></i>Catatan</label>
+                        <textarea class="form-control" rows="2" 
+                                  placeholder="Catatan khusus untuk pesanan ini..."
+                                  onchange="updateOrderNotes('${order.id}', this.value)">${order.notes || ''}</textarea>
+                    </div>
+
+                    <!-- Price Summary -->
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Harga per item:</small>
+                                <div class="fw-bold">Rp ${formatPrice(order.base_price + spiceLevelPrice + customizationsPrice + toppingsPrice)}</div>
+                            </div>
+                            <div class="col-6 text-end">
+                                <small class="text-muted">Subtotal (${order.quantity}x):</small>
+                                <div class="h5 mb-0 text-success fw-bold">Rp ${formatPrice(orderTotal)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Helper function to render customization options grouped by type
+    function renderCustomizationOptions(order) {
+        // Group customization options by component_type
+        const optionsByType = {};
+        allCustomizationOptions.forEach(option => {
+            const type = option.component_type || 'other';
+            if (!optionsByType[type]) {
+                optionsByType[type] = [];
+            }
+            optionsByType[type].push(option);
+        });
+
+        // Type labels
+        const typeLabels = {
+            'egg_type': 'Tipe Telur',
+            'broth_flavor': 'Rasa Kuah',
+            'kencur_level': 'Level Kencur',
+            'other': 'Lainnya'
+        };
+
+        if (Object.keys(optionsByType).length === 0) return '';
+
+        return `
+            <div class="mb-4">
+                <h6 class="fw-bold mb-3"><i class="ti ti-adjustments me-2 text-info"></i>Customization Options</h6>
+                <div class="row g-3">
+                    ${Object.entries(optionsByType).map(([type, options]) => `
+                        <div class="col-md-4">
+                            <h6 class="small fw-bold text-muted mb-2">${typeLabels[type] || type}</h6>
+                            <div class="d-flex flex-column gap-2">
+                                ${options.map(option => {
+            const isSelected = order.customizations[type] === option.id;
+            return `
+                                        <label class="option-card card mb-0 ${isSelected ? 'active' : ''}" onclick="selectCustomizationOption('${order.id}', '${type}', '${option.id}')">
+                                            <div class="card-body d-flex justify-content-between align-items-center py-2 px-3">
+                                                <span class="small">${option.name}</span>
+                                                <input type="radio" name="${type}_${order.id}" class="form-check-input" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">
+                                            </div>
+                                        </label>
+                                    `;
+        }).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Select customization option (radio-based per type)
+    function selectCustomizationOption(orderId, type, optionId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        if (!order.customizations) {
+            order.customizations = {};
+        }
+
+        // Toggle or set the option for this type
+        if (order.customizations[type] === optionId) {
+            // If clicking the same option, do nothing (keep it selected)
+            return;
+        } else {
+            order.customizations[type] = optionId;
+        }
+
+        renderSeblakOrdersList();
+        updateOrderSummary();
+    }
+
+    // Update order quantity
+    function updateOrderQuantity(orderId, change) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        order.quantity = Math.max(1, order.quantity + change);
+        renderSeblakOrdersList();
+        updateOrderSummary();
+    }
+
+    // Remove seblak order
+    function removeSeblakOrder(orderId) {
+        const index = currentOrder.items.findIndex(o => o.id === orderId);
+        if (index >= 0) {
+            currentOrder.items.splice(index, 1);
+            renderSeblakOrdersList();
+            updateOrderSummary();
+        }
+    }
+
+    // Select spice level
+    function selectSpiceLevel(orderId, levelId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        order.spice_level = levelId;
+        renderSeblakOrdersList();
+        updateOrderSummary();
+    }
+
+    // Update order notes
+    function updateOrderNotes(orderId, notes) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        order.notes = notes;
+    }
+
+    // Remove topping from order
+    function removeToppingFromOrder(orderId, toppingId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        const index = order.toppings.findIndex(t => t.topping_id === toppingId);
+        if (index >= 0) {
+            order.toppings.splice(index, 1);
+            renderSeblakOrdersList();
+            updateOrderSummary();
+        }
+    }
+
+    // Update order summary in right sidebar
+    function updateOrderSummary() {
+        const container = document.getElementById('orderSummary');
+        if (!container) return;
+
+        if (currentOrder.items.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="ti ti-file-invoice" style="font-size: 48px;"></i>
+                    <p class="mt-2">Belum ada item dipilih</p>
+                </div>
+            `;
+            document.getElementById('orderSubtotal').textContent = 'Rp 0';
+            document.getElementById('orderTotalPrice').textContent = 'Rp 0';
+            return;
+        }
+
+        let grandTotal = 0;
+
+        container.innerHTML = currentOrder.items.map((order, index) => {
+            const spiceLevelPrice = order.spice_level ? (allSpiceLevels.find(sl => sl.id === order.spice_level)?.price || 0) : 0;
+            const customizationsPrice = order.customizations.reduce((sum, custId) => {
+                const cust = allCustomizationOptions.find(c => c.id === custId);
+                return sum + (cust ? parseFloat(cust.price) : 0);
+            }, 0);
+            const toppingsPrice = order.toppings.reduce((sum, t) => sum + (t.unit_price * t.quantity), 0);
+            const orderTotal = (order.base_price + spiceLevelPrice + customizationsPrice + toppingsPrice) * order.quantity;
+            grandTotal += orderTotal;
+
+            const spiceLevel = allSpiceLevels.find(sl => sl.id === order.spice_level);
+
+            return `
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0"><i class="ti ti-soup"></i> Seblak #${index + 1}</h6>
+                            <small class="text-muted">${order.quantity}x @ Rp ${formatPrice((order.base_price + spiceLevelPrice + customizationsPrice + toppingsPrice))}</small>
+                        </div>
+                        <strong class="text-success">Rp ${formatPrice(orderTotal)}</strong>
+                    </div>
+                    ${spiceLevel ? `<small class="text-muted d-block">🌶️ ${spiceLevel.name}</small>` : ''}
+                    ${order.customizations.length > 0 ? `
+                        <small class="text-muted d-block">
+                            🔧 ${order.customizations.map(cId => allCustomizationOptions.find(c => c.id === cId)?.name).filter(Boolean).join(', ')}
+                        </small>
+                    ` : ''}
+                    ${order.toppings.length > 0 ? `
+                        <small class="text-muted d-block">
+                            🧀 ${order.toppings.map(t => t.topping_name).join(', ')}
+                        </small>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('orderSubtotal').textContent = 'Rp ' + formatPrice(grandTotal);
+        document.getElementById('orderTotalPrice').textContent = 'Rp ' + formatPrice(grandTotal);
     }
 
 
@@ -636,268 +1127,240 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         }
     }
 
-    function renderProducts() {
-        const container = document.getElementById('productsList');
-
-        if (allProducts.length === 0) {
-            container.innerHTML = '<div class="col-12"><p class="text-center text-muted">Tidak ada produk tersedia</p></div>';
-            return;
-        }
-
-        container.innerHTML = allProducts.map(product => `
-            <div class="col-xl-3 col-md-6 col-sm-12 mb-3 product-item">
-                <div class="card h-100 menu-card ${isProductSelected(product.id) ? 'border-primary' : ''}" style="cursor: pointer;" onclick="toggleProduct('${product.id}')">
-                    <div class="card-image-container position-relative" style="height: 150px; overflow: hidden;">
-                        ${getImageHTML(product.image_url, product.name, 'medium')}
-                        <!-- Status badge -->
-                        <div class="position-absolute top-0 end-0 p-2">
-                            ${isProductSelected(product.id) ?
-                '<span class="badge bg-primary">Dipilih</span>' :
-                '<span class="badge bg-light text-dark">Tersedia</span>'
-            }
-                        </div>
-                    </div>
-                    <div class="card-body d-flex flex-column">
-                        <h6 class="card-title mb-1">${product.name}</h6>
-                        <p class="card-text text-muted f-12 flex-grow-1">${product.description || 'Deskripsi produk seblak'}</p>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-light-primary text-primary">Seblak</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0 text-success">Rp ${formatPrice(product.price)}</h5>
-                            <div class="btn-group" role="group">
-                                ${isProductSelected(product.id) ? `
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateProductQty('${product.id}', -1); event.stopPropagation();" title="Kurangi">
-                                        <i class="ti ti-minus"></i>
-                                    </button>
-                                    <span class="btn btn-sm btn-primary">${getProductQty(product.id)}</span>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="updateProductQty('${product.id}', 1); event.stopPropagation();" title="Tambah">
-                                        <i class="ti ti-plus"></i>
-                                    </button>
-                                ` : `
-                                    <button type="button" class="btn btn-sm btn-outline-primary" title="Pilih Produk">
-                                        <i class="ti ti-plus"></i>
-                                    </button>
-                                `}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function isProductSelected(productId) {
-        return currentOrder.items.some(item => item.product_id === productId);
-    }
-
-    function getProductQty(productId) {
-        const item = currentOrder.items.find(item => item.product_id === productId);
-        return item ? item.quantity : 0;
-    }
-
-    function toggleProduct(productId) {
-        const product = allProducts.find(p => p.id === productId);
-        if (!product) return;
-
-        const existingIndex = currentOrder.items.findIndex(item => item.product_id === productId);
-
-        if (existingIndex >= 0) {
-            // Remove product
-            currentOrder.items.splice(existingIndex, 1);
-            renderProducts();
-            updateSelectedItemsList();
-        } else {
-            // Check if product has variants (levels)
-            if (product.variants && product.variants.length > 0) {
-                // Show variant selection modal
-                showVariantSelectionModal(product);
-            } else {
-                // Add product directly without variants
-                currentOrder.items.push({
-                    id: 'item_' + Date.now(),
-                    product_id: product.id,
-                    product_name: product.name,
-                    unit_price: product.price,
-                    quantity: 1,
-                    toppings: [],
-                    variants: []
-                });
-                renderProducts();
-                updateSelectedItemsList();
-            }
-        }
-    }
-
-    function updateProductQty(productId, change) {
-        const item = currentOrder.items.find(item => item.product_id === productId);
-        if (!item) return;
-
-        item.quantity = Math.max(1, item.quantity + change);
-        renderProducts();
-        updateSelectedItemsList();
-    }
-
-    // Update the selected items list in Step 2
-    function updateSelectedItemsList() {
-        const container = document.getElementById('selectedItemsList');
-        if (!container) return;
-
-        if (currentOrder.items.length === 0) {
-            container.innerHTML = `
-                <div class="text-center text-muted">
-                    <i class="ti ti-shopping-cart" style="font-size: 48px;"></i>
-                    <p class="mt-2">Belum ada produk dipilih</p>
-                </div>
-            `;
-            document.getElementById('orderTotalPrice').textContent = 'Rp 0';
-            return;
-        }
-
-        let total = 0;
-        container.innerHTML = currentOrder.items.map((item, index) => {
-            const itemSubtotal = item.unit_price * item.quantity;
-            const toppingsSubtotal = item.toppings.reduce((sum, t) => sum + (t.unit_price * t.quantity), 0);
-            const itemTotal = itemSubtotal + toppingsSubtotal;
-            total += itemTotal;
-
-            return `
-                <div class="border-bottom pb-3 mb-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="flex-grow-1">
-                            <h6 class="mb-1">${item.product_name}</h6>
-                            <small class="text-muted">${item.quantity}x Rp ${formatPrice(item.unit_price)}</small>
-                            ${item.variants && item.variants.length > 0 ? `
-                                <div class="mt-1">
-                                    ${item.variants.map(v => `
-                                        <span class="badge bg-light-primary text-primary me-1">
-                                            <i class="ti ti-adjustments-horizontal"></i> ${v.option_name}
-                                        </span>
-                                    `).join('')}
-                                </div>
-                            ` : ''}
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeItem('${item.id}')" title="Hapus">
-                            <i class="ti ti-trash"></i>
-                        </button>
-                    </div>
-                    
-                    ${item.toppings.length > 0 ? `
-                        <div class="ps-3 mb-2">
-                            ${item.toppings.map(t => `
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <small class="text-muted">+ ${t.topping_name} (${t.quantity}x)</small>
-                                    <div class="d-flex align-items-center gap-1">
-                                        <small class="text-success">Rp ${formatPrice(t.unit_price * t.quantity)}</small>
-                                        <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeTopping('${item.id}', '${t.topping_id}')" title="Hapus topping">
-                                            <i class="ti ti-x" style="font-size: 14px;"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    ` : ''}
-                    
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="showToppingsModal('${item.id}')">
-                            <i class="ti ti-plus"></i> Tambah Topping
-                        </button>
-                        <strong class="text-success">Rp ${formatPrice(itemTotal)}</strong>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        document.getElementById('orderTotalPrice').textContent = 'Rp ' + formatPrice(total);
-    }
-
-    // Remove item from order
-    function removeItem(itemId) {
-        const index = currentOrder.items.findIndex(i => i.id === itemId);
-        if (index >= 0) {
-            currentOrder.items.splice(index, 1);
-            renderProducts();
-            updateSelectedItemsList();
-        }
-    }
-
-    // Remove topping from item
-    function removeTopping(itemId, toppingId) {
-        const item = currentOrder.items.find(i => i.id === itemId);
-        if (!item) return;
-
-        const toppingIndex = item.toppings.findIndex(t => t.topping_id === toppingId);
-        if (toppingIndex >= 0) {
-            item.toppings.splice(toppingIndex, 1);
-            updateSelectedItemsList();
-        }
-    }
-
-    function filterProducts() {
-        const search = document.getElementById('searchProduct').value.toLowerCase();
-        const items = document.querySelectorAll('.product-item');
-
-        items.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            item.style.display = text.includes(search) ? 'block' : 'none';
-        });
-    }
-
     function validateStep2() {
         if (currentOrder.items.length === 0) {
-            showNotification('Pilih minimal 1 produk', 'error');
+            showNotification('Tambahkan minimal 1 pesanan seblak', 'error');
             return false;
         }
+
+        // Check if all orders have spice level selected
+        for (let i = 0; i < currentOrder.items.length; i++) {
+            const order = currentOrder.items[i];
+            if (!order.spice_level) {
+                showNotification(`Pilih level pedas untuk Seblak #${i + 1}`, 'error');
+                return false;
+            }
+        }
+
         return true;
     }
 
-    // Show toppings modal (renamed from showToppingsSection for clarity)
-    function showToppingsModal(itemId) {
-        const item = currentOrder.items.find(i => i.id === itemId);
-        if (!item) return;
+    // Show toppings modal for specific seblak order
+    function showToppingsModal(orderId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
 
         // Get unique topping categories
-        const toppingCategories = [...new Set(allToppings.map(t => t.category_name))];
+        const toppingCategories = [...new Set(allToppings.map(t => t.category_name).filter(Boolean))];
 
         Swal.fire({
-            title: `Pilih Topping untuk ${item.product_name}`,
+            title: `<i class="ti ti-cheese me-2"></i>Pilih Topping`,
             html: `
                 <div class="container-fluid">
-                    <div class="row mb-3">
-                        <div class="col-md-8">
-                            <input type="text" id="toppingSearch" class="form-control" placeholder="Cari topping...">
+                    <!-- Search and Filter -->
+                    <div class="row g-2 mb-4">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="ti ti-search"></i>
+                                </span>
+                                <input type="text" id="toppingSearch" class="form-control border-start-0" 
+                                       placeholder="Cari topping..." 
+                                       onkeyup="renderToppingsGrid('${orderId}')">
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <select id="toppingCategoryFilter" class="form-select">
-                                <option value="">Semua Kategori</option>
-                                ${toppingCategories.map(category => `<option value="${category}">${category}</option>`).join('')}
-                            </select>
+                        <div class="col-md-6">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="filter-btn active" data-category="" onclick="filterToppingsByCategory('${orderId}', '')">
+                                    Semua
+                                </button>
+                                ${toppingCategories.map(category => `
+                                    <button type="button" class="filter-btn" data-category="${category}" onclick="filterToppingsByCategory('${orderId}', '${category}')">
+                                        ${category}
+                                    </button>
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
-                    <div class="row" id="toppingsGrid" style="max-height: 400px; overflow-y: auto;">
+                    
+                    <!-- Toppings Grid -->
+                    <div class="row g-3" id="toppingsGrid" style="max-height: 450px; overflow-y: auto;">
                         <!-- Toppings will be rendered here -->
                     </div>
                 </div>
             `,
-            width: '80%',
+            width: '90%',
             showConfirmButton: true,
-            confirmButtonText: 'Selesai',
+            confirmButtonText: '<i class="ti ti-check me-2"></i>Selesai',
+            confirmButtonColor: '#e53734',
             showCloseButton: true,
+            customClass: {
+                popup: 'toppings-modal',
+                confirmButton: 'btn btn-primary px-4'
+            },
             didOpen: () => {
-                renderToppingsGrid(itemId);
-                document.getElementById('toppingSearch').addEventListener('keyup', () => renderToppingsGrid(itemId));
-                document.getElementById('toppingCategoryFilter').addEventListener('change', () => renderToppingsGrid(itemId));
+                renderToppingsGrid(orderId);
             },
             didClose: () => {
-                // Update selected items list when modal closes
-                updateSelectedItemsList();
+                renderSeblakOrdersList();
+                updateOrderSummary();
             }
         });
     }
 
-    // Keep the old function name for backward compatibility
-    function showToppingsSection(itemId) {
-        showToppingsModal(itemId);
+    // Filter toppings by category
+    function filterToppingsByCategory(orderId, category) {
+        // Update active button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            if (btn.getAttribute('data-category') === category) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // Re-render grid with filter
+        renderToppingsGrid(orderId, category);
+    }
+
+    // Render toppings grid in modal
+    function renderToppingsGrid(orderId, categoryFilter = null) {
+        const search = document.getElementById('toppingSearch')?.value.toLowerCase() || '';
+        const category = categoryFilter !== null ? categoryFilter :
+            (document.querySelector('.filter-btn.active')?.getAttribute('data-category') || '');
+        const toppingsGrid = document.getElementById('toppingsGrid');
+        if (!toppingsGrid) return;
+
+        const filteredToppings = allToppings.filter(topping => {
+            const nameMatch = topping.name.toLowerCase().includes(search);
+            const categoryMatch = category ? topping.category_name === category : true;
+            return nameMatch && categoryMatch;
+        });
+
+        if (filteredToppings.length === 0) {
+            toppingsGrid.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                    <i class="ti ti-search-off" style="font-size: 48px; opacity: 0.3;"></i>
+                    <p class="mt-3">Tidak ada topping ditemukan</p>
+                </div>
+            `;
+            return;
+        }
+
+        toppingsGrid.innerHTML = filteredToppings.map(topping => {
+            const isSelected = isToppingSelectedInOrder(orderId, topping.id);
+            const toppingQty = getToppingQuantityInOrder(orderId, topping.id);
+
+            return `
+                <div class="col-6 col-sm-4 col-md-3">
+                    <label class="topping-card card h-100 mb-0 ${isSelected ? 'active' : ''}" style="cursor: pointer;">
+                        <input type="checkbox" class="d-none" 
+                               ${isSelected ? 'checked' : ''}
+                               onchange="toggleToppingInOrder('${orderId}', '${topping.id}')">
+                        
+                        <div class="position-relative" style="aspect-ratio: 1; overflow: hidden; background: #f8f9fa;">
+                            ${topping.image ? `
+                                <img src="uploads/menu-images/${topping.image}" alt="${topping.name}" 
+                                     style="width: 100%; height: 100%; object-fit: cover;">
+                            ` : `
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="ti ti-cheese text-muted" style="font-size: 3rem;"></i>
+                                </div>
+                            `}
+                            
+                            <!-- Checkbox Overlay -->
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input bg-white" 
+                                           ${isSelected ? 'checked' : ''}
+                                           onclick="event.stopPropagation();">
+                                </div>
+                            </div>
+
+                            <!-- Category Badge -->
+                            ${topping.category_name ? `
+                                <div class="position-absolute bottom-0 start-0 p-2">
+                                    <span class="badge bg-dark bg-opacity-75 small">${topping.category_name}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="card-body p-2">
+                            <h6 class="card-title small mb-1 text-truncate fw-bold">${topping.name}</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-success fw-bold small">Rp ${formatPrice(topping.price)}</span>
+                                ${isSelected ? `
+                                    <div class="btn-group btn-group-sm" role="group" onclick="event.stopPropagation(); event.preventDefault();">
+                                        <button type="button" class="btn btn-outline-secondary py-0 px-2" 
+                                                onclick="updateToppingQtyInOrder('${orderId}', '${topping.id}', -1);">
+                                            <i class="ti ti-minus" style="font-size: 0.8rem;"></i>
+                                        </button>
+                                        <span class="btn btn-primary py-0 px-2 small">${toppingQty}</span>
+                                        <button type="button" class="btn btn-outline-secondary py-0 px-2" 
+                                                onclick="updateToppingQtyInOrder('${orderId}', '${topping.id}', 1);">
+                                            <i class="ti ti-plus" style="font-size: 0.8rem;"></i>
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Check if topping is selected in specific order
+    function isToppingSelectedInOrder(orderId, toppingId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return false;
+        return order.toppings.some(t => t.topping_id === toppingId);
+    }
+
+    // Get topping quantity in specific order
+    function getToppingQuantityInOrder(orderId, toppingId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return 0;
+        const topping = order.toppings.find(t => t.topping_id === toppingId);
+        return topping ? topping.quantity : 0;
+    }
+
+    // Toggle topping in specific order
+    function toggleToppingInOrder(orderId, toppingId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        const toppingIndex = order.toppings.findIndex(t => t.topping_id === toppingId);
+
+        if (toppingIndex >= 0) {
+            // Remove topping
+            order.toppings.splice(toppingIndex, 1);
+        } else {
+            // Add topping
+            const topping = allToppings.find(t => t.id === toppingId);
+            if (topping) {
+                order.toppings.push({
+                    topping_id: topping.id,
+                    topping_name: topping.name,
+                    unit_price: parseFloat(topping.price),
+                    quantity: 1
+                });
+            }
+        }
+
+        renderToppingsGrid(orderId);
+    }
+
+    // Update topping quantity in specific order
+    function updateToppingQtyInOrder(orderId, toppingId, change) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        const topping = order.toppings.find(t => t.topping_id === toppingId);
+        if (topping) {
+            topping.quantity = Math.max(1, topping.quantity + change);
+            renderToppingsGrid(orderId);
+        }
     }
 
 
@@ -1475,6 +1938,9 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 product_name: item.product_name,
                 quantity: item.quantity,
                 unit_price: item.unit_price,
+                spice_level_id: item.spice_level, // Include spice level
+                customizations: item.customizations || {}, // Include customizations as object
+                notes: item.notes || '', // Include item notes
                 toppings: item.toppings ? item.toppings.map(t => ({
                     topping_id: t.topping_id,
                     topping_name: t.topping_name,
@@ -1908,57 +2374,63 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     // Get order list HTML
     function getOrderListHTML() {
         return `
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="ti ti-search"></i></span>
-                        <input type="text" class="form-control" id="searchOrder" placeholder="Cari transaksi..." onkeyup="searchOrders()">
+            <!-- Table Controls Section -->
+            <div class="table-controls-section p-3 mb-0">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="ti ti-search"></i></span>
+                            <input type="text" class="form-control" id="searchOrder" placeholder="Cari transaksi..." onkeyup="searchOrders()">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filterStatus" onchange="loadOrders()">
+                            <option value="">Semua Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="completed">Selesai</option>
+                            <option value="cancelled">Dibatalkan</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" class="form-control" id="filterDate" value="${new Date().toISOString().split('T')[0]}" onchange="loadOrders()">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="d-flex btn btn-secondary w-100" onclick="loadOrders()">
+                            <i class="ti ti-refresh me-2"></i> Refresh
+                        </button>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <select class="form-select" id="filterStatus" onchange="loadOrders()">
-                        <option value="">Semua Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="completed">Selesai</option>
-                        <option value="cancelled">Dibatalkan</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <input type="date" class="form-control" id="filterDate" value="${new Date().toISOString().split('T')[0]}" onchange="loadOrders()">
-                </div>
-                <div class="col-md-2">
-                    <button class="d-flex btn btn-secondary w-100" onclick="loadOrders()">
-                        <i class="ti ti-refresh me-2"></i> Refresh
-                    </button>
-                </div>
             </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>No. Transaksi</th>
-                            <th>Tanggal & Waktu</th>
-                            <th>Customer</th>
-                            <th>Items</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="orderTableBody">
-                        <tr>
-                            <td colspan="8" class="text-center">
-                                <div class="spinner-border spinner-border-sm" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                                Loading orders...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            
+            <!-- Table Container -->
+            <div class="table-container">
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light table-header-sticky">
+                            <tr class="column-headers">
+                                <th style="min-width: 50px;">#</th>
+                                <th style="min-width: 150px;">No. Transaksi</th>
+                                <th style="min-width: 180px;">Tanggal & Waktu</th>
+                                <th style="min-width: 150px;">Customer</th>
+                                <th style="min-width: 200px;">Items</th>
+                                <th style="min-width: 120px;">Total</th>
+                                <th style="min-width: 100px;">Status</th>
+                                <th style="min-width: 120px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    Loading orders...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         `;
     }
@@ -2093,3 +2565,125 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         allOrders = temp;
     }
 </script>
+
+<style>
+    /* Table container */
+    .table-container {
+        position: relative;
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 0.375rem 0.375rem;
+        border-top: none;
+        overflow: hidden;
+    }
+
+    /* Scrollable table container */
+    .table-responsive {
+        border: none;
+        border-radius: 0;
+        position: relative;
+        background: white;
+    }
+
+    /* Sticky table header */
+    .table-header-sticky {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: var(--bs-gray-100) !important;
+    }
+
+    .table-header-sticky th {
+        background-color: var(--bs-gray-100) !important;
+        border-bottom: 2px solid #dee2e6;
+        border-top: 1px solid #dee2e6;
+        font-weight: 600;
+        color: #495057;
+        padding: 1rem 0.75rem;
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        border-left: none;
+        border-right: none;
+        background-clip: padding-box;
+    }
+
+    .table-header-sticky th:last-child {
+        border-right: none;
+    }
+
+    /* Ensure table borders don't scroll with content */
+    .table-responsive table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table-responsive .table thead th {
+        border-left: none;
+        border-right: none;
+    }
+
+    .table-responsive .table thead th:first-child {
+        border-left: none;
+    }
+
+    /* External controls section styling */
+    .table-controls-section {
+        background-color: var(--bs-gray-100) !important;
+        border: 1px solid #dee2e6 !important;
+        border-bottom: none !important;
+        border-radius: 0.375rem 0.375rem 0 0 !important;
+    }
+
+    /* Custom scrollbar styling */
+    .table-responsive::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    /* Table header controls layout */
+    .table-header-controls {
+        display: flex;
+        align-items: center;
+        justify-content: start;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    /* Search section */
+    .search-section {
+        flex: 1;
+        min-width: 250px;
+        max-width: 400px;
+    }
+
+    .search-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-input {
+        background: white;
+        border: 2px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 8px 12px 8px 35px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        width: 100%;
+    }
+</style>
