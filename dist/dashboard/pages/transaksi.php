@@ -2375,29 +2375,36 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     function getOrderListHTML() {
         return `
             <!-- Table Controls Section -->
-            <div class="table-controls-section p-3 mb-0">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="ti ti-search"></i></span>
-                            <input type="text" class="form-control" id="searchOrder" placeholder="Cari transaksi..." onkeyup="searchOrders()">
+            <div class="table-controls-section table-light p-3 mb-0 border rounded-top">
+                <div class="table-header-controls">
+                    <div class="search-section">
+                        <div class="search-input-wrapper">
+                            <i class="ti ti-search search-icon"></i>
+                            <input type="text" class="form-control search-input" id="searchOrder" 
+                                   placeholder="Cari transaksi..." onkeyup="searchOrders()" onchange="searchOrders()">
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <select class="form-select" id="filterStatus" onchange="loadOrders()">
-                            <option value="">Semua Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="completed">Selesai</option>
-                            <option value="cancelled">Dibatalkan</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <input type="date" class="form-control" id="filterDate" value="${new Date().toISOString().split('T')[0]}" onchange="loadOrders()">
-                    </div>
-                    <div class="col-md-2">
-                        <button class="d-flex btn btn-secondary w-100" onclick="loadOrders()">
-                            <i class="ti ti-refresh me-2"></i> Refresh
+                    
+                    <div class="filter-section d-flex gap-3 align-items-center">
+                        <div class="filter-select-wrapper">
+                            <i class="ti ti-filter filter-icon"></i>
+                            <select class="form-select filter-select" id="filterStatus" onchange="loadOrders()">
+                                <option value="">Semua Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="completed">Selesai</option>
+                                <option value="cancelled">Dibatalkan</option>
+                            </select>
+                        </div>
+                        
+                        <div class="date-input-wrapper">
+                            <i class="ti ti-calendar date-icon"></i>
+                            <input type="date" class="form-control filter-date" id="filterDate" 
+                                   value="${new Date().toISOString().split('T')[0]}" onchange="loadOrders()">
+                        </div>
+                        
+                        <button class="btn refresh-btn" onclick="loadOrders()">
+                            <i class="ti ti-refresh"></i> Refresh
                         </button>
                     </div>
                 </div>
@@ -2685,5 +2692,111 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         transition: all 0.3s ease;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         width: 100%;
+    }
+
+    .search-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        color: #6c757d;
+        font-size: 16px;
+        z-index: 1;
+    }
+
+    /* Filter section */
+    .filter-section {
+        flex-shrink: 0;
+    }
+
+    /* Enhanced form controls styling */
+    .filter-select-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .filter-icon {
+        position: absolute;
+        left: 8px;
+        color: #6c757d;
+        font-size: 14px;
+        z-index: 1;
+    }
+
+    .filter-select {
+        background: white;
+        border: 2px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 8px 12px 8px 30px;
+        font-size: 13px;
+        min-width: 150px;
+        transition: all 0.3s ease;
+        appearance: none;
+        background-image: url('data:image/svg+xml;utf8,<svg fill="%23666" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+    }
+
+    .filter-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    .date-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .date-icon {
+        position: absolute;
+        left: 8px;
+        color: #6c757d;
+        font-size: 14px;
+        z-index: 1;
+    }
+
+    .filter-date {
+        background: white;
+        border: 2px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 8px 12px 8px 30px;
+        font-size: 13px;
+        min-width: 150px;
+        transition: all 0.3s ease;
+    }
+
+    .filter-date:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    .refresh-btn {
+        background: white;
+        border: 2px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 8px 16px;
+        color: #495057;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+        min-width: 120px;
+        font-size: 13px;
+    }
+
+    .refresh-btn:hover {
+        border-color: #667eea;
+        background: #f8f9fa;
+        color: #667eea;
     }
 </style>
