@@ -128,6 +128,96 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 </div>
 <!-- [ Main Content ] end -->
 
+<!-- Topping Selection Modal - Clean & Minimal Design -->
+<div class="modal fade" id="toppingModal" tabindex="-1" aria-labelledby="toppingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+            <!-- Minimal Header -->
+            <div class="modal-header border-0 pb-2" style="background: #fff;">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div>
+                        <h5 class="modal-title fw-semibold mb-1" id="toppingModalLabel" style="color: #1f2937;">Pilih
+                            Topping</h5>
+                        <div class="d-flex align-items-center gap-3 mt-2">
+                            <span class="badge bg-light text-dark border" style="font-weight: 500; padding: 6px 12px;">
+                                <i class="ti ti-shopping-bag me-1" style="font-size: 14px;"></i>
+                                <span id="modalSelectedCounter">0 item</span>
+                            </span>
+                            <span class="badge bg-light text-success border border-success"
+                                style="font-weight: 500; padding: 6px 12px;">
+                                <span id="modalTotalPrice">Rp 0</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body px-4 pt-3" style="background: #f9fafb;">
+                <!-- Clean Search Bar -->
+                <div class="mb-3">
+                    <div class="position-relative">
+                        <i class="ti ti-search position-absolute"
+                            style="left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 18px;"></i>
+                        <input type="text" id="modalToppingSearch" class="form-control border-0 shadow-sm"
+                            placeholder="Cari topping..." autocomplete="off"
+                            style="padding-left: 42px; border-radius: 10px; background: white; height: 44px;">
+                    </div>
+                </div>
+
+                <!-- Minimal Category Filters -->
+                <div class="mb-4">
+                    <div class="d-flex gap-2 flex-wrap" id="modalCategoryFilters" style="margin-top: -4px;">
+                        <!-- Category filters will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Clean Selected Summary -->
+                <div id="modalSelectedSummary" class="mb-4" style="display: none;">
+                    <div class="p-3 bg-white border-0 shadow-sm" style="border-radius: 10px;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="ti ti-check-circle text-success me-2" style="font-size: 18px;"></i>
+                            <span class="fw-semibold" style="color: #1f2937; font-size: 14px;">Terpilih</span>
+                        </div>
+                        <div id="modalSelectedItems" class="d-flex flex-wrap gap-2">
+                            <!-- Selected items badges will be shown here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clean Toppings Grid -->
+                <div class="row g-3" id="modalToppingsGrid"
+                    style="max-height: 450px; overflow-y: auto; padding-right: 4px;">
+                    <!-- Topping cards will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Minimal Footer -->
+            <div class="modal-footer border-0 pt-3" style="background: #fff;">
+                <div class="d-flex gap-2 w-100">
+                    <button type="button" class="btn btn-sm text-danger border-0" id="btnClearAllToppings"
+                        style="background: #fef2f2; border-radius: 8px; padding: 8px 16px;">
+                        <i class="ti ti-trash" style="font-size: 16px;"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm text-warning border-0" id="btnAddPopularToppings"
+                        style="background: #fffbeb; border-radius: 8px; padding: 8px 16px;">
+                        <i class="ti ti-star" style="font-size: 16px;"></i>
+                    </button>
+                    <div class="flex-fill"></div>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal"
+                        style="border-radius: 8px; padding: 8px 20px; font-weight: 500;">
+                        Batal
+                    </button>
+                    <button type="button" class="btn btn-dark" id="btnConfirmToppings"
+                        style="border-radius: 8px; padding: 8px 24px; font-weight: 500;">
+                        <i class="ti ti-check me-1"></i>Selesai
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Midtrans Snap JS (Sandbox) -->
 <!-- IMPORTANT: Ganti YOUR_CLIENT_KEY_HERE dengan Client Key dari Midtrans Dashboard -->
 <!-- Dapatkan di: https://dashboard.sandbox.midtrans.com/settings/config_info -->
@@ -244,10 +334,22 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         }
     }
 
-    // Load orders
+    // Load orders with filters
     async function loadOrders() {
         try {
-            const response = await fetch('api/orders.php');
+            // Get filter values
+            const filterStatus = document.getElementById('filterStatus')?.value || '';
+            const filterDate = document.getElementById('filterDate')?.value || '';
+
+            // Build query parameters
+            const params = new URLSearchParams();
+            if (filterStatus) params.append('status', filterStatus);
+            if (filterDate) params.append('date', filterDate);
+
+            const queryString = params.toString();
+            const url = queryString ? `api/orders.php?${queryString}` : 'api/orders.php';
+
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -665,10 +767,15 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                     transform: translateY(-2px);
                     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                 }
+
+                .topping-card:hover .position-absolute:last-child {
+                    opacity: 1 !important;
+                }
                 
-                .topping-card.selected {
-                    border-color: #0d6efd;
-                    background-color: rgba(13, 110, 253, 0.05);
+                .topping-card.active {
+                    border-color: #dc3545;
+                    background-color: rgba(220, 53, 69, 0.05);
+                    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
                 }
                 
                 .topping-card img {
@@ -866,18 +973,52 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                     <!-- Pilih Level Pedas -->
                     <div class="mb-4">
                         <h6 class="fw-bold mb-3"><i class="ti ti-flame me-2 text-danger"></i>Pilih Level Pedas <span class="text-danger">*</span></h6>
-                        <div class="row g-2">
+                        <div class="row g-3">
                             ${allSpiceLevels.map(level => {
                 const isSelected = order.spice_level === level.id;
                 const icon = getSpiceIcon(level.name);
+
                 return `
-                                    <div class="col-6 col-sm-4 col-md-2">
-                                        <label class="spice-card card h-100 text-center ${isSelected ? 'active' : ''}" onclick="selectSpiceLevel('${order.id}', '${level.id}')">
+                                    <div class="col-6 col-sm-4 col-md-3">
+                                        <label class="topping-card card h-100 mb-0 ${isSelected ? 'active' : ''}" 
+                                               onclick="selectSpiceLevel('${order.id}', '${level.id}')" 
+                                               style="cursor: pointer;">
                                             <input type="radio" name="spiceLevel_${order.id}" value="${level.id}" class="d-none" ${isSelected ? 'checked' : ''}>
-                                            <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
-                                                <i class="${icon} fs-2 mb-2"></i>
-                                                <span class="fw-medium small">${level.name}</span>
-                                                <small class="text-muted">+ Rp ${formatPrice(level.price)}</small>
+                                            
+                                            <div class="position-relative" style="aspect-ratio: 1; overflow: hidden; background: linear-gradient(135deg, #fff5f5, #fed7d7);">
+                                                ${level.image ? `
+                                                    <img src="../../../uploads/menu-images/${level.image}" alt="${level.name}" 
+                                                         style="width: 100%; height: 100%; object-fit: cover;"
+                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                    <div class="d-flex align-items-center justify-content-center h-100 position-absolute top-0 start-0 w-100" style="display: none !important;">
+                                                        <i class="${icon} text-danger" style="font-size: 3rem;"></i>
+                                                    </div>
+                                                ` : `
+                                                    <div class="d-flex align-items-center justify-content-center h-100">
+                                                        <i class="${icon} text-danger" style="font-size: 3rem;"></i>
+                                                    </div>
+                                                `}
+                                                
+                                                <!-- Selection Indicator -->
+                                                ${isSelected ? `
+                                                    <div class="position-absolute top-0 end-0 p-2">
+                                                        <div class="bg-danger rounded-circle p-1">
+                                                            <i class="ti ti-check text-white"></i>
+                                                        </div>
+                                                    </div>
+                                                ` : ''}
+                                                
+                                                <!-- Level Badge -->
+                                                <div class="position-absolute bottom-0 start-0 p-2">
+                                                    <span class="badge bg-danger bg-opacity-90 small">${level.name.replace('Pedas ', '')}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="card-body p-2">
+                                                <h6 class="card-title small mb-1 text-truncate fw-bold">${level.name}</h6>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="text-danger fw-bold small">${level.price > 0 ? `+ Rp ${formatPrice(level.price)}` : 'Gratis'}</span>
+                                                </div>
                                             </div>
                                         </label>
                                     </div>
@@ -891,22 +1032,84 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
                     <!-- Pilih Topping Tambahan -->
                     <div class="mb-4">
-                        <h6 class="fw-bold mb-3"><i class="ti ti-cheese me-2 text-warning"></i>Pilih Topping Tambahan</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0">
+                                <i class="ti ti-cheese me-2 text-warning"></i>Pilih Topping Tambahan
+                                ${order.toppings.length > 0 ? `<span class="badge bg-warning text-dark ms-2">${order.toppings.length} item</span>` : ''}
+                            </h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="showToppingsModal('${order.id}')">
+                                <i class="ti ti-plus me-1"></i>Tambah Topping
+                            </button>
+                        </div>
+                        
                         ${order.toppings.length > 0 ? `
-                            <div class="row g-2 mb-3">
-                                ${order.toppings.map(t => `
-                                    <div class="col-auto">
-                                        <span class="badge bg-primary px-3 py-2">
-                                            ${t.topping_name} (${t.quantity}x) - Rp ${formatPrice(t.unit_price * t.quantity)}
-                                            <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.7rem;" onclick="removeToppingFromOrder('${order.id}', '${t.topping_id}')"></button>
-                                        </span>
-                                    </div>
-                                `).join('')}
+                            <div class="row g-3">
+                                ${order.toppings.map(t => {
+                const topping = allToppings.find(tp => tp.id === t.topping_id);
+                const totalPrice = t.unit_price * t.quantity;
+
+                return `
+                                        <div class="col-6 col-sm-4 col-md-3">
+                                            <div class="card topping-card h-100 border-warning">
+                                                <div class="position-relative" style="aspect-ratio: 1; overflow: hidden; background: linear-gradient(135deg, #fff3cd, #ffc107);">
+                                                    ${topping && topping.image ? `
+                                                        <img src="../../../uploads/menu-images/${topping.image}" alt="${t.topping_name}" 
+                                                             style="width: 100%; height: 100%; object-fit: cover;">
+                                                    ` : `
+                                                        <div class="d-flex align-items-center justify-content-center h-100">
+                                                            <i class="ti ti-cheese text-warning" style="font-size: 3rem; opacity: 0.6;"></i>
+                                                        </div>
+                                                    `}
+                                                    
+                                                    <!-- Remove Button -->
+                                                    <div class="position-absolute top-0 end-0 p-2">
+                                                        <button type="button" class="btn btn-sm btn-danger rounded-circle p-1" 
+                                                                style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;"
+                                                                onclick="removeToppingFromOrder('${order.id}', '${t.topping_id}')"
+                                                                title="Hapus ${t.topping_name}">
+                                                            <i class="ti ti-x" style="font-size: 1rem;"></i>
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <!-- Quantity Badge -->
+                                                    <div class="position-absolute bottom-0 end-0 p-2">
+                                                        <span class="badge bg-primary fs-6">${t.quantity}x</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="card-body p-2">
+                                                    <h6 class="card-title small mb-1 text-truncate fw-bold" title="${t.topping_name}">
+                                                        ${t.topping_name}
+                                                    </h6>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="text-success fw-bold small">Rp ${formatPrice(totalPrice)}</span>
+                                                        <div class="btn-group btn-group-sm" role="group">
+                                                            <button type="button" class="btn btn-outline-secondary py-0 px-2" 
+                                                                    onclick="updateToppingQtyInOrder('${order.id}', '${t.topping_id}', -1);"
+                                                                    title="Kurangi">
+                                                                <i class="ti ti-minus" style="font-size: 0.8rem;"></i>
+                                                            </button>
+                                                            <span class="btn btn-primary py-0 px-2 small">${t.quantity}</span>
+                                                            <button type="button" class="btn btn-outline-secondary py-0 px-2" 
+                                                                    onclick="updateToppingQtyInOrder('${order.id}', '${t.topping_id}', 1);"
+                                                                    title="Tambah">
+                                                                <i class="ti ti-plus" style="font-size: 0.8rem;"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+            }).join('')}
                             </div>
-                        ` : ''}
-                        <button type="button" class="btn btn-outline-primary" onclick="showToppingsModal('${order.id}')">
-                            <i class="ti ti-plus me-2"></i>Tambah Topping
-                        </button>
+                        ` : `
+                            <div class="text-center py-4 bg-light rounded">
+                                <i class="ti ti-cheese text-muted" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="text-muted mb-0 mt-2">Belum ada topping dipilih</p>
+                                <small class="text-muted">Klik tombol "Tambah Topping" untuk memilih</small>
+                            </div>
+                        `}
                     </div>
 
                     <!-- Notes -->
@@ -937,22 +1140,38 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
     // Helper function to render customization options grouped by type
     function renderCustomizationOptions(order) {
-        // Group customization options by component_type
-        const optionsByType = {};
+        // Group customization options by analyzing their names
+        const optionsByType = {
+            'kencur_level': [],
+            'broth_flavor': [],
+            'egg_type': []
+        };
+
         allCustomizationOptions.forEach(option => {
-            const type = option.component_type || 'other';
-            if (!optionsByType[type]) {
-                optionsByType[type] = [];
+            const name = option.name.toLowerCase();
+
+            // Group by name patterns
+            if (name.includes('kencur')) {
+                optionsByType['kencur_level'].push(option);
+            } else if (name.includes('kuah') || name.includes('nyemek')) {
+                optionsByType['broth_flavor'].push(option);
+            } else if (name.includes('orak') || name.includes('telur') || name.includes('teluh')) {
+                optionsByType['egg_type'].push(option);
             }
-            optionsByType[type].push(option);
+        });
+
+        // Remove empty groups
+        Object.keys(optionsByType).forEach(key => {
+            if (optionsByType[key].length === 0) {
+                delete optionsByType[key];
+            }
         });
 
         // Type labels
         const typeLabels = {
             'egg_type': 'Tipe Telur',
             'broth_flavor': 'Rasa Kuah',
-            'kencur_level': 'Level Kencur',
-            'other': 'Lainnya'
+            'kencur_level': 'Level Kencur'
         };
 
         if (Object.keys(optionsByType).length === 0) return '';
@@ -1146,69 +1365,78 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     }
 
     // Show toppings modal for specific seblak order
+    let currentModalOrderId = null;
+
     function showToppingsModal(orderId) {
         const order = currentOrder.items.find(o => o.id === orderId);
         if (!order) return;
 
+        // Store current order ID for modal
+        currentModalOrderId = orderId;
+
         // Get unique topping categories
         const toppingCategories = [...new Set(allToppings.map(t => t.category_name).filter(Boolean))];
 
-        Swal.fire({
-            title: `<i class="ti ti-cheese me-2"></i>Pilih Topping`,
-            html: `
-                <div class="container-fluid">
-                    <!-- Search and Filter -->
-                    <div class="row g-2 mb-4">
-                        <div class="col-md-6">
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0">
-                                    <i class="ti ti-search"></i>
-                                </span>
-                                <input type="text" id="toppingSearch" class="form-control border-start-0" 
-                                       placeholder="Cari topping..." 
-                                       onkeyup="renderToppingsGrid('${orderId}')">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="d-flex gap-2 flex-wrap">
-                                <button type="button" class="filter-btn active" data-category="" onclick="filterToppingsByCategory('${orderId}', '')">
-                                    Semua
-                                </button>
-                                ${toppingCategories.map(category => `
-                                    <button type="button" class="filter-btn" data-category="${category}" onclick="filterToppingsByCategory('${orderId}', '${category}')">
-                                        ${category}
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Toppings Grid -->
-                    <div class="row g-3" id="toppingsGrid" style="max-height: 450px; overflow-y: auto;">
-                        <!-- Toppings will be rendered here -->
-                    </div>
-                </div>
-            `,
-            width: '90%',
-            showConfirmButton: true,
-            confirmButtonText: '<i class="ti ti-check me-2"></i>Selesai',
-            confirmButtonColor: '#e53734',
-            showCloseButton: true,
-            customClass: {
-                popup: 'toppings-modal',
-                confirmButton: 'btn btn-primary px-4'
-            },
-            didOpen: () => {
-                renderToppingsGrid(orderId);
-            },
-            didClose: () => {
-                renderSeblakOrdersList();
-                updateOrderSummary();
-            }
+        // Build category filters - Clean & Minimal Style
+        const categoryFiltersHTML = `
+            <button type="button" class="filter-btn active" data-category="" 
+                    style="border: none; background: #1f2937; color: white; border-radius: 20px; padding: 6px 16px; font-size: 13px; font-weight: 500; transition: all 0.2s;">
+                Semua
+            </button>
+            ${toppingCategories.map(category => `
+                <button type="button" class="filter-btn" data-category="${category}"
+                        style="border: 1px solid #e5e7eb; background: white; color: #6b7280; border-radius: 20px; padding: 6px 16px; font-size: 13px; font-weight: 500; transition: all 0.2s;">
+                    ${category}
+                </button>
+            `).join('')}
+        `;
+
+        document.getElementById('modalCategoryFilters').innerHTML = categoryFiltersHTML;
+
+        // Add event listeners to filter buttons with clean style toggle
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'white';
+                    b.style.color = '#6b7280';
+                    b.style.border = '1px solid #e5e7eb';
+                });
+                this.classList.add('active');
+                this.style.background = '#1f2937';
+                this.style.color = 'white';
+                this.style.border = 'none';
+                renderModalToppingsGrid();
+            });
         });
+
+        // Add event listener to search
+        document.getElementById('modalToppingSearch').addEventListener('input', renderModalToppingsGrid);
+
+        // Add event listeners to action buttons
+        document.getElementById('btnClearAllToppings').onclick = () => clearAllToppingsInOrder(orderId);
+        document.getElementById('btnAddPopularToppings').onclick = () => addPopularToppings(orderId);
+        document.getElementById('btnConfirmToppings').onclick = () => {
+            bootstrap.Modal.getInstance(document.getElementById('toppingModal')).hide();
+        };
+
+        // Initial render
+        renderModalToppingsGrid();
+        updateModalCounters();
+        updateModalSelectedSummary();
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('toppingModal'));
+        modal.show();
+
+        // Update main page when modal closes
+        document.getElementById('toppingModal').addEventListener('hidden.bs.modal', function () {
+            renderSeblakOrdersList();
+            updateOrderSummary();
+        }, { once: true });
     }
 
-    // Filter toppings by category
+    // Filter toppings by category - legacy for compatibility
     function filterToppingsByCategory(orderId, category) {
         // Update active button
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -1220,15 +1448,17 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         });
 
         // Re-render grid with filter
-        renderToppingsGrid(orderId, category);
+        renderModalToppingsGrid();
     }
 
     // Render toppings grid in modal
-    function renderToppingsGrid(orderId, categoryFilter = null) {
-        const search = document.getElementById('toppingSearch')?.value.toLowerCase() || '';
-        const category = categoryFilter !== null ? categoryFilter :
-            (document.querySelector('.filter-btn.active')?.getAttribute('data-category') || '');
-        const toppingsGrid = document.getElementById('toppingsGrid');
+    function renderModalToppingsGrid() {
+        const orderId = currentModalOrderId;
+        if (!orderId) return;
+
+        const search = document.getElementById('modalToppingSearch')?.value.toLowerCase() || '';
+        const category = document.querySelector('.filter-btn.active')?.getAttribute('data-category') || '';
+        const toppingsGrid = document.getElementById('modalToppingsGrid');
         if (!toppingsGrid) return;
 
         const filteredToppings = allToppings.filter(topping => {
@@ -1241,7 +1471,8 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             toppingsGrid.innerHTML = `
                 <div class="col-12 text-center text-muted py-5">
                     <i class="ti ti-search-off" style="font-size: 48px; opacity: 0.3;"></i>
-                    <p class="mt-3">Tidak ada topping ditemukan</p>
+                    <p class="mt-3 mb-2" style="color: #6b7280; font-weight: 500;">Tidak ada topping ditemukan</p>
+                    <small style="color: #9ca3af;">Coba kata kunci yang lain atau lihat semua kategori</small>
                 </div>
             `;
             return;
@@ -1253,58 +1484,68 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
             return `
                 <div class="col-6 col-sm-4 col-md-3">
-                    <label class="topping-card card h-100 mb-0 ${isSelected ? 'active' : ''}" style="cursor: pointer;">
-                        <input type="checkbox" class="d-none" 
-                               ${isSelected ? 'checked' : ''}
-                               onchange="toggleToppingInOrder('${orderId}', '${topping.id}')">
-                        
-                        <div class="position-relative" style="aspect-ratio: 1; overflow: hidden; background: #f8f9fa;">
+                    <div class="h-100 bg-white shadow-sm" 
+                         style="cursor: pointer; border-radius: 12px; overflow: hidden; transition: all 0.2s; border: ${isSelected ? '2px solid #1f2937' : '1px solid #e5e7eb'};"
+                         onmouseover="if (!${isSelected}) this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.1)';"
+                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='';"
+                         onclick="toggleToppingInOrder('${orderId}', '${topping.id}')">
+                        <div class="position-relative" style="aspect-ratio: 1; overflow: hidden; border-radius: 10px; background: ${isSelected ? '#f9fafb' : '#ffffff'}; border: ${isSelected ? '2px solid #1f2937' : '1px solid #e5e7eb'};">
                             ${topping.image ? `
-                                <img src="uploads/menu-images/${topping.image}" alt="${topping.name}" 
-                                     style="width: 100%; height: 100%; object-fit: cover;">
+                                <img src="../../../uploads/menu-images/${topping.image}" alt="${topping.name}" 
+                                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
                             ` : `
                                 <div class="d-flex align-items-center justify-content-center h-100">
-                                    <i class="ti ti-cheese text-muted" style="font-size: 3rem;"></i>
+                                    <i class="ti ti-cheese" style="font-size: 2.5rem; color: #d1d5db;"></i>
                                 </div>
                             `}
                             
-                            <!-- Checkbox Overlay -->
-                            <div class="position-absolute top-0 end-0 p-2">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input bg-white" 
-                                           ${isSelected ? 'checked' : ''}
-                                           onclick="event.stopPropagation();">
+                            <!-- Checkmark for Selected -->
+                            ${isSelected ? `
+                                <div class="position-absolute top-0 start-0 m-2">
+                                    <div class="d-flex align-items-center justify-content-center" 
+                                         style="width: 24px; height: 24px; background: #1f2937; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                                        <i class="ti ti-check text-white" style="font-size: 14px;"></i>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <!-- Category Badge -->
-                            ${topping.category_name ? `
-                                <div class="position-absolute bottom-0 start-0 p-2">
-                                    <span class="badge bg-dark bg-opacity-75 small">${topping.category_name}</span>
+                            ` : ''}
+                            
+                            <!-- Quantity Badge -->
+                            ${isSelected ? `
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <div class="d-flex align-items-center justify-content-center px-2 py-1" 
+                                         style="background: #1f2937; border-radius: 12px; min-width: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                                        <span class="text-white fw-semibold" style="font-size: 12px;">${toppingQty}x</span>
+                                    </div>
                                 </div>
                             ` : ''}
                         </div>
                         
-                        <div class="card-body p-2">
-                            <h6 class="card-title small mb-1 text-truncate fw-bold">${topping.name}</h6>
+                        <div class="p-2">
+                            <h6 class="mb-1 text-truncate fw-semibold" style="font-size: 13px; color: #1f2937;" title="${topping.name}">
+                                ${topping.name}
+                            </h6>
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-success fw-bold small">Rp ${formatPrice(topping.price)}</span>
+                                <span class="fw-semibold" style="font-size: 13px; color: #059669;">Rp ${formatPrice(topping.price)}</span>
                                 ${isSelected ? `
-                                    <div class="btn-group btn-group-sm" role="group" onclick="event.stopPropagation(); event.preventDefault();">
-                                        <button type="button" class="btn btn-outline-secondary py-0 px-2" 
-                                                onclick="updateToppingQtyInOrder('${orderId}', '${topping.id}', -1);">
-                                            <i class="ti ti-minus" style="font-size: 0.8rem;"></i>
+                                    <div class="d-flex align-items-center gap-1" onclick="event.stopPropagation();">
+                                        <button type="button" class="btn btn-sm p-0 d-flex align-items-center justify-content-center" 
+                                                onclick="event.stopPropagation(); updateToppingQtyInOrder('${orderId}', '${topping.id}', -1);"
+                                                style="width: 24px; height: 24px; border: 1px solid #e5e7eb; border-radius: 6px; background: white;"
+                                                title="Kurangi">
+                                            <i class="ti ti-minus" style="font-size: 12px; color: #6b7280;"></i>
                                         </button>
-                                        <span class="btn btn-primary py-0 px-2 small">${toppingQty}</span>
-                                        <button type="button" class="btn btn-outline-secondary py-0 px-2" 
-                                                onclick="updateToppingQtyInOrder('${orderId}', '${topping.id}', 1);">
-                                            <i class="ti ti-plus" style="font-size: 0.8rem;"></i>
+                                        <span class="px-2 fw-semibold" style="font-size: 13px; color: #1f2937; min-width: 24px; text-align: center;">${toppingQty}</span>
+                                        <button type="button" class="btn btn-sm p-0 d-flex align-items-center justify-content-center" 
+                                                onclick="event.stopPropagation(); updateToppingQtyInOrder('${orderId}', '${topping.id}', 1);"
+                                                style="width: 24px; height: 24px; border: 1px solid #1f2937; border-radius: 6px; background: #1f2937;"
+                                                title="Tambah">
+                                            <i class="ti ti-plus" style="font-size: 12px; color: white;"></i>
                                         </button>
                                     </div>
                                 ` : ''}
                             </div>
                         </div>
-                    </label>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -1348,7 +1589,12 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             }
         }
 
-        renderToppingsGrid(orderId);
+        // Update modal if exists (check if modal is open)
+        if (currentModalOrderId && document.getElementById('modalToppingsGrid')) {
+            renderModalToppingsGrid();
+            updateModalSelectedSummary();
+            updateModalCounters();
+        }
     }
 
     // Update topping quantity in specific order
@@ -1359,7 +1605,130 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         const topping = order.toppings.find(t => t.topping_id === toppingId);
         if (topping) {
             topping.quantity = Math.max(1, topping.quantity + change);
-            renderToppingsGrid(orderId);
+
+            // Update modal if exists (check if modal is open)
+            if (currentModalOrderId && document.getElementById('modalToppingsGrid')) {
+                renderModalToppingsGrid();
+                updateModalSelectedSummary();
+                updateModalCounters();
+            } else {
+                // Update main page
+                renderSeblakOrdersList();
+                updateOrderSummary();
+            }
+        }
+    }
+
+    // Clear all toppings in specific order
+    function clearAllToppingsInOrder(orderId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        order.toppings = [];
+
+        // Update modal if exists
+        if (currentModalOrderId && document.getElementById('modalToppingsGrid')) {
+            renderModalToppingsGrid();
+            updateModalSelectedSummary();
+            updateModalCounters();
+        }
+    }
+
+    // Add popular toppings
+    function addPopularToppings(orderId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        // Define popular toppings (you can modify this list)
+        const popularToppingNames = ['keju', 'sosis', 'bakso', 'telur', 'ayam'];
+
+        popularToppingNames.forEach(name => {
+            const topping = allToppings.find(t =>
+                t.name.toLowerCase().includes(name) &&
+                !order.toppings.some(ot => ot.topping_id === t.id)
+            );
+
+            if (topping) {
+                order.toppings.push({
+                    topping_id: topping.id,
+                    topping_name: topping.name,
+                    unit_price: parseFloat(topping.price),
+                    quantity: 1
+                });
+            }
+        });
+
+        // Update modal if exists
+        if (currentModalOrderId && document.getElementById('modalToppingsGrid')) {
+            renderModalToppingsGrid();
+            updateModalSelectedSummary();
+            updateModalCounters();
+        }
+    }
+
+    // Update selected summary in modal
+    function updateModalSelectedSummary() {
+        const orderId = currentModalOrderId;
+        if (!orderId) return;
+
+        const order = currentOrder.items.find(o => o.id === orderId);
+        const summaryContainer = document.getElementById('modalSelectedSummary');
+        const selectedItems = document.getElementById('modalSelectedItems');
+
+        if (!order || !summaryContainer || !selectedItems) return;
+
+        if (order.toppings.length > 0) {
+            summaryContainer.style.display = 'block';
+            selectedItems.innerHTML = order.toppings.map(topping => `
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-2 border-0" 
+                     style="background: #f3f4f6; border-radius: 8px;">
+                    <span class="fw-medium" style="font-size: 13px; color: #1f2937;">${topping.topping_name}</span>
+                    <span class="badge bg-dark" style="font-size: 11px; padding: 3px 8px; border-radius: 6px;">${topping.quantity}x</span>
+                    <button type="button" class="btn-close" 
+                            style="font-size: 10px; opacity: 0.5;"
+                            onclick="removeToppingFromOrder('${orderId}', '${topping.topping_id}')"
+                            title="Hapus ${topping.topping_name}"></button>
+                </div>
+            `).join('');
+        } else {
+            summaryContainer.style.display = 'none';
+        }
+    }
+
+    // Update modal counters
+    function updateModalCounters() {
+        const orderId = currentModalOrderId;
+        if (!orderId) return;
+
+        const order = currentOrder.items.find(o => o.id === orderId);
+        const selectedCounter = document.getElementById('modalSelectedCounter');
+        const totalPriceElement = document.getElementById('modalTotalPrice');
+
+        if (!order || !selectedCounter || !totalPriceElement) return;
+
+        const selectedCount = order.toppings.length;
+        const totalSelectedPrice = order.toppings.reduce((sum, t) => sum + (t.unit_price * t.quantity), 0);
+
+        selectedCounter.textContent = `${selectedCount} item`;
+        totalPriceElement.textContent = `Rp ${formatPrice(totalSelectedPrice)}`;
+    }
+
+    // Remove specific topping from order
+    function removeToppingFromOrder(orderId, toppingId) {
+        const order = currentOrder.items.find(o => o.id === orderId);
+        if (!order) return;
+
+        order.toppings = order.toppings.filter(t => t.topping_id !== toppingId);
+
+        // Update modal if exists (check if modal is open)
+        if (currentModalOrderId && document.getElementById('modalToppingsGrid')) {
+            renderModalToppingsGrid();
+            updateModalSelectedSummary();
+            updateModalCounters();
+        } else {
+            // Update main page
+            renderSeblakOrdersList();
+            updateOrderSummary();
         }
     }
 
@@ -2196,6 +2565,14 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     // View order detail
     async function viewOrder(orderId) {
         try {
+            // Show loading
+            Swal.fire({
+                title: 'Memuat Detail...',
+                html: '<div class="spinner-border text-primary" role="status"></div>',
+                showConfirmButton: false,
+                allowOutsideClick: false
+            });
+
             const response = await fetch(`api/orders.php?id=${orderId}`);
             const result = await response.json();
 
@@ -2203,91 +2580,144 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 const order = result.data;
 
                 const itemsHTML = order.items.map(item => `
-                    <div class="mb-3 pb-2 border-bottom">
-                        <div class="d-flex justify-content-between mb-1">
-                            <strong>${item.product_name}</strong>
-                            <span>${item.quantity}x Rp ${formatPrice(item.unit_price)}</span>
-                        </div>
-                        <div class="text-end">
-                            <strong class="text-success">Rp ${formatPrice(item.subtotal)}</strong>
+                    <div class="mb-3 pb-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <strong style="color: #1f2937; font-size: 14px;">${item.product_name}</strong>
+                                <div class="text-muted small">${item.quantity}x @ Rp ${formatPrice(item.unit_price)}</div>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-success">Rp ${formatPrice(item.subtotal)}</strong>
+                            </div>
                         </div>
                         ${item.toppings && item.toppings.length > 0 ? `
-                            <div class="mt-2">
-                                <small class="text-muted">Topping:</small>
+                            <div class="mt-2 ps-3" style="background: #f9fafb; padding: 8px; border-radius: 6px;">
+                                <small class="text-muted fw-semibold">Topping:</small>
                                 ${item.toppings.map(t => `
-                                    <div class="d-flex justify-content-between">
-                                        <small>+ ${t.topping_name} (${t.quantity}x)</small>
+                                    <div class="d-flex justify-content-between mt-1">
+                                        <small style="color: #6b7280;">+ ${t.topping_name} (${t.quantity}x)</small>
                                         <small class="text-success">Rp ${formatPrice(t.subtotal)}</small>
                                     </div>
                                 `).join('')}
+                            </div>
+                        ` : ''}
+                        ${item.spice_level ? `
+                            <div class="mt-2">
+                                <small class="badge bg-danger bg-opacity-75">${item.spice_level}</small>
+                            </div>
+                        ` : ''}
+                        ${item.customization_options ? `
+                            <div class="mt-2">
+                                <small class="text-muted">${item.customization_options}</small>
                             </div>
                         ` : ''}
                     </div>
                 `).join('');
 
                 Swal.fire({
-                    title: `Detail Transaksi`,
+                    title: `<div style="color: #1f2937; font-size: 20px; font-weight: 600;">Detail Transaksi</div>`,
                     html: `
-                        <div class="text-start">
-                            <table class="table table-sm">
-                                <tr>
-                                    <td>No. Transaksi:</td>
-                                    <td><strong>${order.order_number}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td>Tanggal:</td>
-                                    <td>${formatDate(order.created_at)} ${formatTime(order.created_at)}</td>
-                                </tr>
-                                <tr>
-                                    <td>Customer:</td>
-                                    <td>${order.customer_name}</td>
-                                </tr>
-                                ${order.table_number ? `
-                                <tr>
-                                    <td>No. Meja:</td>
-                                    <td>${order.table_number}</td>
-                                </tr>
-                                ` : ''}
-                                <tr>
-                                    <td>Status:</td>
-                                    <td>${getStatusBadge(order.order_status)}</td>
-                                </tr>
-                                <tr>
-                                    <td>Pembayaran:</td>
-                                    <td>${getPaymentBadge(order.payment_status)}</td>
-                                </tr>
-                            </table>
+                        <div class="text-start" style="max-height: 500px; overflow-y: auto;">
+                            <!-- Order Info Card -->
+                            <div style="background: #f9fafb; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">No. Transaksi</small>
+                                        <strong style="color: #1f2937; font-size: 14px;">${order.order_number}</strong>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <small class="text-muted d-block">Tanggal & Waktu</small>
+                                        <strong style="color: #1f2937; font-size: 14px;">${formatDate(order.created_at)}</strong>
+                                        <div><small class="text-muted">${formatTime(order.created_at)}</small></div>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Customer</small>
+                                        <strong style="color: #1f2937; font-size: 14px;">${order.customer_name}</strong>
+                                    </div>
+                                    ${order.table_number ? `
+                                    <div class="col-6 text-end">
+                                        <small class="text-muted d-block">No. Meja</small>
+                                        <strong style="color: #1f2937; font-size: 14px;">${order.table_number}</strong>
+                                    </div>
+                                    ` : ''}
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Status Order</small>
+                                        ${getStatusBadge(order.order_status)}
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <small class="text-muted d-block">Status Pembayaran</small>
+                                        ${getPaymentBadge(order.payment_status)}
+                                    </div>
+                                    ${order.payment_method ? `
+                                    <div class="col-12">
+                                        <small class="text-muted d-block">Metode Pembayaran</small>
+                                        <strong style="color: #1f2937; font-size: 14px; text-transform: uppercase;">${order.payment_method}</strong>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
                             
-                            <hr>
-                            <h6>Items Pesanan:</h6>
-                            ${itemsHTML}
+                            <!-- Items -->
+                            <h6 style="color: #1f2937; font-size: 15px; font-weight: 600; margin-bottom: 12px;">
+                                <i class="ti ti-shopping-bag me-2"></i>Items Pesanan
+                            </h6>
+                            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin-bottom: 16px;">
+                                ${itemsHTML}
+                            </div>
                             
-                            <hr>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Subtotal:</span>
-                                <span>Rp ${formatPrice(order.subtotal)}</span>
+                            <!-- Summary -->
+                            <div style="background: #f9fafb; border-radius: 10px; padding: 16px;">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span style="color: #6b7280; font-size: 14px;">Subtotal:</span>
+                                    <span style="color: #1f2937; font-size: 14px;">Rp ${formatPrice(order.subtotal)}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span style="color: #6b7280; font-size: 14px;">Pajak (${order.tax_percentage || 10}%):</span>
+                                    <span style="color: #1f2937; font-size: 14px;">Rp ${formatPrice(order.tax)}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                                    <span style="color: #6b7280; font-size: 14px;">Diskon:</span>
+                                    <span style="color: #1f2937; font-size: 14px;">Rp ${formatPrice(order.discount)}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 style="color: #1f2937; font-size: 18px; margin: 0; font-weight: 600;">Total:</h5>
+                                    <h5 class="text-success" style="font-size: 20px; margin: 0; font-weight: 700;">Rp ${formatPrice(order.total_amount)}</h5>
+                                </div>
                             </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Pajak:</span>
-                                <span>Rp ${formatPrice(order.tax)}</span>
+                            
+                            ${order.notes ? `
+                            <div class="mt-3" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px;">
+                                <small class="text-muted fw-semibold d-block mb-1">
+                                    <i class="ti ti-note me-1"></i>Catatan:
+                                </small>
+                                <small style="color: #6b7280;">${order.notes}</small>
                             </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Diskon:</span>
-                                <span>Rp ${formatPrice(order.discount)}</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <h5>Total:</h5>
-                                <h5 class="text-success">Rp ${formatPrice(order.total_amount)}</h5>
-                            </div>
+                            ` : ''}
                         </div>
                     `,
-                    width: '600px',
-                    confirmButtonText: 'Tutup'
+                    width: '700px',
+                    showCancelButton: false,
+                    confirmButtonText: '<i class="ti ti-x me-1"></i> Tutup',
+                    confirmButtonColor: '#6b7280',
+                    customClass: {
+                        popup: 'border-0 shadow-lg',
+                        confirmButton: 'btn btn-secondary'
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: result.message || 'Gagal memuat detail transaksi'
                 });
             }
         } catch (error) {
             console.error('Error loading order detail:', error);
-            showNotification('Gagal memuat detail transaksi', 'error');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat memuat detail transaksi'
+            });
         }
     }
 
@@ -2381,7 +2811,13 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         <div class="search-input-wrapper">
                             <i class="ti ti-search search-icon"></i>
                             <input type="text" class="form-control search-input" id="searchOrder" 
-                                   placeholder="Cari transaksi..." onkeyup="searchOrders()" onchange="searchOrders()">
+                                   placeholder="Cari no. transaksi, customer, atau no. meja..." 
+                                   onkeyup="searchOrders()" 
+                                   onchange="searchOrders()">
+                            <button type="button" class="btn-clear-search" id="btnClearSearch" 
+                                    onclick="clearSearch()" style="display: none;">
+                                <i class="ti ti-x"></i>
+                            </button>
                         </div>
                     </div>
                     
@@ -2419,7 +2855,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                                 <th style="min-width: 50px;">#</th>
                                 <th style="min-width: 150px;">No. Transaksi</th>
                                 <th style="min-width: 180px;">Tanggal & Waktu</th>
-                                <th style="min-width: 150px;">Customer</th>
                                 <th style="min-width: 200px;">Items</th>
                                 <th style="min-width: 120px;">Total</th>
                                 <th style="min-width: 100px;">Status</th>
@@ -2471,10 +2906,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 <td>
                     <div>${formatDate(order.created_at)}</div>
                     <small class="text-muted">${formatTime(order.created_at)}</small>
-                </td>
-                <td>
-                    <div>${order.customer_name}</div>
-                    ${order.table_number ? `<small class="text-muted">Meja #${order.table_number}</small>` : ''}
                 </td>
                 <td>
                     <div>${order.items_count || 0} item</div>
@@ -2557,19 +2988,90 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         }
     }
 
-    // Search orders
+    // Search orders with better filtering
     function searchOrders() {
-        const searchTerm = document.getElementById('searchOrder').value.toLowerCase();
-        const filteredOrders = allOrders.filter(order =>
-            order.order_number.toLowerCase().includes(searchTerm) ||
-            order.customer_name.toLowerCase().includes(searchTerm)
-        );
+        const searchInput = document.getElementById('searchOrder');
+        if (!searchInput) return;
 
-        // Temporarily replace allOrders for display
-        const temp = allOrders;
-        allOrders = filteredOrders;
-        displayOrders();
-        allOrders = temp;
+        const searchTerm = searchInput.value.toLowerCase().trim();
+
+        if (!searchTerm) {
+            // If search is empty, display all orders
+            displayOrders();
+            return;
+        }
+
+        const filteredOrders = allOrders.filter(order => {
+            const orderNumber = (order.order_number || '').toLowerCase();
+            const customerName = (order.customer_name || '').toLowerCase();
+            const tableNumber = (order.table_number || '').toLowerCase();
+
+            return orderNumber.includes(searchTerm) ||
+                customerName.includes(searchTerm) ||
+                tableNumber.includes(searchTerm);
+        });
+
+        // Update display with filtered orders
+        displayFilteredOrders(filteredOrders);
+    }
+
+    // Display filtered orders
+    function displayFilteredOrders(orders) {
+        const tbody = document.getElementById('orderTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        if (orders.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <i class="ti ti-search-off" style="font-size: 48px; opacity: 0.3; color: #9ca3af;"></i>
+                        <p class="mb-0 mt-2" style="color: #6b7280;">Tidak ada transaksi yang ditemukan</p>
+                        <small style="color: #9ca3af;">Coba kata kunci yang lain</small>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        orders.forEach((order, index) => {
+            const row = document.createElement('tr');
+            const statusBadge = getStatusBadge(order.order_status);
+            const paymentBadge = getPaymentBadge(order.payment_status);
+
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td><strong>${order.order_number}</strong></td>
+                <td>
+                    <div>${formatDate(order.created_at)}</div>
+                    <small class="text-muted">${formatTime(order.created_at)}</small>
+                </td>
+                <td>
+                    <div>${order.items_count || 0} item</div>
+                </td>
+                <td><strong class="text-success">Rp ${formatPrice(order.total_amount)}</strong></td>
+                <td>
+                    ${statusBadge}
+                    <br>
+                    <small>${paymentBadge}</small>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-info me-1" onclick="viewOrder('${order.id}')" title="Lihat Detail">
+                        <i class="ti ti-eye"></i>
+                    </button>
+                    ${order.order_status === 'pending' ? `
+                        <button class="btn btn-sm btn-success me-1" onclick="completeOrder('${order.id}')" title="Selesaikan">
+                            <i class="ti ti-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="cancelOrder('${order.id}')" title="Batalkan">
+                            <i class="ti ti-x"></i>
+                        </button>
+                    ` : ''}
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
     }
 </script>
 

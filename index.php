@@ -351,13 +351,9 @@ if (isLoggedIn() && !canAccessPage($page)) {
                       <?= date('H:i, d M Y', $_SESSION['login_time'] ?? time()) ?></small>
                   </div>
                   <hr />
-                  <a href="index.php?page=user" class="dropdown-item">
+                  <a href="index.php?page=account" class="dropdown-item">
                     <i class="ti ti-settings"></i>
                     <span>Pengaturan Akun</span>
-                  </a>
-                  <a href="index.php?page=dashboard" class="dropdown-item">
-                    <i class="ti ti-dashboard"></i>
-                    <span>Dashboard</span>
                   </a>
                   <div class="dropdown-divider"></div>
                   <a href="#" class="dropdown-item text-danger" onclick="handleLogout()">
