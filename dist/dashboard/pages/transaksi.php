@@ -199,10 +199,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         style="background: #fef2f2; border-radius: 8px; padding: 8px 16px;">
                         <i class="ti ti-trash" style="font-size: 16px;"></i>
                     </button>
-                    <button type="button" class="btn btn-sm text-warning border-0" id="btnAddPopularToppings"
-                        style="background: #fffbeb; border-radius: 8px; padding: 8px 16px;">
-                        <i class="ti ti-star" style="font-size: 16px;"></i>
-                    </button>
                     <div class="flex-fill"></div>
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal"
                         style="border-radius: 8px; padding: 8px 20px; font-weight: 500;">
@@ -248,6 +244,25 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         loadSpiceLevels();
         loadCustomizationOptions();
         showOrderList();
+
+        // Event delegation for topping quantity buttons
+        document.addEventListener('click', function (e) {
+            // Handle decrease topping quantity
+            if (e.target.closest('.btn-decrease-topping')) {
+                const btn = e.target.closest('.btn-decrease-topping');
+                const orderId = btn.getAttribute('data-order-id');
+                const toppingId = btn.getAttribute('data-topping-id');
+                updateToppingQtyInOrder(orderId, toppingId, -1);
+            }
+
+            // Handle increase topping quantity
+            if (e.target.closest('.btn-increase-topping')) {
+                const btn = e.target.closest('.btn-increase-topping');
+                const orderId = btn.getAttribute('data-order-id');
+                const toppingId = btn.getAttribute('data-topping-id');
+                updateToppingQtyInOrder(orderId, toppingId, 1);
+            }
+        });
     });
 
     // Load products
@@ -891,7 +906,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             spice_level: null,
             customizations: {},
             toppings: [],
-            base_price: 15000, // Base price untuk seblak dasar
+            base_price: 0, // Base price 0, harga dihitung dari level pedas + topping + customization
             notes: ''
         };
 
@@ -1050,14 +1065,18 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
                 return `
                                         <div class="col-6 col-sm-4 col-md-3">
-                                            <div class="card topping-card h-100 border-warning">
-                                                <div class="position-relative" style="aspect-ratio: 1; overflow: hidden; background: linear-gradient(135deg, #fff3cd, #ffc107);">
+                                            <div class="card topping-card h-100 mb-0">
+                                                <div class="position-relative" style="aspect-ratio: 1; overflow: hidden; background: linear-gradient(135deg, #fff5f5, #fed7d7);">
                                                     ${topping && topping.image ? `
                                                         <img src="../../../uploads/menu-images/${topping.image}" alt="${t.topping_name}" 
-                                                             style="width: 100%; height: 100%; object-fit: cover;">
+                                                             style="width: 100%; height: 100%; object-fit: cover;"
+                                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                        <div class="d-flex align-items-center justify-content-center h-100 position-absolute top-0 start-0 w-100" style="display: none !important;">
+                                                            <i class="ti ti-cheese text-warning" style="font-size: 3rem;"></i>
+                                                        </div>
                                                     ` : `
                                                         <div class="d-flex align-items-center justify-content-center h-100">
-                                                            <i class="ti ti-cheese text-warning" style="font-size: 3rem; opacity: 0.6;"></i>
+                                                            <i class="ti ti-cheese text-warning" style="font-size: 3rem;"></i>
                                                         </div>
                                                     `}
                                                     
@@ -1065,15 +1084,15 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                                                     <div class="position-absolute top-0 end-0 p-2">
                                                         <button type="button" class="btn btn-sm btn-danger rounded-circle p-1" 
                                                                 style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;"
-                                                                onclick="removeToppingFromOrder('${order.id}', '${t.topping_id}')"
+                                                                onclick="event.stopPropagation(); removeToppingFromOrder('${order.id}', '${t.topping_id}');"
                                                                 title="Hapus ${t.topping_name}">
                                                             <i class="ti ti-x" style="font-size: 1rem;"></i>
                                                         </button>
                                                     </div>
                                                     
                                                     <!-- Quantity Badge -->
-                                                    <div class="position-absolute bottom-0 end-0 p-2">
-                                                        <span class="badge bg-primary fs-6">${t.quantity}x</span>
+                                                    <div class="position-absolute bottom-0 start-0 p-2">
+                                                        <span class="badge bg-warning bg-opacity-90 small">${t.quantity}x</span>
                                                     </div>
                                                 </div>
                                                 
@@ -1081,21 +1100,32 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                                                     <h6 class="card-title small mb-1 text-truncate fw-bold" title="${t.topping_name}">
                                                         ${t.topping_name}
                                                     </h6>
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <span class="text-success fw-bold small">Rp ${formatPrice(totalPrice)}</span>
-                                                        <div class="btn-group btn-group-sm" role="group">
-                                                            <button type="button" class="btn btn-outline-secondary py-0 px-2" 
-                                                                    onclick="updateToppingQtyInOrder('${order.id}', '${t.topping_id}', -1);"
-                                                                    title="Kurangi">
-                                                                <i class="ti ti-minus" style="font-size: 0.8rem;"></i>
-                                                            </button>
-                                                            <span class="btn btn-primary py-0 px-2 small">${t.quantity}</span>
-                                                            <button type="button" class="btn btn-outline-secondary py-0 px-2" 
-                                                                    onclick="updateToppingQtyInOrder('${order.id}', '${t.topping_id}', 1);"
-                                                                    title="Tambah">
-                                                                <i class="ti ti-plus" style="font-size: 0.8rem;"></i>
-                                                            </button>
+                                                    <div class="mb-2">
+                                                        <span class="text-warning fw-bold small">+ Rp ${formatPrice(totalPrice)}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-center gap-1">
+                                                        <button type="button" class="btn btn-sm btn-decrease-topping" 
+                                                                data-order-id="${order.id}" 
+                                                                data-topping-id="${t.topping_id}"
+                                                                style="width: 32px; height: 32px; padding: 0; background: #fff; border: 2px solid #dc3545; color: #dc3545; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.2s;"
+                                                                onmouseover="this.style.background='#dc3545'; this.style.color='#fff';"
+                                                                onmouseout="this.style.background='#fff'; this.style.color='#dc3545';"
+                                                                title="Kurangi">
+                                                            <i class="ti ti-minus" style="font-size: 14px;"></i>
+                                                        </button>
+                                                        <div class="d-flex align-items-center justify-content-center" 
+                                                             style="width: 40px; height: 32px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 6px; font-weight: bold; color: #212529; font-size: 14px;">
+                                                            ${t.quantity}
                                                         </div>
+                                                        <button type="button" class="btn btn-sm btn-increase-topping" 
+                                                                data-order-id="${order.id}" 
+                                                                data-topping-id="${t.topping_id}"
+                                                                style="width: 32px; height: 32px; padding: 0; background: #fff; border: 2px solid #28a745; color: #28a745; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.2s;"
+                                                                onmouseover="this.style.background='#28a745'; this.style.color='#fff';"
+                                                                onmouseout="this.style.background='#fff'; this.style.color='#28a745';"
+                                                                title="Tambah">
+                                                            <i class="ti ti-plus" style="font-size: 14px;"></i>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1263,18 +1293,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     }
 
     // Remove topping from order
-    function removeToppingFromOrder(orderId, toppingId) {
-        const order = currentOrder.items.find(o => o.id === orderId);
-        if (!order) return;
-
-        const index = order.toppings.findIndex(t => t.topping_id === toppingId);
-        if (index >= 0) {
-            order.toppings.splice(index, 1);
-            renderSeblakOrdersList();
-            updateOrderSummary();
-        }
-    }
-
     // Update order summary in right sidebar
     function updateOrderSummary() {
         const container = document.getElementById('orderSummary');
@@ -1282,9 +1300,10 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
         if (currentOrder.items.length === 0) {
             container.innerHTML = `
-                <div class="text-center text-muted">
-                    <i class="ti ti-file-invoice" style="font-size: 48px;"></i>
-                    <p class="mt-2">Belum ada item dipilih</p>
+                <div class="text-center py-5" style="color: #9ca3af;">
+                    <i class="ti ti-shopping-cart-off" style="font-size: 56px; opacity: 0.3;"></i>
+                    <p class="mt-3 mb-0 fw-medium">Keranjang Kosong</p>
+                    <small style="font-size: 12px;">Tambahkan item untuk memulai pesanan</small>
                 </div>
             `;
             document.getElementById('orderSubtotal').textContent = 'Rp 0';
@@ -1296,36 +1315,117 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
         container.innerHTML = currentOrder.items.map((order, index) => {
             const spiceLevelPrice = order.spice_level ? (allSpiceLevels.find(sl => sl.id === order.spice_level)?.price || 0) : 0;
-            const customizationsPrice = order.customizations.reduce((sum, custId) => {
-                const cust = allCustomizationOptions.find(c => c.id === custId);
-                return sum + (cust ? parseFloat(cust.price) : 0);
-            }, 0);
+
+            // Calculate customizations price (support both object and array format)
+            let customizationsPrice = 0;
+            if (order.customizations) {
+                if (Array.isArray(order.customizations)) {
+                    customizationsPrice = order.customizations.reduce((sum, custId) => {
+                        const cust = allCustomizationOptions.find(c => c.id === custId);
+                        return sum + (cust ? parseFloat(cust.price) : 0);
+                    }, 0);
+                } else {
+                    // Object format: {type: optionId}
+                    customizationsPrice = Object.values(order.customizations).reduce((sum, custId) => {
+                        const cust = allCustomizationOptions.find(c => c.id === custId);
+                        return sum + (cust ? parseFloat(cust.price) : 0);
+                    }, 0);
+                }
+            }
+
             const toppingsPrice = order.toppings.reduce((sum, t) => sum + (t.unit_price * t.quantity), 0);
-            const orderTotal = (order.base_price + spiceLevelPrice + customizationsPrice + toppingsPrice) * order.quantity;
+            const itemPrice = order.base_price + spiceLevelPrice + customizationsPrice + toppingsPrice;
+            const orderTotal = itemPrice * order.quantity;
             grandTotal += orderTotal;
 
             const spiceLevel = allSpiceLevels.find(sl => sl.id === order.spice_level);
 
             return `
-                <div class="border-bottom pb-3 mb-3">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div class="flex-grow-1">
-                            <h6 class="mb-0"><i class="ti ti-soup"></i> Seblak #${index + 1}</h6>
-                            <small class="text-muted">${order.quantity}x @ Rp ${formatPrice((order.base_price + spiceLevelPrice + customizationsPrice + toppingsPrice))}</small>
+                <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #f97316, #fb923c); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ti ti-soup text-white" style="font-size: 18px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px; color: #1f2937;">Seblak #${index + 1}</div>
+                                <div style="font-size: 11px; color: #6b7280;">${order.quantity} Porsi</div>
+                            </div>
                         </div>
-                        <strong class="text-success">Rp ${formatPrice(orderTotal)}</strong>
+                        <div style="font-weight: 700; font-size: 16px; color: #059669;">
+                            Rp ${formatPrice(orderTotal)}
+                        </div>
                     </div>
-                    ${spiceLevel ? `<small class="text-muted d-block">🌶️ ${spiceLevel.name}</small>` : ''}
-                    ${order.customizations.length > 0 ? `
-                        <small class="text-muted d-block">
-                            🔧 ${order.customizations.map(cId => allCustomizationOptions.find(c => c.id === cId)?.name).filter(Boolean).join(', ')}
-                        </small>
-                    ` : ''}
-                    ${order.toppings.length > 0 ? `
-                        <small class="text-muted d-block">
-                            🧀 ${order.toppings.map(t => t.topping_name).join(', ')}
-                        </small>
-                    ` : ''}
+
+                    <!-- Breakdown Harga -->
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                        ${spiceLevel ? `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="ti ti-flame" style="font-size: 14px; color: #dc2626;"></i>
+                                    <span style="font-size: 13px; color: #374151;">${spiceLevel.name}</span>
+                                </div>
+                                <span style="font-size: 13px; font-weight: 600; color: #6b7280;">
+                                    ${spiceLevelPrice > 0 ? 'Rp ' + formatPrice(spiceLevelPrice) : 'Gratis'}
+                                </span>
+                            </div>
+                        ` : `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="ti ti-alert-circle" style="font-size: 14px; color: #dc2626;"></i>
+                                    <span style="font-size: 13px; color: #dc2626; font-style: italic;">Level pedas belum dipilih</span>
+                                </div>
+                            </div>
+                        `}
+                        
+                        ${order.customizations && Object.keys(order.customizations).length > 0 ? `
+                            <div class="mb-2">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <i class="ti ti-adjustments" style="font-size: 14px; color: #7c3aed;"></i>
+                                    <span style="font-size: 12px; font-weight: 600; color: #6b7280;">Kustomisasi</span>
+                                </div>
+                                ${Object.values(order.customizations).map(cId => {
+                const cust = allCustomizationOptions.find(c => c.id === cId);
+                return cust ? `
+                                        <div class="d-flex justify-content-between align-items-center ms-4 mb-1">
+                                            <span style="font-size: 12px; color: #6b7280;">• ${cust.name}</span>
+                                            <span style="font-size: 12px; font-weight: 600; color: #6b7280;">
+                                                ${cust.price > 0 ? 'Rp ' + formatPrice(cust.price) : 'Gratis'}
+                                            </span>
+                                        </div>
+                                    ` : '';
+            }).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        ${order.toppings.length > 0 ? `
+                            <div>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <i class="ti ti-cheese" style="font-size: 14px; color: #f59e0b;"></i>
+                                    <span style="font-size: 12px; font-weight: 600; color: #6b7280;">Topping (${order.toppings.length})</span>
+                                </div>
+                                ${order.toppings.map(t => `
+                                    <div class="d-flex justify-content-between align-items-center ms-4 mb-1">
+                                        <span style="font-size: 12px; color: #6b7280;">• ${t.topping_name} (${t.quantity}x)</span>
+                                        <span style="font-size: 12px; font-weight: 600; color: #6b7280;">
+                                            Rp ${formatPrice(t.unit_price * t.quantity)}
+                                        </span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Total per Item -->
+                    <div class="d-flex justify-content-between align-items-center pt-2" style="border-top: 1px dashed #d1d5db;">
+                        <span style="font-size: 13px; font-weight: 600; color: #6b7280;">
+                            ${order.quantity}x @ Rp ${formatPrice(itemPrice)}
+                        </span>
+                        <span style="font-size: 14px; font-weight: 700; color: #1f2937;">
+                            Rp ${formatPrice(orderTotal)}
+                        </span>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -1415,7 +1515,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
         // Add event listeners to action buttons
         document.getElementById('btnClearAllToppings').onclick = () => clearAllToppingsInOrder(orderId);
-        document.getElementById('btnAddPopularToppings').onclick = () => addPopularToppings(orderId);
         document.getElementById('btnConfirmToppings').onclick = () => {
             bootstrap.Modal.getInstance(document.getElementById('toppingModal')).hide();
         };
@@ -1431,6 +1530,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
         // Update main page when modal closes
         document.getElementById('toppingModal').addEventListener('hidden.bs.modal', function () {
+            currentModalOrderId = null; // Reset modal order ID
             renderSeblakOrdersList();
             updateOrderSummary();
         }, { once: true });
@@ -1604,10 +1704,21 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
         const topping = order.toppings.find(t => t.topping_id === toppingId);
         if (topping) {
-            topping.quantity = Math.max(1, topping.quantity + change);
+            const newQuantity = topping.quantity + change;
 
-            // Update modal if exists (check if modal is open)
-            if (currentModalOrderId && document.getElementById('modalToppingsGrid')) {
+            // If quantity becomes 0 or less, remove the topping
+            if (newQuantity <= 0) {
+                removeToppingFromOrder(orderId, toppingId);
+                return;
+            }
+
+            topping.quantity = newQuantity;
+
+            // Check if modal is actually open/visible
+            const modalElement = document.getElementById('toppingModal');
+            const isModalOpen = modalElement && modalElement.classList.contains('show');
+
+            if (isModalOpen && currentModalOrderId && document.getElementById('modalToppingsGrid')) {
                 renderModalToppingsGrid();
                 updateModalSelectedSummary();
                 updateModalCounters();
@@ -1625,38 +1736,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         if (!order) return;
 
         order.toppings = [];
-
-        // Update modal if exists
-        if (currentModalOrderId && document.getElementById('modalToppingsGrid')) {
-            renderModalToppingsGrid();
-            updateModalSelectedSummary();
-            updateModalCounters();
-        }
-    }
-
-    // Add popular toppings
-    function addPopularToppings(orderId) {
-        const order = currentOrder.items.find(o => o.id === orderId);
-        if (!order) return;
-
-        // Define popular toppings (you can modify this list)
-        const popularToppingNames = ['keju', 'sosis', 'bakso', 'telur', 'ayam'];
-
-        popularToppingNames.forEach(name => {
-            const topping = allToppings.find(t =>
-                t.name.toLowerCase().includes(name) &&
-                !order.toppings.some(ot => ot.topping_id === t.id)
-            );
-
-            if (topping) {
-                order.toppings.push({
-                    topping_id: topping.id,
-                    topping_name: topping.name,
-                    unit_price: parseFloat(topping.price),
-                    quantity: 1
-                });
-            }
-        });
 
         // Update modal if exists
         if (currentModalOrderId && document.getElementById('modalToppingsGrid')) {
@@ -2094,79 +2173,152 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     // STEP 3: Pembayaran (formerly Step 4)
     function getStep3HTML() {
         return `
-            <div class="row">
+            <div class="row g-4">
+                <!-- Left Column - Order Summary -->
                 <div class="col-lg-8">
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h6 class="mb-0">Ringkasan Pesanan</h6>
+                    <!-- Ringkasan Pesanan -->
+                    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; margin-bottom: 24px;">
+                        <div style="background: linear-gradient(135deg, #f97316, #fb923c); padding: 20px;">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="ti ti-shopping-cart text-white" style="font-size: 24px;"></i>
+                                </div>
+                                <div>
+                                    <h5 class="text-white mb-0" style="font-weight: 700;">Ringkasan Pesanan</h5>
+                                    <p class="text-white mb-0" style="opacity: 0.9; font-size: 13px;">Detail pesanan yang akan diproses</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
+                        <div style="padding: 24px;">
                             <div id="step3_orderSummary"></div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Right Column - Customer Info & Payment -->
                 <div class="col-lg-4">
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h6 class="mb-0">Detail Pelanggan</h6>
-                        </div>
-                        <div class="card-body">
-                            <p class="mb-1"><strong>Nama:</strong> <span id="step3_name"></span></p>
-                            <p class="mb-1"><strong>Meja:</strong> <span id="step3_table"></span></p>
-                            <p class="mb-1"><strong>Telepon:</strong> <span id="step3_phone"></span></p>
-                            <p class="mb-0"><strong>Catatan:</strong> <span id="step3_notes"></span></p>
-                        </div>
-                    </div>
-                    
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h6 class="mb-0">Total Pembayaran</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Subtotal:</span>
-                                <strong id="step3_subtotal">Rp 0</strong>
+                    <!-- Detail Pelanggan -->
+                    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #8b5cf6, #a78bfa); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ti ti-user text-white" style="font-size: 18px;"></i>
                             </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Pajak (0%):</span>
-                                <strong id="step3_tax">Rp 0</strong>
+                            <h6 class="mb-0" style="font-weight: 700; color: #1f2937;">Detail Pelanggan</h6>
+                        </div>
+                        
+                        <div style="background: #f9fafb; border-radius: 12px; padding: 16px;">
+                            <div class="mb-3">
+                                <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; mb-1">Nama</div>
+                                <div style="font-size: 14px; font-weight: 600; color: #1f2937;" id="step3_name">-</div>
                             </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>Diskon:</span>
-                                <strong id="step3_discount">Rp 0</strong>
+                            <div class="mb-3">
+                                <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; mb-1">Meja</div>
+                                <div style="font-size: 14px; font-weight: 600; color: #1f2937;" id="step3_table">-</div>
                             </div>
-                            <hr>
-                            <div class="d-flex justify-content-between">
-                                <h5>Total:</h5>
-                                <h5 class="text-success" id="step3_total">Rp 0</h5>
+                            <div class="mb-3">
+                                <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; mb-1">Telepon</div>
+                                <div style="font-size: 14px; font-weight: 600; color: #1f2937;" id="step3_phone">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; mb-1">Catatan</div>
+                                <div style="font-size: 13px; color: #6b7280; font-style: italic;" id="step3_notes">-</div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">Metode Pembayaran</h6>
-                        </div>
-                        <div class="card-body">
-                            <select class="form-select mb-3" id="step3_paymentMethod" onchange="togglePaymentMethod()">
-                                <option value="cash">Tunai (Cash)</option>
-                                <option value="midtrans">Midtrans (Kartu/E-Wallet/Bank Transfer)</option>
-                            </select>
-                            
-                            <div id="cashPaymentInfo" class="alert alert-info">
-                                <i class="ti ti-info-circle"></i> Pembayaran tunai akan diproses di kasir
+
+                    <!-- Total Pembayaran -->
+                    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #059669, #10b981); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ti ti-calculator text-white" style="font-size: 18px;"></i>
                             </div>
-                            
-                            <div id="midtransPaymentInfo" class="alert alert-success d-none">
-                                <i class="ti ti-credit-card"></i> 
-                                <strong>Midtrans Payment Gateway</strong>
-                                <p class="mb-0 mt-2">Metode pembayaran tersedia:</p>
-                                <ul class="mb-0 mt-1">
-                                    <li>Kartu Kredit/Debit (Visa, Mastercard, JCB)</li>
-                                    <li>E-Wallet (GoPay, ShopeePay, DANA, OVO)</li>
-                                    <li>Bank Transfer (BCA, Mandiri, BNI, BRI, Permata)</li>
-                                    <li>Indomaret, Alfamart</li>
-                                </ul>
+                            <h6 class="mb-0" style="font-weight: 700; color: #1f2937;">Total Pembayaran</h6>
+                        </div>
+                        
+                        <div style="background: #f9fafb; border-radius: 12px; padding: 16px;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span style="font-size: 13px; color: #6b7280;">Subtotal</span>
+                                <span style="font-size: 14px; font-weight: 600; color: #1f2937;" id="step3_subtotal">Rp 0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span style="font-size: 13px; color: #6b7280;">Pajak (0%)</span>
+                                <span style="font-size: 14px; font-weight: 600; color: #1f2937;" id="step3_tax">Rp 0</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span style="font-size: 13px; color: #6b7280;">Diskon</span>
+                                <span style="font-size: 14px; font-weight: 600; color: #dc2626;" id="step3_discount">Rp 0</span>
+                            </div>
+                            <div style="border-top: 2px dashed #d1d5db; padding-top: 12px;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span style="font-size: 15px; font-weight: 700; color: #1f2937;">TOTAL</span>
+                                    <span style="font-size: 20px; font-weight: 700; color: #059669;" id="step3_total">Rp 0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Metode Pembayaran -->
+                    <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px;">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #3b82f6, #60a5fa); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ti ti-credit-card text-white" style="font-size: 18px;"></i>
+                            </div>
+                            <h6 class="mb-0" style="font-weight: 700; color: #1f2937;">Metode Pembayaran</h6>
+                        </div>
+                        
+                        <select class="form-select mb-3" id="step3_paymentMethod" onchange="togglePaymentMethod()" 
+                                style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 12px 16px; font-weight: 600; font-size: 14px;">
+                            <option value="cash">💵 Tunai (Cash)</option>
+                            <option value="midtrans">💳 Midtrans (Digital Payment)</option>
+                        </select>
+                        
+                        <!-- Cash Payment Info -->
+                        <div id="cashPaymentInfo" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); border: 1px solid #93c5fd; border-radius: 12px; padding: 16px;">
+                            <div class="d-flex gap-3">
+                                <div style="flex-shrink: 0;">
+                                    <div style="width: 40px; height: 40px; background: #3b82f6; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="ti ti-cash text-white" style="font-size: 20px;"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px; color: #1e40af; margin-bottom: 4px;">Pembayaran Tunai</div>
+                                    <div style="font-size: 13px; color: #1e40af; line-height: 1.5;">
+                                        Pembayaran akan diproses di kasir setelah pesanan dikonfirmasi
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Midtrans Payment Info -->
+                        <div id="midtransPaymentInfo" class="d-none" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0); border: 1px solid #6ee7b7; border-radius: 12px; padding: 16px;">
+                            <div class="d-flex gap-3 mb-3">
+                                <div style="flex-shrink: 0;">
+                                    <div style="width: 40px; height: 40px; background: #059669; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="ti ti-credit-card text-white" style="font-size: 20px;"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px; color: #065f46; margin-bottom: 4px;">Midtrans Payment Gateway</div>
+                                    <div style="font-size: 12px; color: #065f46;">Metode pembayaran digital yang tersedia:</div>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <div style="background: rgba(255,255,255,0.5); border-radius: 8px; padding: 8px; text-align: center;">
+                                    <div style="font-size: 11px; font-weight: 600; color: #065f46;">💳 Kartu</div>
+                                    <div style="font-size: 9px; color: #047857;">Visa, Mastercard</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.5); border-radius: 8px; padding: 8px; text-align: center;">
+                                    <div style="font-size: 11px; font-weight: 600; color: #065f46;">📱 E-Wallet</div>
+                                    <div style="font-size: 9px; color: #047857;">GoPay, DANA, OVO</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.5); border-radius: 8px; padding: 8px; text-align: center;">
+                                    <div style="font-size: 11px; font-weight: 600; color: #065f46;">🏦 Bank Transfer</div>
+                                    <div style="font-size: 9px; color: #047857;">BCA, Mandiri, BNI</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.5); border-radius: 8px; padding: 8px; text-align: center;">
+                                    <div style="font-size: 11px; font-weight: 600; color: #065f46;">🏪 Retail</div>
+                                    <div style="font-size: 9px; color: #047857;">Indomaret, Alfamart</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2180,53 +2332,109 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         document.getElementById('step3_name').textContent = currentOrder.customer_name || '-';
         document.getElementById('step3_table').textContent = currentOrder.table_number || '-';
         document.getElementById('step3_phone').textContent = currentOrder.phone || '-';
-        document.getElementById('step3_notes').textContent = currentOrder.notes || '-';
+        document.getElementById('step3_notes').textContent = currentOrder.notes || 'Tidak ada catatan';
 
-        // Order summary
+        // Order summary - using seblak items format
         let subtotal = 0;
-        const summaryHTML = currentOrder.items.map(item => {
-            const itemSubtotal = item.unit_price * item.quantity;
-            const toppingsSubtotal = item.toppings.reduce((sum, t) => sum + (t.unit_price * t.quantity), 0);
-            const totalItemPrice = itemSubtotal + toppingsSubtotal;
-            subtotal += totalItemPrice;
+        const summaryHTML = currentOrder.items.map((order, index) => {
+            const spiceLevelPrice = order.spice_level ? (allSpiceLevels.find(sl => sl.id === order.spice_level)?.price || 0) : 0;
+
+            // Calculate customizations price
+            let customizationsPrice = 0;
+            if (order.customizations) {
+                if (Array.isArray(order.customizations)) {
+                    customizationsPrice = order.customizations.reduce((sum, custId) => {
+                        const cust = allCustomizationOptions.find(c => c.id === custId);
+                        return sum + (cust ? parseFloat(cust.price) : 0);
+                    }, 0);
+                } else {
+                    customizationsPrice = Object.values(order.customizations).reduce((sum, custId) => {
+                        const cust = allCustomizationOptions.find(c => c.id === custId);
+                        return sum + (cust ? parseFloat(cust.price) : 0);
+                    }, 0);
+                }
+            }
+
+            const toppingsPrice = order.toppings.reduce((sum, t) => sum + (t.unit_price * t.quantity), 0);
+            const itemPrice = order.base_price + spiceLevelPrice + customizationsPrice + toppingsPrice;
+            const orderTotal = itemPrice * order.quantity;
+            subtotal += orderTotal;
+
+            const spiceLevel = allSpiceLevels.find(sl => sl.id === order.spice_level);
 
             return `
-                <div class="mb-3 pb-3 border-bottom">
-                    <div class="d-flex justify-content-between mb-1">
-                        <strong>${item.product_name}</strong>
-                        <span>${item.quantity}x Rp ${formatPrice(item.unit_price)}</span>
-                    </div>
-                    ${item.variants && item.variants.length > 0 ? `
-                        <div class="ps-3 mb-1">
-                            ${item.variants.map(v => `
-                                <small class="text-primary">
-                                    <i class="ti ti-adjustments-horizontal"></i> ${v.option_name}
-                                    ${v.price_adjustment !== 0 ?
-                    ` (${v.price_adjustment > 0 ? '+' : ''}Rp ${formatPrice(v.price_adjustment)})`
-                    : ''
-                }
-                                </small><br>
-                            `).join('')}
+                <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #f97316, #fb923c); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ti ti-soup text-white" style="font-size: 16px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 15px; color: #1f2937;">Seblak #${index + 1}</div>
+                                <div style="font-size: 12px; color: #6b7280;">${order.quantity} Porsi × Rp ${formatPrice(itemPrice)}</div>
+                            </div>
                         </div>
-                    ` : ''}
-                    ${item.toppings.length > 0 ? `
-                        <div class="ps-3">
-                            ${item.toppings.map(t => `
-                                <div class="d-flex justify-content-between">
-                                    <small class="text-muted">+ ${t.topping_name} (${t.quantity}x)</small>
-                                    <small class="text-success">Rp ${formatPrice(t.unit_price * t.quantity)}</small>
+                        <div style="font-weight: 700; font-size: 16px; color: #059669;">
+                            Rp ${formatPrice(orderTotal)}
+                        </div>
+                    </div>
+
+                    <!-- Details -->
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 12px;">
+                        ${spiceLevel ? `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="ti ti-flame" style="font-size: 13px; color: #dc2626;"></i>
+                                    <span style="font-size: 12px; color: #374151;">${spiceLevel.name}</span>
+                                </div>
+                                <span style="font-size: 12px; font-weight: 600; color: #6b7280;">
+                                    ${spiceLevelPrice > 0 ? 'Rp ' + formatPrice(spiceLevelPrice) : 'Gratis'}
+                                </span>
+                            </div>
+                        ` : ''}
+                        
+                        ${order.customizations && Object.keys(order.customizations).length > 0 ? `
+                            ${Object.values(order.customizations).map(cId => {
+                const cust = allCustomizationOptions.find(c => c.id === cId);
+                return cust ? `
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="ti ti-adjustments" style="font-size: 13px; color: #7c3aed;"></i>
+                                            <span style="font-size: 12px; color: #374151;">${cust.name}</span>
+                                        </div>
+                                        <span style="font-size: 12px; font-weight: 600; color: #6b7280;">
+                                            ${cust.price > 0 ? 'Rp ' + formatPrice(cust.price) : 'Gratis'}
+                                        </span>
+                                    </div>
+                                ` : '';
+            }).join('')}
+                        ` : ''}
+                        
+                        ${order.toppings.length > 0 ? `
+                            ${order.toppings.map(t => `
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="ti ti-cheese" style="font-size: 13px; color: #f59e0b;"></i>
+                                        <span style="font-size: 12px; color: #374151;">${t.topping_name} (${t.quantity}x)</span>
+                                    </div>
+                                    <span style="font-size: 12px; font-weight: 600; color: #6b7280;">
+                                        Rp ${formatPrice(t.unit_price * t.quantity)}
+                                    </span>
                                 </div>
                             `).join('')}
-                        </div>
-                    ` : ''}
-                    <div class="text-end mt-2">
-                        <strong class="text-success">Rp ${formatPrice(totalItemPrice)}</strong>
+                        ` : ''}
                     </div>
                 </div>
             `;
         }).join('');
 
-        document.getElementById('step3_orderSummary').innerHTML = summaryHTML;
+        document.getElementById('step3_orderSummary').innerHTML = summaryHTML || `
+            <div class="text-center py-4" style="color: #9ca3af;">
+                <i class="ti ti-shopping-cart-off" style="font-size: 48px; opacity: 0.3;"></i>
+                <p class="mt-2 mb-0">Tidak ada pesanan</p>
+            </div>
+        `;
 
         const tax = 0;
         const discount = 0;
