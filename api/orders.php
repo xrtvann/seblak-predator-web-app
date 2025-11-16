@@ -106,10 +106,10 @@ function handleGet($koneksi)
         }
 
         // Get order items
-        $itemsQuery = "SELECT oi.*, p.image_url as product_image 
+        $itemsQuery = "SELECT oi.* 
                        FROM order_items oi
-                       LEFT JOIN products p ON oi.product_id = p.id
-                       WHERE oi.order_id = ?";
+                       WHERE oi.order_id = ?
+                       ORDER BY oi.customer_number";
         $itemsStmt = mysqli_prepare($koneksi, $itemsQuery);
         mysqli_stmt_bind_param($itemsStmt, "s", $id);
         mysqli_stmt_execute($itemsStmt);
@@ -128,8 +128,25 @@ function handleGet($koneksi)
             while ($topping = mysqli_fetch_assoc($toppingsResult)) {
                 $toppings[] = $topping;
             }
-
             $item['toppings'] = $toppings;
+
+            // Get customizations for this item
+            $customizationsQuery = "SELECT * FROM order_item_customizations WHERE order_item_id = ?";
+            $customizationsStmt = mysqli_prepare($koneksi, $customizationsQuery);
+            mysqli_stmt_bind_param($customizationsStmt, "s", $item['id']);
+            mysqli_stmt_execute($customizationsStmt);
+            $customizationsResult = mysqli_stmt_get_result($customizationsStmt);
+
+            $customizations = [];
+            while ($customization = mysqli_fetch_assoc($customizationsResult)) {
+                $customizations[] = $customization;
+            }
+            $item['customizations'] = $customizations;
+
+            // Set product name as "Seblak" with customer number
+            $item['product_name'] = 'Seblak #' . $item['customer_number'];
+            $item['unit_price'] = $item['spice_level_price'];
+
             $items[] = $item;
         }
 
@@ -195,10 +212,12 @@ function handleGet($koneksi)
     $total = $totalRow['total'];
 
     // Get orders
-    $query = "SELECT o.*, u.username as created_by_name,
-              (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count
+    $query = "SELECT o.id, o.order_number, o.customer_name, o.order_type, o.table_number,
+              o.total_amount, o.payment_method, o.payment_status, o.order_status,
+              o.created_at,
+              (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count,
+              (SELECT SUM(quantity) FROM order_items WHERE order_id = o.id) as total_items
               FROM orders o 
-              LEFT JOIN users u ON o.created_by = u.id 
               $whereClause 
               ORDER BY o.created_at DESC 
               LIMIT ? OFFSET ?";
@@ -481,36 +500,81 @@ function handlePatch($koneksi)
 {
     $input = json_decode(file_get_contents('php://input'), true);
 
-    if (!isset($input['id']) || !isset($input['status'])) {
+    if (!isset($input['id'])) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Order ID and status are required']);
+        echo json_encode(['success' => false, 'message' => 'Order ID is required']);
         return;
     }
 
-    $allowedStatuses = ['pending', 'processing', 'completed', 'cancelled'];
-    if (!in_array($input['status'], $allowedStatuses)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'message' => 'Invalid status']);
-        return;
-    }
+    $updateFields = [];
+    $params = [];
+    $types = '';
 
-    $query = "UPDATE orders SET order_status = ?";
-    $params = [$input['status']];
-    $types = 's';
+    // Update order status
+    if (isset($input['order_status'])) {
+        $allowedStatuses = ['pending', 'processing', 'completed', 'cancelled'];
+        if (!in_array($input['order_status'], $allowedStatuses)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid order status']);
+            return;
+        }
+        $updateFields[] = "order_status = ?";
+        $params[] = $input['order_status'];
+        $types .= 's';
 
-    // Set completion/cancellation timestamp
-    if ($input['status'] === 'completed') {
-        $query .= ", completed_at = NOW(), payment_status = 'paid'";
-    } elseif ($input['status'] === 'cancelled') {
-        $query .= ", cancelled_at = NOW()";
-        if (isset($input['cancel_reason'])) {
-            $query .= ", cancel_reason = ?";
-            $params[] = $input['cancel_reason'];
-            $types .= 's';
+        // Set completion/cancellation timestamp
+        if ($input['order_status'] === 'completed') {
+            $updateFields[] = "completed_at = NOW()";
+        } elseif ($input['order_status'] === 'cancelled') {
+            $updateFields[] = "cancelled_at = NOW()";
+            if (isset($input['cancel_reason'])) {
+                $updateFields[] = "cancel_reason = ?";
+                $params[] = $input['cancel_reason'];
+                $types .= 's';
+            }
         }
     }
 
-    $query .= " WHERE id = ?";
+    // Update payment status
+    if (isset($input['payment_status'])) {
+        $allowedPaymentStatuses = ['pending', 'paid', 'cancelled'];
+        if (!in_array($input['payment_status'], $allowedPaymentStatuses)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid payment status']);
+            return;
+        }
+        $updateFields[] = "payment_status = ?";
+        $params[] = $input['payment_status'];
+        $types .= 's';
+    }
+
+    // Backward compatibility with old 'status' field
+    if (isset($input['status']) && !isset($input['order_status'])) {
+        $allowedStatuses = ['pending', 'processing', 'completed', 'cancelled'];
+        if (!in_array($input['status'], $allowedStatuses)) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid status']);
+            return;
+        }
+        $updateFields[] = "order_status = ?";
+        $params[] = $input['status'];
+        $types .= 's';
+
+        if ($input['status'] === 'completed') {
+            $updateFields[] = "completed_at = NOW()";
+            $updateFields[] = "payment_status = 'paid'";
+        } elseif ($input['status'] === 'cancelled') {
+            $updateFields[] = "cancelled_at = NOW()";
+        }
+    }
+
+    if (empty($updateFields)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'No fields to update']);
+        return;
+    }
+
+    $query = "UPDATE orders SET " . implode(', ', $updateFields) . " WHERE id = ?";
     $params[] = $input['id'];
     $types .= 's';
 
@@ -519,9 +583,9 @@ function handlePatch($koneksi)
     mysqli_stmt_execute($stmt);
 
     if (mysqli_stmt_affected_rows($stmt) > 0) {
-        echo json_encode(['success' => true, 'message' => 'Order status updated successfully']);
+        echo json_encode(['success' => true, 'message' => 'Order updated successfully']);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Order not found']);
+        echo json_encode(['success' => false, 'message' => 'Order not found or no changes made']);
     }
 }
 

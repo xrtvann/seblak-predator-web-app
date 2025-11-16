@@ -396,6 +396,30 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     }
 
     // Show order list
+    // Reset new order form
+    function resetNewOrderForm() {
+        currentOrder = {
+            customer_name: '',
+            order_type: 'dine_in',
+            table_number: '',
+            phone: '',
+            pickup_time: '',
+            delivery_address: '',
+            notes: '',
+            payment_method: 'cash',
+            items: [],
+            currentStep: 1
+        };
+
+        // Clear form inputs
+        const form = document.getElementById('orderForm');
+        if (form) {
+            form.reset();
+        }
+
+        console.log('Order form reset');
+    }
+
     function showOrderList() {
         document.getElementById('pageTitleText').textContent = 'Transaksi';
         document.getElementById('breadcrumbText').textContent = 'Transaksi';
@@ -422,8 +446,11 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         // Reset current order
         currentOrder = {
             customer_name: '',
+            order_type: 'dine_in',
             table_number: '',
             phone: '',
+            pickup_time: '',
+            delivery_address: '',
             notes: '',
             payment_method: 'cash',
             items: [],
@@ -2477,47 +2504,21 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             return;
         }
 
-        // Calculate totals
-        let subtotal = 0;
-        currentOrder.items.forEach(item => {
-            console.log('Processing item:', item);
-            const itemTotal = item.unit_price * item.quantity;
-            subtotal += itemTotal;
-            console.log(`  Item subtotal: ${itemTotal}`);
-
-            if (item.toppings && item.toppings.length > 0) {
-                item.toppings.forEach(t => {
-                    const toppingTotal = t.unit_price * t.quantity;
-                    subtotal += toppingTotal;
-                    console.log(`  Topping "${t.topping_name}" subtotal: ${toppingTotal}`);
-                });
-            }
-        });
-
-        const tax = 0; // No tax
-        const discount = 0; // No discount
-        const total_amount = subtotal + tax - discount;
-
-        console.log('Calculated totals:', { subtotal, tax, discount, total_amount });
-
+        // Prepare order data with proper structure
         const orderData = {
             customer_name: currentOrder.customer_name,
+            order_type: currentOrder.order_type || 'dine_in',
             table_number: currentOrder.table_number,
             phone: currentOrder.phone,
+            pickup_time: currentOrder.pickup_time || null,
+            delivery_address: currentOrder.delivery_address || null,
             notes: currentOrder.notes,
             payment_method: currentOrder.payment_method,
-            subtotal: subtotal,
-            tax: tax,
-            discount: discount,
-            total_amount: total_amount,
             items: currentOrder.items.map(item => ({
-                product_id: item.product_id,
-                product_name: item.product_name,
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                spice_level_id: item.spice_level, // Include spice level
-                customizations: item.customizations || {}, // Include customizations as object
-                notes: item.notes || '', // Include item notes
+                quantity: item.quantity || 1,
+                spice_level: item.spice_level,
+                customizations: item.customizations || {},
+                notes: item.notes || '',
                 toppings: item.toppings ? item.toppings.map(t => ({
                     topping_id: t.topping_id,
                     topping_name: t.topping_name,
@@ -2536,8 +2537,8 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 console.log('Processing with Midtrans...');
                 await processWithMidtrans(orderData);
             } else {
-                console.log('Processing cash payment...');
-                // Cash payment - direct save
+                console.log('Processing cash/card/qris/transfer payment...');
+                // Direct payment - save to database
                 await processCashPayment(orderData);
             }
         } catch (error) {
@@ -2549,7 +2550,18 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     // Process cash payment
     async function processCashPayment(orderData) {
         try {
-            const response = await fetch('api/orders.php', {
+            // Show loading
+            Swal.fire({
+                title: 'Memproses...',
+                html: 'Mohon tunggu, sedang menyimpan transaksi',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            console.log('Calling API: /api/orders/create-transaction.php');
+            const response = await fetch('/api/orders/create-transaction.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -2557,15 +2569,51 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 body: JSON.stringify(orderData)
             });
 
+            console.log('Response status:', response.status);
             const result = await response.json();
+            console.log('Response data:', result);
+
+            Swal.close();
 
             if (result.success) {
-                showNotification('Transaksi berhasil dibuat! Silakan bayar di kasir.', 'success');
-                showOrderList();
+                // Show success message with order details
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Transaksi Berhasil!',
+                    html: `
+                        <div class="text-start">
+                            <p class="mb-2"><strong>No. Invoice:</strong> ${result.data.order_number}</p>
+                            <p class="mb-2"><strong>Total:</strong> Rp ${formatPrice(result.data.total_amount)}</p>
+                            <p class="mb-2"><strong>Metode:</strong> ${result.data.payment_method.toUpperCase()}</p>
+                            <hr>
+                            <small class="text-muted">Silakan lanjutkan pembayaran sesuai metode yang dipilih</small>
+                        </div>
+                    `,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#10b981'
+                }).then(() => {
+                    // Reset form and reload orders
+                    resetNewOrderForm();
+                    showOrderList();
+                    loadOrders(); // Refresh order list
+                });
             } else {
-                showNotification(result.message || 'Gagal membuat transaksi', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: result.message || 'Gagal membuat transaksi',
+                    confirmButtonColor: '#ef4444'
+                });
             }
         } catch (error) {
+            Swal.close();
+            console.error('Error in processCashPayment:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan: ' + error.message,
+                confirmButtonColor: '#ef4444'
+            });
             throw error;
         }
     }
@@ -2771,8 +2819,10 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
 
     // View order detail
-    async function viewOrder(orderId) {
+    async function viewOrderDetail(orderId) {
         try {
+            console.log('Loading order detail for ID:', orderId);
+
             // Show loading
             Swal.fire({
                 title: 'Memuat Detail...',
@@ -2781,136 +2831,295 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 allowOutsideClick: false
             });
 
-            const response = await fetch(`api/orders.php?id=${orderId}`);
-            const result = await response.json();
+            const url = `api/orders.php?id=${orderId}`;
+            console.log('Fetching from:', url);
 
-            if (result.success) {
+            const response = await fetch(url);
+            console.log('Response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Response error:', errorText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('Order detail result:', result);
+
+            if (result.success && result.data) {
                 const order = result.data;
 
-                const itemsHTML = order.items.map(item => `
-                    <div class="mb-3 pb-3 border-bottom">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                                <strong style="color: #1f2937; font-size: 14px;">${item.product_name}</strong>
-                                <div class="text-muted small">${item.quantity}x @ Rp ${formatPrice(item.unit_price)}</div>
+                const itemsHTML = order.items && order.items.length > 0 ? order.items.map((item, idx) => `
+                    <div style="padding: 20px; ${idx !== order.items.length - 1 ? 'border-bottom: 2px solid #f1f5f9;' : ''}">
+                        <!-- Item Header dengan Harga -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="background: #667eea; 
+                                            width: 36px; height: 36px; 
+                                            border-radius: 50%; 
+                                            display: flex; 
+                                            align-items: center; 
+                                            justify-content: center;
+                                            color: white;
+                                            font-weight: 700;
+                                            font-size: 15px;
+                                            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">
+                                    ${idx + 1}
+                                </div>
+                                <div>
+                                    <div style="color: #0f172a; font-size: 16px; font-weight: 700;">
+                                        ${item.product_name || 'Seblak'}
+                                    </div>
+                                    <div style="color: #64748b; font-size: 12px; margin-top: 2px;">
+                                        ${item.quantity || 1} porsi
+                                    </div>
+                                </div>
                             </div>
-                            <div class="text-end">
-                                <strong class="text-success">Rp ${formatPrice(item.subtotal)}</strong>
+                            <div style="text-align: right;">
+                                <div style="color: #0f172a; font-size: 20px; font-weight: 700;">
+                                    Rp ${formatPrice(item.subtotal || 0)}
+                                </div>
                             </div>
                         </div>
-                        ${item.toppings && item.toppings.length > 0 ? `
-                            <div class="mt-2 ps-3" style="background: #f9fafb; padding: 8px; border-radius: 6px;">
-                                <small class="text-muted fw-semibold">Topping:</small>
-                                ${item.toppings.map(t => `
-                                    <div class="d-flex justify-content-between mt-1">
-                                        <small style="color: #6b7280;">+ ${t.topping_name} (${t.quantity}x)</small>
-                                        <small class="text-success">Rp ${formatPrice(t.subtotal)}</small>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                        ${item.spice_level ? `
-                            <div class="mt-2">
-                                <small class="badge bg-danger bg-opacity-75">${item.spice_level}</small>
-                            </div>
-                        ` : ''}
-                        ${item.customization_options ? `
-                            <div class="mt-2">
-                                <small class="text-muted">${item.customization_options}</small>
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('');
 
-                Swal.fire({
-                    title: `<div style="color: #1f2937; font-size: 20px; font-weight: 600;">Detail Transaksi</div>`,
-                    html: `
-                        <div class="text-start" style="max-height: 500px; overflow-y: auto;">
-                            <!-- Order Info Card -->
-                            <div style="background: #f9fafb; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">No. Transaksi</small>
-                                        <strong style="color: #1f2937; font-size: 14px;">${order.order_number}</strong>
+                        <!-- Detail Section dengan Color Coding -->
+                        <div style="margin-left: 48px;">
+                            <!-- 1. Spice Level (Red = Pedas) -->
+                            ${item.spice_level_name ? `
+                            <div style="background: #fef2f2; 
+                                        border-left: 4px solid #ef4444; 
+                                        border-radius: 8px; 
+                                        padding: 12px 16px; 
+                                        margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <i class="ti ti-flame" style="color: #dc2626; font-size: 16px;"></i>
+                                        <span style="color: #991b1b; font-weight: 600; font-size: 13px;">Tingkat Kepedasan</span>
                                     </div>
-                                    <div class="col-6 text-end">
-                                        <small class="text-muted d-block">Tanggal & Waktu</small>
-                                        <strong style="color: #1f2937; font-size: 14px;">${formatDate(order.created_at)}</strong>
-                                        <div><small class="text-muted">${formatTime(order.created_at)}</small></div>
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Customer</small>
-                                        <strong style="color: #1f2937; font-size: 14px;">${order.customer_name}</strong>
-                                    </div>
-                                    ${order.table_number ? `
-                                    <div class="col-6 text-end">
-                                        <small class="text-muted d-block">No. Meja</small>
-                                        <strong style="color: #1f2937; font-size: 14px;">${order.table_number}</strong>
-                                    </div>
-                                    ` : ''}
-                                    <div class="col-6">
-                                        <small class="text-muted d-block">Status Order</small>
-                                        ${getStatusBadge(order.order_status)}
-                                    </div>
-                                    <div class="col-6 text-end">
-                                        <small class="text-muted d-block">Status Pembayaran</small>
-                                        ${getPaymentBadge(order.payment_status)}
-                                    </div>
-                                    ${order.payment_method ? `
-                                    <div class="col-12">
-                                        <small class="text-muted d-block">Metode Pembayaran</small>
-                                        <strong style="color: #1f2937; font-size: 14px; text-transform: uppercase;">${order.payment_method}</strong>
-                                    </div>
-                                    ` : ''}
+                                    <span style="background: #dc2626; color: white; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                                        ${item.spice_level_name}
+                                    </span>
                                 </div>
                             </div>
-                            
-                            <!-- Items -->
-                            <h6 style="color: #1f2937; font-size: 15px; font-weight: 600; margin-bottom: 12px;">
-                                <i class="ti ti-shopping-bag me-2"></i>Items Pesanan
-                            </h6>
-                            <div style="background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin-bottom: 16px;">
-                                ${itemsHTML}
+                            ` : ''}
+
+                            <!-- 2. Customizations (Blue = Pilihan) -->
+                            ${item.customizations && item.customizations.length > 0 ? `
+                            <div style="background: #eff6ff; 
+                                        border-left: 4px solid #3b82f6; 
+                                        border-radius: 8px; 
+                                        padding: 12px 16px; 
+                                        margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                    <i class="ti ti-adjustments" style="color: #2563eb; font-size: 16px;"></i>
+                                    <span style="color: #1e40af; font-weight: 600; font-size: 13px;">Pilihan Kustomisasi</span>
+                                </div>
+                                <div style="display: grid; gap: 6px;">
+                                    ${item.customizations.map(c => {
+                    // Format nama customization type untuk display
+                    const typeLabel = c.customization_type === 'kencur_level' ? 'Kencur' :
+                        c.customization_type === 'broth_flavor' ? 'Kuah' :
+                            c.customization_type === 'egg_type' ? 'Telur' :
+                                c.customization_type;
+                    return `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+                                            <span style="color: #1e40af; font-size: 13px;">• ${typeLabel}: <strong>${c.customization_name || '-'}</strong></span>
+                                            <span style="color: #2563eb; font-size: 12px; font-weight: 600;">+Rp ${formatPrice(c.price || 0)}</span>
+                                        </div>
+                                    `}).join('')}
+                                </div>
                             </div>
-                            
-                            <!-- Summary -->
-                            <div style="background: #f9fafb; border-radius: 10px; padding: 16px;">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span style="color: #6b7280; font-size: 14px;">Subtotal:</span>
-                                    <span style="color: #1f2937; font-size: 14px;">Rp ${formatPrice(order.subtotal)}</span>
+                            ` : ''}
+
+                            <!-- 3. Toppings (Green = Extra/Tambahan) -->
+                            ${item.toppings && item.toppings.length > 0 ? `
+                            <div style="background: #f0fdf4; 
+                                        border-left: 4px solid #10b981; 
+                                        border-radius: 8px; 
+                                        padding: 12px 16px; 
+                                        margin-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                    <i class="ti ti-circle-plus" style="color: #059669; font-size: 16px;"></i>
+                                    <span style="color: #065f46; font-weight: 600; font-size: 13px;">Topping Tambahan</span>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span style="color: #6b7280; font-size: 14px;">Pajak (${order.tax_percentage || 10}%):</span>
-                                    <span style="color: #1f2937; font-size: 14px;">Rp ${formatPrice(order.tax)}</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
-                                    <span style="color: #6b7280; font-size: 14px;">Diskon:</span>
-                                    <span style="color: #1f2937; font-size: 14px;">Rp ${formatPrice(order.discount)}</span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 style="color: #1f2937; font-size: 18px; margin: 0; font-weight: 600;">Total:</h5>
-                                    <h5 class="text-success" style="font-size: 20px; margin: 0; font-weight: 700;">Rp ${formatPrice(order.total_amount)}</h5>
+                                <div style="display: grid; gap: 6px;">
+                                    ${item.toppings.map(t => `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+                                            <span style="color: #065f46; font-size: 13px;">• ${t.topping_name} <span style="color: #64748b;">(${t.quantity}x)</span></span>
+                                            <span style="color: #059669; font-size: 12px; font-weight: 600;">Rp ${formatPrice(t.subtotal)}</span>
+                                        </div>
+                                    `).join('')}
                                 </div>
                             </div>
-                            
-                            ${order.notes ? `
-                            <div class="mt-3" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px;">
-                                <small class="text-muted fw-semibold d-block mb-1">
-                                    <i class="ti ti-note me-1"></i>Catatan:
-                                </small>
-                                <small style="color: #6b7280;">${order.notes}</small>
+                            ` : ''}
+
+                            <!-- 4. Notes (Yellow = Catatan Khusus) -->
+                            ${item.notes ? `
+                            <div style="background: #fefce8; 
+                                        border-left: 4px solid #eab308; 
+                                        border-radius: 8px; 
+                                        padding: 12px 16px;">
+                                <div style="display: flex; gap: 10px;">
+                                    <i class="ti ti-message-circle" style="color: #ca8a04; font-size: 16px; margin-top: 2px;"></i>
+                                    <div>
+                                        <div style="color: #854d0e; font-weight: 600; font-size: 12px; margin-bottom: 4px;">Catatan Khusus</div>
+                                        <div style="color: #713f12; font-size: 13px; line-height: 1.5; font-style: italic;">
+                                            "${item.notes}"
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             ` : ''}
                         </div>
+                    </div>
+                `).join('') : '<p class="text-muted text-center py-3">Tidak ada item</p>';
+
+                Swal.fire({
+                    html: `
+                        <div style="text-align: left; padding: 32px; background: #ffffff;">
+                            
+                            <!-- Minimalist Header - Invoice Info -->
+                            <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 24px; margin-bottom: 28px;">
+                                <div style="margin-bottom: 24px;">
+                                    <div style="color: #0f172a; font-size: 28px; font-weight: 700; margin-bottom: 6px;">
+                                        ${order.order_number}
+                                    </div>
+                                    <div style="color: #64748b; font-size: 14px;">
+                                        <i class="ti ti-calendar" style="font-size: 14px;"></i> ${formatDate(order.created_at)} • ${formatTime(order.created_at)}
+                                    </div>
+                                </div>
+
+                                <!-- Unified Container: Info Lengkap -->
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+                                    <!-- Grid 3 Kolom -->
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;">
+                                        
+                                        <!-- Kolom 1: Info Pelanggan -->
+                                        <div style="padding: 20px; border-right: 1px solid #e2e8f0;">
+                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+                                                👤 Pelanggan
+                                            </div>
+                                            <div style="margin-bottom: 10px;">
+                                                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 3px;">Nama</div>
+                                                <div style="color: #0f172a; font-size: 14px; font-weight: 600;">${order.customer_name}</div>
+                                            </div>
+                                            ${order.phone ? `
+                                            <div>
+                                                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 3px;">Telepon</div>
+                                                <div style="color: #0f172a; font-size: 14px; font-weight: 600;">${order.phone}</div>
+                                            </div>
+                                            ` : ''}
+                                        </div>
+
+                                        <!-- Kolom 2: Tipe Pesanan -->
+                                        <div style="padding: 20px; border-right: 1px solid #e2e8f0;">
+                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+                                                📋 Tipe Pesanan
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                                ${order.order_type === 'dine_in'
+                            ? `<i class="ti ti-utensils" style="font-size: 24px; color: #667eea;"></i>
+                                   <div>
+                                       <div style="color: #0f172a; font-weight: 700; font-size: 15px;">Dine In</div>
+                                       <div style="color: #64748b; font-size: 11px;">Makan di Tempat</div>
+                                   </div>`
+                            : `<i class="ti ti-shopping-bag" style="font-size: 24px; color: #667eea;"></i>
+                                   <div>
+                                       <div style="color: #0f172a; font-weight: 700; font-size: 15px;">Take Away</div>
+                                       <div style="color: #64748b; font-size: 11px;">Bawa Pulang</div>
+                                   </div>`
+                        }
+                                            </div>
+                                            ${order.order_type === 'dine_in' && order.table_number ? `
+                                            <div style="background: #fff; border: 1px dashed #e2e8f0; border-radius: 6px; padding: 8px; text-align: center;">
+                                                <div style="color: #64748b; font-size: 10px; margin-bottom: 2px;">Nomor Meja</div>
+                                                <div style="color: #0f172a; font-size: 22px; font-weight: 700;">${order.table_number}</div>
+                                            </div>
+                                            ` : ''}
+                                        </div>
+
+                                        <!-- Kolom 3: Status -->
+                                        <div style="padding: 20px;">
+                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+                                                📊 Status
+                                            </div>
+                                            <div style="margin-bottom: 10px;">
+                                                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">Pesanan</div>
+                                                ${getStatusBadge(order.order_status)}
+                                            </div>
+                                            <div>
+                                                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">Pembayaran</div>
+                                                ${getPaymentBadge(order.payment_status)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Content Area dengan Scroll -->
+                            <div style="max-height: 550px; overflow-y: auto; margin: 0 -8px; padding: 0 8px;">
+                                
+
+                                <!-- Items Section - Clean List -->
+                                <div style="margin-bottom: 28px;">
+                                    <div style="color: #0f172a; font-size: 15px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
+                                        Pesanan
+                                    </div>
+                                    <div style="background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+                                        ${itemsHTML}
+                                    </div>
+                                </div>
+
+                                <!-- Total Summary - Minimalist -->
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+                                    <div style="padding: 20px 24px;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                            <span style="color: #64748b; font-size: 14px;">Subtotal</span>
+                                            <span style="color: #0f172a; font-size: 14px; font-weight: 600;">Rp ${formatPrice(order.subtotal)}</span>
+                                        </div>
+                                        ${order.tax > 0 ? `
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                                            <span style="color: #64748b; font-size: 14px;">Pajak</span>
+                                            <span style="color: #0f172a; font-size: 14px; font-weight: 600;">Rp ${formatPrice(order.tax)}</span>
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                    <div style="background: #0f172a; padding: 20px 24px; border-top: 1px solid #e2e8f0;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Pembayaran</span>
+                                            <span style="color: #ffffff; font-size: 24px; font-weight: 700;">Rp ${formatPrice(order.total_amount)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                ${order.notes ? `
+                                <div style="margin-top: 20px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px;">
+                                    <div style="display: flex; gap: 10px;">
+                                        <i class="ti ti-message-circle" style="color: #d97706; font-size: 18px;"></i>
+                                        <div style="flex: 1;">
+                                            <div style="color: #92400e; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">
+                                                Catatan
+                                            </div>
+                                            <div style="color: #78350f; font-size: 13px; line-height: 1.5;">
+                                                ${order.notes}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
                     `,
-                    width: '700px',
+                    width: '900px',
                     showCancelButton: false,
-                    confirmButtonText: '<i class="ti ti-x me-1"></i> Tutup',
-                    confirmButtonColor: '#6b7280',
+                    confirmButtonText: '<i class="ti ti-x me-2"></i>Tutup',
+                    confirmButtonColor: '#0f172a',
+                    buttonsStyling: true,
                     customClass: {
-                        popup: 'border-0 shadow-lg',
-                        confirmButton: 'btn btn-secondary'
-                    }
+                        popup: 'border-0 shadow-xl',
+                        confirmButton: 'px-4 py-2'
+                    },
+                    padding: '0'
                 });
             } else {
                 Swal.fire({
@@ -2923,21 +3132,23 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             console.error('Error loading order detail:', error);
             Swal.fire({
                 icon: 'error',
-                title: 'Error',
-                text: 'Terjadi kesalahan saat memuat detail transaksi'
+                title: 'Gagal Memuat Detail',
+                text: error.message || 'Terjadi kesalahan saat memuat detail transaksi',
+                footer: '<small>Periksa console browser untuk detail error</small>'
             });
         }
     }
 
-    // Complete order
-    async function completeOrder(orderId) {
+    // Confirm payment and complete order (combined action)
+    async function confirmPaymentAndComplete(orderId) {
         const confirm = await Swal.fire({
-            title: 'Selesaikan Transaksi?',
-            text: 'Tandai transaksi ini sebagai selesai?',
+            title: 'Konfirmasi Pembayaran & Selesaikan?',
+            text: 'Tandai pembayaran sudah diterima dan pesanan selesai?',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Ya, Selesaikan',
-            cancelButtonText: 'Batal'
+            confirmButtonText: '<i class="ti ti-check me-1"></i>Ya, Sudah Dibayar & Selesai',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#10b981'
         });
 
         if (!confirm.isConfirmed) return;
@@ -2950,22 +3161,34 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 },
                 body: JSON.stringify({
                     id: orderId,
-                    order_status: 'completed',
-                    payment_status: 'paid'
+                    payment_status: 'paid',
+                    order_status: 'completed'
                 })
             });
+
+            console.log('Confirm payment response status:', response.status);
 
             const result = await response.json();
 
             if (result.success) {
-                showNotification('Transaksi berhasil diselesaikan', 'success');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Pembayaran dikonfirmasi dan pesanan selesai',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
                 loadOrders();
             } else {
-                showNotification(result.message || 'Gagal menyelesaikan transaksi', 'error');
+                showNotification(result.message || 'Gagal memproses pesanan', 'error');
             }
         } catch (error) {
-            console.error('Error completing order:', error);
-            showNotification('Terjadi kesalahan', 'error');
+            console.error('Error processing order:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memproses',
+                text: error.message || 'Terjadi kesalahan saat memproses pesanan'
+            });
         }
     }
 
@@ -3061,11 +3284,12 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         <thead class="table-light table-header-sticky">
                             <tr class="column-headers">
                                 <th style="min-width: 50px;">#</th>
-                                <th style="min-width: 150px;">No. Transaksi</th>
-                                <th style="min-width: 180px;">Tanggal & Waktu</th>
-                                <th style="min-width: 200px;">Items</th>
-                                <th style="min-width: 120px;">Total</th>
-                                <th style="min-width: 100px;">Status</th>
+                                <th style="min-width: 180px;">No. Transaksi</th>
+                                <th style="min-width: 150px;">Tanggal & Waktu</th>
+                                <th style="min-width: 140px;">Tipe</th>
+                                <th style="min-width: 80px;">Items</th>
+                                <th style="min-width: 130px;">Total</th>
+                                <th style="min-width: 140px;">Status</th>
                                 <th style="min-width: 120px;">Aksi</th>
                             </tr>
                         </thead>
@@ -3108,28 +3332,30 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             const statusBadge = getStatusBadge(order.order_status);
             const paymentBadge = getPaymentBadge(order.payment_status);
 
+            // Order type badge only (no table number)
+            const orderTypeDisplay = order.order_type === 'dine_in'
+                ? '<span class="badge bg-info"><i class="ti ti-utensils me-1"></i>Dine In</span>'
+                : '<span class="badge bg-primary"><i class="ti ti-shopping-bag me-1"></i>Take Away</span>';
+
             row.innerHTML = `
                 <td>${index + 1}</td>
                 <td><strong>${order.order_number}</strong></td>
+                <td>${formatDate(order.created_at)}</td>
+                <td>${orderTypeDisplay}</td>
                 <td>
-                    <div>${formatDate(order.created_at)}</div>
-                    <small class="text-muted">${formatTime(order.created_at)}</small>
-                </td>
-                <td>
-                    <div>${order.items_count || 0} item</div>
+                    <div>${order.total_items || order.items_count || 0} item</div>
                 </td>
                 <td><strong class="text-success">Rp ${formatPrice(order.total_amount)}</strong></td>
                 <td>
                     ${statusBadge}
-                    <br>
-                    <small>${paymentBadge}</small>
+                    <div class="mt-1">${paymentBadge}</div>
                 </td>
                 <td>
-                    <button class="btn btn-sm btn-info me-1" onclick="viewOrder('${order.id}')" title="Lihat Detail">
+                    <button class="btn btn-sm btn-info me-1" onclick="viewOrderDetail('${order.id}')" title="Lihat Detail">
                         <i class="ti ti-eye"></i>
                     </button>
-                    ${order.order_status === 'pending' ? `
-                        <button class="btn btn-sm btn-success me-1" onclick="completeOrder('${order.id}')" title="Selesaikan">
+                    ${order.order_status === 'pending' && order.payment_status === 'pending' ? `
+                        <button class="btn btn-sm btn-success me-1" onclick="confirmPaymentAndComplete('${order.id}')" title="Konfirmasi Pembayaran & Selesaikan">
                             <i class="ti ti-check"></i>
                         </button>
                         <button class="btn btn-sm btn-danger" onclick="cancelOrder('${order.id}')" title="Batalkan">
