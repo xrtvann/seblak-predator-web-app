@@ -83,7 +83,7 @@ try {
         'id' => $user['id'],
         'username' => $user['username'],
         'email' => $user['email'],
-        'role_id' => $user['role_id'],
+        'role_id' => $user['role_id'] ?? null,
         'name' => $user['name']
     ]);
 
