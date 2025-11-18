@@ -236,6 +236,9 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         payment_method: 'cash',
         items: []
     };
+    // Pagination variables
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function () {
@@ -2532,23 +2535,18 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         console.log(JSON.stringify(orderData, null, 2));
 
         try {
-            // If payment method is Midtrans, process via Midtrans
-            if (currentOrder.payment_method === 'midtrans') {
-                console.log('Processing with Midtrans...');
-                await processWithMidtrans(orderData);
-            } else {
-                console.log('Processing cash/card/qris/transfer payment...');
-                // Direct payment - save to database
-                await processCashPayment(orderData);
-            }
+            // Semua metode pembayaran (Cash, Midtrans, dll) menggunakan endpoint yang sama
+            console.log('Processing payment with method:', currentOrder.payment_method);
+            await processPayment(orderData);
         } catch (error) {
             console.error('❌ Error submitting order:', error);
-            showNotification('Terjadi kesalahan saat membuat transaksi', 'error');
+            // Error sudah ditangani di processPayment
+            // Tidak perlu alert lagi di sini
         }
     }
 
-    // Process cash payment
-    async function processCashPayment(orderData) {
+    // Process payment (all payment methods)
+    async function processPayment(orderData) {
         try {
             // Show loading
             Swal.fire({
@@ -2617,171 +2615,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             throw error;
         }
     }
-
-    // Process with Midtrans
-    async function processWithMidtrans(orderData) {
-        console.log('💳 processWithMidtrans() called');
-        try {
-            // Show loading
-            Swal.fire({
-                title: 'Memproses...',
-                html: 'Mohon tunggu, sedang menghubungkan ke payment gateway',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            console.log('Fetching Snap token from API...');
-            // Get Snap Token from backend
-            const response = await fetch('api/midtrans/create-transaction.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(orderData)
-            });
-
-            console.log('API Response status:', response.status);
-            console.log('API Response ok:', response.ok);
-
-            // Get response text first
-            const responseText = await response.text();
-            console.log('API Response text:', responseText);
-
-            // Try to parse as JSON
-            let result;
-            try {
-                result = JSON.parse(responseText);
-            } catch (e) {
-                console.error('❌ Failed to parse JSON:', e);
-                console.error('Response was:', responseText);
-                throw new Error('Invalid JSON response from server');
-            }
-
-            console.log('API Response data:', result);
-
-            if (result.success && result.snap_token) {
-                console.log('✅ Snap token received:', result.snap_token.substring(0, 20) + '...');
-                Swal.close();
-
-                console.log('Checking window.snap...');
-                if (typeof window.snap === 'undefined') {
-                    console.error('❌ window.snap is undefined! Snap.js not loaded!');
-                    showNotification('Snap.js tidak dimuat! Periksa kredensial Midtrans.', 'error');
-                    return;
-                }
-
-                console.log('✅ window.snap is available');
-                console.log('Opening Snap popup...');
-
-                // Open Midtrans Snap popup
-                window.snap.pay(result.snap_token, {
-                    onSuccess: function (result) {
-                        console.log('✅ Payment success:', result);
-                        handleMidtransSuccess(result, orderData);
-                    },
-                    onPending: function (result) {
-                        console.log('⏳ Payment pending:', result);
-                        handleMidtransPending(result, orderData);
-                    },
-                    onError: function (result) {
-                        console.log('❌ Payment error:', result);
-                        showNotification('Pembayaran gagal! Silakan coba lagi.', 'error');
-                    },
-                    onClose: function () {
-                        console.log('🚪 Payment popup closed');
-                        showNotification('Pembayaran dibatalkan', 'warning');
-                    }
-                });
-            } else {
-                console.error('❌ Failed to get snap token:', result.message);
-                Swal.close();
-                showNotification(result.message || 'Gagal mendapatkan token pembayaran', 'error');
-            }
-        } catch (error) {
-            console.error('❌ Exception in processWithMidtrans:', error);
-            Swal.close();
-            throw error;
-        }
-    }
-
-    // Handle Midtrans payment success
-    async function handleMidtransSuccess(paymentResult, orderData) {
-        // Save order with payment info
-        orderData.payment_status = 'paid';
-        orderData.midtrans_transaction_id = paymentResult.transaction_id;
-        orderData.midtrans_order_id = paymentResult.order_id;
-        orderData.midtrans_payment_type = paymentResult.payment_type;
-
-        const response = await fetch('api/orders.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderData)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Pembayaran Berhasil!',
-                html: `
-                    <p>Transaksi telah selesai</p>
-                    <p><strong>Order ID:</strong> ${result.data.order_number}</p>
-                    <p><strong>Total:</strong> Rp ${formatPrice(result.data.total_amount)}</p>
-                `,
-                confirmButtonText: 'OK'
-            }).then(() => {
-                showOrderList();
-            });
-        } else {
-            showNotification('Pembayaran berhasil, tapi gagal menyimpan data order', 'warning');
-        }
-    }
-
-    // Handle Midtrans payment pending
-    async function handleMidtransPending(paymentResult, orderData) {
-        // Save order with pending status
-        orderData.payment_status = 'pending';
-        orderData.midtrans_transaction_id = paymentResult.transaction_id;
-        orderData.midtrans_order_id = paymentResult.order_id;
-        orderData.midtrans_payment_type = paymentResult.payment_type;
-
-        const response = await fetch('api/orders.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(orderData)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            Swal.fire({
-                icon: 'info',
-                title: 'Pembayaran Pending',
-                html: `
-                    <p>Pembayaran Anda sedang diproses</p>
-                    <p><strong>Order ID:</strong> ${result.data.order_number}</p>
-                    <p>Silakan selesaikan pembayaran sesuai instruksi yang diberikan</p>
-                `,
-                confirmButtonText: 'OK'
-            }).then(() => {
-                showOrderList();
-            });
-        }
-    }
-
-
-
-
-
-
-
 
 
     // Add topping to item
@@ -2896,9 +2729,14 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                                         <i class="ti ti-flame" style="color: #dc2626; font-size: 16px;"></i>
                                         <span style="color: #991b1b; font-weight: 600; font-size: 13px;">Tingkat Kepedasan</span>
                                     </div>
-                                    <span style="background: #dc2626; color: white; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">
-                                        ${item.spice_level_name}
-                                    </span>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="background: #dc2626; color: white; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                                            ${item.spice_level_name}
+                                        </span>
+                                        ${item.spice_level_price && parseFloat(item.spice_level_price) > 0 ? `
+                                        <span style="color: #dc2626; font-size: 12px; font-weight: 600;">+Rp ${formatPrice(item.spice_level_price)}</span>
+                                        ` : ''}
+                                    </div>
                                 </div>
                             </div>
                             ` : ''}
@@ -2991,8 +2829,8 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
                                 <!-- Unified Container: Info Lengkap -->
                                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
-                                    <!-- Grid 3 Kolom -->
-                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;">
+                                    <!-- Grid 4 Kolom -->
+                                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;">
                                         
                                         <!-- Kolom 1: Info Pelanggan -->
                                         <div style="padding: 20px; border-right: 1px solid #e2e8f0;">
@@ -3038,7 +2876,28 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                                             ` : ''}
                                         </div>
 
-                                        <!-- Kolom 3: Status -->
+                                        <!-- Kolom 3: Metode Pembayaran -->
+                                        <div style="padding: 20px; border-right: 1px solid #e2e8f0;">
+                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+                                                💳 Pembayaran
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                                ${order.payment_method === 'midtrans'
+                            ? `<i class="ti ti-credit-card" style="font-size: 24px; color: #3b82f6;"></i>
+                                   <div>
+                                       <div style="color: #0f172a; font-weight: 700; font-size: 15px;">Midtrans</div>
+                                       <div style="color: #64748b; font-size: 11px;">Payment Gateway</div>
+                                   </div>`
+                            : `<i class="ti ti-cash" style="font-size: 24px; color: #10b981;"></i>
+                                   <div>
+                                       <div style="color: #0f172a; font-weight: 700; font-size: 15px;">Cash</div>
+                                       <div style="color: #64748b; font-size: 11px;">Tunai</div>
+                                   </div>`
+                        }
+                                            </div>
+                                        </div>
+
+                                        <!-- Kolom 4: Status -->
                                         <div style="padding: 20px;">
                                             <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
                                                 📊 Status
@@ -3139,11 +2998,156 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         }
     }
 
-    // Confirm payment and complete order (combined action)
+    // Reopen Midtrans Snap for existing order
+    async function reopenMidtransSnap(orderNumber, orderId) {
+        try {
+            // Show loading
+            Swal.fire({
+                title: 'Memuat...',
+                html: 'Sedang menyiapkan pembayaran Midtrans',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Get order details to fetch snap token
+            const response = await fetch(`api/orders.php?id=${orderId}`);
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                const order = result.data;
+
+                // Prepare item details for Midtrans
+                const itemDetails = order.items.map(item => {
+                    // Calculate item price including customizations and toppings
+                    let itemPrice = parseFloat(item.base_price || 0);
+
+                    // Add spice level price
+                    if (item.spice_level_price) {
+                        itemPrice += parseFloat(item.spice_level_price);
+                    }
+
+                    // Add customizations price
+                    if (item.customizations && Array.isArray(item.customizations)) {
+                        item.customizations.forEach(c => {
+                            itemPrice += parseFloat(c.price || 0);
+                        });
+                    }
+
+                    // Add toppings price
+                    if (item.toppings && Array.isArray(item.toppings)) {
+                        item.toppings.forEach(t => {
+                            itemPrice += parseFloat(t.unit_price || 0) * parseInt(t.quantity || 1);
+                        });
+                    }
+
+                    return {
+                        id: item.id,
+                        name: item.product_name + (item.spice_level_name ? ' - ' + item.spice_level_name : ''),
+                        price: Math.round(itemPrice),
+                        quantity: parseInt(item.quantity)
+                    };
+                });
+
+                // Get snap token using new endpoint (no duplicate transaction)
+                const snapResponse = await fetch('api/midtrans/get-snap-token.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        order_number: order.order_number,
+                        customer_name: order.customer_name,
+                        phone: order.phone || '0000000000',
+                        total_amount: order.total_amount,
+                        items: itemDetails
+                    })
+                });
+
+                const snapResult = await snapResponse.json();
+
+                if (snapResult.success && snapResult.snap_token) {
+                    Swal.close();
+
+                    // Check if Snap.js is loaded
+                    if (typeof window.snap === 'undefined') {
+                        showNotification('Snap.js tidak dimuat! Periksa kredensial Midtrans.', 'error');
+                        return;
+                    }
+
+                    // Add delay to ensure Swal is completely closed and DOM is ready
+                    setTimeout(() => {
+                        try {
+                            // Open Midtrans Snap popup
+                            window.snap.pay(snapResult.snap_token, {
+                                onSuccess: function (result) {
+                                    console.log('Payment success:', result);
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Pembayaran Berhasil!',
+                                        text: 'Status pembayaran akan diperbarui otomatis oleh sistem',
+                                        timer: 3000,
+                                        showConfirmButton: false
+                                    });
+                                    // Reload orders to get updated status from webhook
+                                    setTimeout(() => loadOrders(), 3000);
+                                },
+                                onPending: function (result) {
+                                    console.log('Payment pending:', result);
+                                    Swal.fire({
+                                        icon: 'info',
+                                        title: 'Pembayaran Menunggu',
+                                        text: 'Pembayaran sedang diproses',
+                                        timer: 3000,
+                                        showConfirmButton: false
+                                    });
+                                    setTimeout(() => loadOrders(), 3000);
+                                },
+                                onError: function (result) {
+                                    console.log('Payment error:', result);
+                                    showNotification('Pembayaran gagal! Silakan coba lagi.', 'error');
+                                },
+                                onClose: function () {
+                                    console.log('Payment popup closed');
+                                    showNotification('Pembayaran dibatalkan', 'info');
+                                    loadOrders(); // Refresh to check if any status update
+                                }
+                            });
+                        } catch (error) {
+                            console.error('Error opening Snap:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal Membuka Pembayaran',
+                                text: error.message || 'Silakan coba lagi',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    }, 500); // Delay 500ms to ensure clean state
+                } else {
+                    Swal.close();
+                    showNotification(snapResult.message || 'Gagal mendapatkan token pembayaran', 'error');
+                }
+            } else {
+                Swal.close();
+                showNotification('Gagal memuat detail order', 'error');
+            }
+        } catch (error) {
+            console.error('Error reopening Midtrans Snap:', error);
+            Swal.close();
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal',
+                text: 'Terjadi kesalahan: ' + error.message
+            });
+        }
+    }
+
+    // Confirm payment and complete order (for CASH payment only)
     async function confirmPaymentAndComplete(orderId) {
         const confirm = await Swal.fire({
             title: 'Konfirmasi Pembayaran & Selesaikan?',
-            text: 'Tandai pembayaran sudah diterima dan pesanan selesai?',
+            text: 'Tandai pembayaran CASH sudah diterima dan pesanan selesai?',
             icon: 'question',
             showCancelButton: true,
             confirmButtonText: '<i class="ti ti-check me-1"></i>Ya, Sudah Dibayar & Selesai',
@@ -3283,19 +3287,17 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                     <table class="table table-hover mb-0">
                         <thead class="table-light table-header-sticky">
                             <tr class="column-headers">
-                                <th style="min-width: 50px;">#</th>
-                                <th style="min-width: 180px;">No. Transaksi</th>
-                                <th style="min-width: 150px;">Tanggal & Waktu</th>
-                                <th style="min-width: 140px;">Tipe</th>
-                                <th style="min-width: 80px;">Items</th>
-                                <th style="min-width: 130px;">Total</th>
-                                <th style="min-width: 140px;">Status</th>
-                                <th style="min-width: 120px;">Aksi</th>
+                                <th style="min-width: 60px;">No</th>
+                                <th style="min-width: 200px;">No. Transaksi</th>
+                                <th style="min-width: 150px;">Tanggal</th>
+                                <th style="min-width: 150px;">Total</th>
+                                <th style="min-width: 150px;">Status</th>
+                                <th style="min-width: 150px;">Aksi</th>
                             </tr>
-                        </thead>
+            </thead>
                         <tbody id="orderTableBody">
                             <tr>
-                                <td colspan="8" class="text-center">
+                                <td colspan="6" class="text-center">
                                     <div class="spinner-border spinner-border-sm" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
@@ -3305,6 +3307,16 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         </tbody>
                     </table>
                 </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex align-items-center">
+                    <small class="text-muted" id="paginationInfo">Showing 0 - 0 of 0 entries</small>
+                </div>
+                <nav aria-label="Order pagination">
+                    <ul class="pagination pagination-sm mb-0" id="paginationControls"></ul>
+                </nav>
             </div>
         `;
     }
@@ -3319,32 +3331,34 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         if (allOrders.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center">
+                    <td colspan="6" class="text-center">
                         <p class="mb-0">Tidak ada data transaksi</p>
                     </td>
                 </tr>
             `;
+
+            document.getElementById('paginationInfo').textContent = 'Showing 0 - 0 of 0 entries';
+            document.getElementById('paginationControls').innerHTML = '';
             return;
         }
 
-        allOrders.forEach((order, index) => {
+        // Calculate pagination
+        const totalPages = Math.ceil(allOrders.length / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, allOrders.length);
+        const paginatedOrders = allOrders.slice(startIndex, endIndex);
+
+        // Display paginated orders
+        paginatedOrders.forEach((order, index) => {
             const row = document.createElement('tr');
             const statusBadge = getStatusBadge(order.order_status);
             const paymentBadge = getPaymentBadge(order.payment_status);
-
-            // Order type badge only (no table number)
-            const orderTypeDisplay = order.order_type === 'dine_in'
-                ? '<span class="badge bg-info"><i class="ti ti-utensils me-1"></i>Dine In</span>'
-                : '<span class="badge bg-primary"><i class="ti ti-shopping-bag me-1"></i>Take Away</span>';
+            const rowNumber = startIndex + index + 1;
 
             row.innerHTML = `
-                <td>${index + 1}</td>
-                <td><strong>${order.order_number}</strong></td>
+                <td>${rowNumber}</td>
+                <td><strong>${order.order_number}</strong></t           d>
                 <td>${formatDate(order.created_at)}</td>
-                <td>${orderTypeDisplay}</td>
-                <td>
-                    <div>${order.total_items || order.items_count || 0} item</div>
-                </td>
                 <td><strong class="text-success">Rp ${formatPrice(order.total_amount)}</strong></td>
                 <td>
                     ${statusBadge}
@@ -3355,9 +3369,15 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         <i class="ti ti-eye"></i>
                     </button>
                     ${order.order_status === 'pending' && order.payment_status === 'pending' ? `
-                        <button class="btn btn-sm btn-success me-1" onclick="confirmPaymentAndComplete('${order.id}')" title="Konfirmasi Pembayaran & Selesaikan">
-                            <i class="ti ti-check"></i>
-                        </button>
+                        ${order.payment_method === 'midtrans' ? `
+                            <button class="btn btn-sm btn-primary me-1" onclick="reopenMidtransSnap('${order.order_number}', '${order.id}')" title="Bayar dengan Midtrans">
+                                <i class="ti ti-credit-card"></i>
+                            </button>
+                        ` : `
+                            <button class="btn btn-sm btn-success me-1" onclick="confirmPaymentAndComplete('${order.id}')" title="Konfirmasi Pembayaran & Selesaikan">
+                                <i class="ti ti-check"></i>
+                            </button>
+                        `}
                         <button class="btn btn-sm btn-danger" onclick="cancelOrder('${order.id}')" title="Batalkan">
                             <i class="ti ti-x"></i>
                         </button>
@@ -3366,6 +3386,9 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             `;
             tbody.appendChild(row);
         });
+
+        // Update pagination
+        updatePagination();
     }
 
     // Get status badge
@@ -3398,6 +3421,91 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     function formatDate(dateString) {
         const date = new Date(dateString);
         return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    // Pagination functions
+    function updatePagination() {
+        const totalItems = allOrders.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+        const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
+        const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+        document.getElementById('paginationInfo').textContent =
+            `Showing ${startItem} - ${endItem} of ${totalItems} entries`;
+
+        generatePaginationControls(totalPages);
+    }
+
+    function generatePaginationControls(totalPages) {
+        const paginationContainer = document.getElementById('paginationControls');
+        if (!paginationContainer) return;
+
+        paginationContainer.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        `;
+        paginationContainer.appendChild(prevLi);
+
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+
+        if (startPage > 1) {
+            const firstLi = document.createElement('li');
+            firstLi.className = 'page-item';
+            firstLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(1); return false;">1</a>`;
+            paginationContainer.appendChild(firstLi);
+
+            if (startPage > 2) {
+                const dotsLi = document.createElement('li');
+                dotsLi.className = 'page-item disabled';
+                dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                paginationContainer.appendChild(dotsLi);
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>`;
+            paginationContainer.appendChild(li);
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const dotsLi = document.createElement('li');
+                dotsLi.className = 'page-item disabled';
+                dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                paginationContainer.appendChild(dotsLi);
+            }
+
+            const lastLi = document.createElement('li');
+            lastLi.className = 'page-item';
+            lastLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>`;
+            paginationContainer.appendChild(lastLi);
+        }
+
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        `;
+        paginationContainer.appendChild(nextLi);
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(allOrders.length / itemsPerPage);
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        currentPage = page;
+        displayOrders();
     }
 
     // Format time
