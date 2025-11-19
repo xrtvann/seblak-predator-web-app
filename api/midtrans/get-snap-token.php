@@ -81,6 +81,13 @@ try {
         ]
     ];
 
+    // Log request to Midtrans
+    error_log('=== Midtrans Snap Token Request ===');
+    error_log('URL: ' . MIDTRANS_SNAP_URL . '/transactions');
+    error_log('Mode: ' . (MIDTRANS_IS_PRODUCTION ? 'PRODUCTION' : 'SANDBOX'));
+    error_log('Server Key: ' . substr(MIDTRANS_SERVER_KEY, 0, 15) . '...');
+    error_log('Transaction Data: ' . json_encode($transactionData));
+
     // Call Midtrans Snap API
     $ch = curl_init();
     curl_setopt_array($ch, [
@@ -92,13 +99,22 @@ try {
             'Content-Type: application/json',
             'Accept: application/json',
             'Authorization: Basic ' . base64_encode(MIDTRANS_SERVER_KEY . ':')
-        ]
+        ],
+        CURLOPT_SSL_VERIFYPEER => false, // Disable SSL verification for local testing
+        CURLOPT_SSL_VERIFYHOST => false
     ]);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
     curl_close($ch);
+
+    // Log response
+    error_log('HTTP Code: ' . $httpCode);
+    error_log('Response: ' . $response);
+    if ($curlError) {
+        error_log('CURL Error: ' . $curlError);
+    }
 
     if ($curlError) {
         throw new Exception('Curl error: ' . $curlError);
@@ -110,6 +126,11 @@ try {
         $errorMessage = isset($result['error_messages'])
             ? implode(', ', $result['error_messages'])
             : 'Failed to get snap token';
+
+        // Log detailed error
+        error_log('Midtrans Error: ' . $errorMessage);
+        error_log('Full Response: ' . json_encode($result));
+
         throw new Exception($errorMessage);
     }
 

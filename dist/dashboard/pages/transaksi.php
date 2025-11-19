@@ -214,13 +214,18 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     </div>
 </div>
 
-<!-- Midtrans Snap JS (Sandbox) -->
-<!-- IMPORTANT: Ganti YOUR_CLIENT_KEY_HERE dengan Client Key dari Midtrans Dashboard -->
-<!-- Dapatkan di: https://dashboard.sandbox.midtrans.com/settings/config_info -->
-<script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
-    data-client-key="<?php echo defined('MIDTRANS_CLIENT_KEY') ? MIDTRANS_CLIENT_KEY : 'SB-Mid-client-YOUR_CLIENT_KEY_HERE'; ?>"></script>
+<!-- Midtrans Snap JS -->
+<!-- Automatically loads Production or Sandbox based on MIDTRANS_IS_PRODUCTION config -->
+<script type="text/javascript"
+    src="<?php echo MIDTRANS_IS_PRODUCTION ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js'; ?>"
+    data-client-key="<?php echo MIDTRANS_CLIENT_KEY; ?>"></script>
 
 <script>
+    // Debug: Check Midtrans configuration
+    console.log('Midtrans Mode:', '<?php echo MIDTRANS_IS_PRODUCTION ? 'PRODUCTION' : 'SANDBOX'; ?>');
+    console.log('Midtrans Client Key:', '<?php echo substr(MIDTRANS_CLIENT_KEY, 0, 20); ?>...');
+    console.log('Snap.js loaded from:', '<?php echo MIDTRANS_IS_PRODUCTION ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js'; ?>');
+
     // Global variables
     let allOrders = [];
     let allProducts = [];
@@ -3066,15 +3071,19 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 });
 
                 const snapResult = await snapResponse.json();
+                console.log('Snap token response:', snapResult);
 
                 if (snapResult.success && snapResult.snap_token) {
                     Swal.close();
 
                     // Check if Snap.js is loaded
                     if (typeof window.snap === 'undefined') {
+                        console.error('Snap.js not loaded!');
                         showNotification('Snap.js tidak dimuat! Periksa kredensial Midtrans.', 'error');
                         return;
                     }
+
+                    console.log('Opening Snap with token:', snapResult.snap_token);
 
                     // Add delay to ensure Swal is completely closed and DOM is ready
                     setTimeout(() => {
