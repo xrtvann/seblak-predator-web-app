@@ -3076,6 +3076,13 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 if (snapResult.success && snapResult.snap_token) {
                     Swal.close();
 
+                    // Log if token is reused
+                    if (snapResult.reused) {
+                        console.log('✅ Using existing Snap token (no duplicate transaction created)');
+                    } else {
+                        console.log('🆕 New Snap token generated');
+                    }
+
                     // Check if Snap.js is loaded
                     if (typeof window.snap === 'undefined') {
                         console.error('Snap.js not loaded!');

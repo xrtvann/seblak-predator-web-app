@@ -71,9 +71,11 @@ function getAllExpenses()
         }
 
         if (isset($_GET['is_active'])) {
-            $whereConditions[] = "e.is_active = ?";
+            $whereConditions[] = "e.is_deleted = ?";
+            // is_active=true means is_deleted=0, is_active=false means is_deleted=1
             $is_active_value = ($_GET['is_active'] === 'true' || $_GET['is_active'] === '1' || $_GET['is_active'] === 1) ? 1 : 0;
-            $params[] = $is_active_value;
+            $is_deleted_value = $is_active_value === 1 ? 0 : 1;
+            $params[] = $is_deleted_value;
             $types .= "i";
         }
 
@@ -125,7 +127,8 @@ function getAllExpenses()
 
         // Get expenses
         $query = "SELECT e.id, e.category_id, e.title, e.description, e.amount, e.expense_date,
-                         e.payment_method, e.receipt_image, e.created_by, e.is_active,
+                         e.receipt_image, e.created_by, 
+                         (CASE WHEN e.is_deleted = 0 THEN 1 ELSE 0 END) as is_active,
                          e.created_at, e.updated_at,
                          ec.name as category_name, ec.color as category_color, ec.icon as category_icon,
                          u.username as created_by_name
@@ -162,7 +165,7 @@ function getAllExpenses()
                         SUM(CASE WHEN DATE(expense_date) = CURDATE() THEN amount ELSE 0 END) as today_expenses,
                         SUM(CASE WHEN YEAR(expense_date) = YEAR(CURDATE()) AND MONTH(expense_date) = MONTH(CURDATE()) THEN amount ELSE 0 END) as month_expenses,
                         AVG(amount) as avg_expense
-                       FROM expenses WHERE is_active = TRUE";
+                       FROM expenses WHERE is_deleted = 0";
         $statsResult = mysqli_query($koneksi, $statsQuery);
         $stats = mysqli_fetch_assoc($statsResult);
 
@@ -201,7 +204,8 @@ function getExpenseById()
 
     try {
         $query = "SELECT e.id, e.category_id, e.title, e.description, e.amount, e.expense_date,
-                         e.payment_method, e.receipt_image, e.created_by, e.is_active,
+                         e.receipt_image, e.created_by,
+                         (CASE WHEN e.is_deleted = 0 THEN 1 ELSE 0 END) as is_active,
                          e.created_at, e.updated_at,
                          ec.name as category_name, ec.color as category_color, ec.icon as category_icon,
                          u.username as created_by_name
@@ -211,7 +215,7 @@ function getExpenseById()
                   WHERE e.id = ?";
 
         $stmt = mysqli_prepare($koneksi, $query);
-        mysqli_stmt_bind_param($stmt, "s", $expense_id);
+        mysqli_stmt_bind_param($stmt, "i", $expense_id);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
 
@@ -267,9 +271,9 @@ function createExpense()
 
     try {
         // Validate category exists
-        $categoryQuery = "SELECT id FROM expense_categories WHERE id = ? AND is_active = TRUE";
+        $categoryQuery = "SELECT id FROM expense_categories WHERE id = ? AND is_deleted = 0";
         $categoryStmt = mysqli_prepare($koneksi, $categoryQuery);
-        mysqli_stmt_bind_param($categoryStmt, "s", $input['category_id']);
+        mysqli_stmt_bind_param($categoryStmt, "i", $input['category_id']);
         mysqli_stmt_execute($categoryStmt);
         $categoryResult = mysqli_stmt_get_result($categoryStmt);
 
@@ -287,26 +291,25 @@ function createExpense()
             return;
         }
 
-        $id = 'exp_' . uniqid();
         $title = mysqli_real_escape_string($koneksi, trim($input['title']));
         $description = isset($input['description']) ? mysqli_real_escape_string($koneksi, trim($input['description'])) : null;
         $expense_date = date('Y-m-d', strtotime($input['expense_date']));
-        $payment_method = isset($input['payment_method']) ? $input['payment_method'] : 'cash';
         $receipt_image = isset($input['receipt_image']) ? mysqli_real_escape_string($koneksi, trim($input['receipt_image'])) : null;
         $created_by = $current_user['id'] ?? null;
 
-        // Insert expense
-        $insertQuery = "INSERT INTO expenses (id, category_id, title, description, amount, expense_date, payment_method, receipt_image, created_by, is_active, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        // Insert expense (id auto increment)
+        $insertQuery = "INSERT INTO expenses (category_id, title, description, amount, expense_date, receipt_image, created_by, is_deleted, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         $insertStmt = mysqli_prepare($koneksi, $insertQuery);
-        mysqli_stmt_bind_param($insertStmt, "ssssdssss", $id, $input['category_id'], $title, $description, $amount, $expense_date, $payment_method, $receipt_image, $created_by);
+        mysqli_stmt_bind_param($insertStmt, "issdsss", $input['category_id'], $title, $description, $amount, $expense_date, $receipt_image, $created_by);
 
         if (mysqli_stmt_execute($insertStmt)) {
+            $expense_id = mysqli_insert_id($koneksi);
             http_response_code(201);
             echo json_encode([
                 'success' => true,
                 'message' => 'Pengeluaran berhasil dibuat',
-                'expense_id' => $id
+                'expense_id' => $expense_id
             ]);
         } else {
             throw new Exception('Failed to create expense: ' . mysqli_error($koneksi));
@@ -342,9 +345,9 @@ function updateExpense()
 
     try {
         // Check if expense exists
-        $checkQuery = "SELECT id FROM expenses WHERE id = ? AND is_active = TRUE";
+        $checkQuery = "SELECT id FROM expenses WHERE id = ? AND is_deleted = 0";
         $checkStmt = mysqli_prepare($koneksi, $checkQuery);
-        mysqli_stmt_bind_param($checkStmt, "s", $expense_id);
+        mysqli_stmt_bind_param($checkStmt, "i", $expense_id);
         mysqli_stmt_execute($checkStmt);
         $checkResult = mysqli_stmt_get_result($checkStmt);
 
@@ -372,9 +375,9 @@ function updateExpense()
 
         if (isset($input['category_id'])) {
             // Validate category exists
-            $categoryQuery = "SELECT id FROM expense_categories WHERE id = ? AND is_active = TRUE";
+            $categoryQuery = "SELECT id FROM expense_categories WHERE id = ? AND is_deleted = 0";
             $categoryStmt = mysqli_prepare($koneksi, $categoryQuery);
-            mysqli_stmt_bind_param($categoryStmt, "s", $input['category_id']);
+            mysqli_stmt_bind_param($categoryStmt, "i", $input['category_id']);
             mysqli_stmt_execute($categoryStmt);
             $categoryResult = mysqli_stmt_get_result($categoryStmt);
 
@@ -407,12 +410,6 @@ function updateExpense()
             $values[] = date('Y-m-d', strtotime($input['expense_date']));
         }
 
-        if (isset($input['payment_method'])) {
-            $updateFields[] = "payment_method = ?";
-            $types .= "s";
-            $values[] = $input['payment_method'];
-        }
-
         if (isset($input['receipt_image'])) {
             $updateFields[] = "receipt_image = ?";
             $types .= "s";
@@ -426,7 +423,7 @@ function updateExpense()
         }
 
         $updateFields[] = "updated_at = CURRENT_TIMESTAMP";
-        $types .= "s";
+        $types .= "i";
         $values[] = $expense_id;
 
         $updateQuery = "UPDATE expenses SET " . implode(", ", $updateFields) . " WHERE id = ?";
@@ -465,9 +462,9 @@ function deleteExpense()
 
     try {
         // Soft delete expense
-        $deleteQuery = "UPDATE expenses SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        $deleteQuery = "UPDATE expenses SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
         $deleteStmt = mysqli_prepare($koneksi, $deleteQuery);
-        mysqli_stmt_bind_param($deleteStmt, "s", $expense_id);
+        mysqli_stmt_bind_param($deleteStmt, "i", $expense_id);
 
         if (mysqli_stmt_execute($deleteStmt)) {
             if (mysqli_affected_rows($koneksi) > 0) {
@@ -505,10 +502,10 @@ function restoreExpense()
     }
 
     try {
-        // Check if expense exists and is inactive
-        $checkQuery = "SELECT id, is_active FROM expenses WHERE id = ?";
+        // Check if expense exists and is deleted
+        $checkQuery = "SELECT id, is_deleted FROM expenses WHERE id = ?";
         $checkStmt = mysqli_prepare($koneksi, $checkQuery);
-        mysqli_stmt_bind_param($checkStmt, "s", $expense_id);
+        mysqli_stmt_bind_param($checkStmt, "i", $expense_id);
         mysqli_stmt_execute($checkStmt);
         $checkResult = mysqli_stmt_get_result($checkStmt);
 
@@ -519,16 +516,16 @@ function restoreExpense()
         }
 
         $expense = mysqli_fetch_assoc($checkResult);
-        if ($expense['is_active']) {
+        if ($expense['is_deleted'] == 0) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Pengeluaran sudah aktif']);
             return;
         }
 
-        // Restore expense (set is_active = TRUE)
-        $restoreQuery = "UPDATE expenses SET is_active = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+        // Restore expense (set is_deleted = 0)
+        $restoreQuery = "UPDATE expenses SET is_deleted = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
         $restoreStmt = mysqli_prepare($koneksi, $restoreQuery);
-        mysqli_stmt_bind_param($restoreStmt, "s", $expense_id);
+        mysqli_stmt_bind_param($restoreStmt, "i", $expense_id);
 
         if (mysqli_stmt_execute($restoreStmt)) {
             if (mysqli_affected_rows($koneksi) > 0) {

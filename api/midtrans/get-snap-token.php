@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 // Load configuration
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../../config/koneksi.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 try {
@@ -52,6 +53,39 @@ try {
     $phone = $input['phone'];
     $totalAmount = floatval($input['total_amount']);
     $items = $input['items'];
+
+    // Get order_id from database
+    $orderQuery = "SELECT id FROM orders WHERE order_number = ?";
+    $stmt = mysqli_prepare($koneksi, $orderQuery);
+    mysqli_stmt_bind_param($stmt, "s", $orderNumber);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $orderData = mysqli_fetch_assoc($result);
+
+    if (!$orderData) {
+        throw new Exception('Order not found');
+    }
+
+    $orderId = $orderData['id'];
+
+    // Check if snap_token already exists for this order
+    $tokenQuery = "SELECT snap_token FROM midtrans_snap_tokens WHERE order_id = ?";
+    $tokenStmt = mysqli_prepare($koneksi, $tokenQuery);
+    mysqli_stmt_bind_param($tokenStmt, "s", $orderId);
+    mysqli_stmt_execute($tokenStmt);
+    $tokenResult = mysqli_stmt_get_result($tokenStmt);
+    $existingToken = mysqli_fetch_assoc($tokenResult);
+
+    // If snap_token exists, return it (reuse existing token)
+    if ($existingToken && !empty($existingToken['snap_token'])) {
+        echo json_encode([
+            'success' => true,
+            'snap_token' => $existingToken['snap_token'],
+            'order_number' => $orderNumber,
+            'reused' => true // Indicate this is a reused token
+        ]);
+        exit();
+    }
 
     // Prepare item details for Midtrans
     $itemDetails = [];
@@ -138,13 +172,23 @@ try {
         throw new Exception('Snap token not found in response');
     }
 
+    $snapToken = $result['token'];
+
+    // Save snap_token to database for reuse
+    $saveTokenQuery = "INSERT INTO midtrans_snap_tokens (order_id, snap_token) VALUES (?, ?) 
+                       ON DUPLICATE KEY UPDATE snap_token = ?";
+    $saveStmt = mysqli_prepare($koneksi, $saveTokenQuery);
+    mysqli_stmt_bind_param($saveStmt, "sss", $orderId, $snapToken, $snapToken);
+    mysqli_stmt_execute($saveStmt);
+
     // Return success with snap token
     echo json_encode([
         'success' => true,
-        'snap_token' => $result['token'],
+        'snap_token' => $snapToken,
         'redirect_url' => $result['redirect_url'] ?? null,
-        'order_number' => $orderNumber, // Original order number in our database
-        'midtrans_order_id' => $midtransOrderId // Unique ID sent to Midtrans
+        'order_number' => $orderNumber,
+        'midtrans_order_id' => $midtransOrderId,
+        'reused' => false // New token generated
     ]);
 
 } catch (Exception $e) {

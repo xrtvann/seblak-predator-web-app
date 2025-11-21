@@ -73,7 +73,7 @@
     </div>
 
     <div class="col-xl-3 col-md-6">
-        <div class="card bg-danger-dark dashnum-card text-white overflow-hidden">
+        <div class="card bg-danger dashnum-card text-white overflow-hidden">
             <span class="round small"></span>
             <span class="round big"></span>
             <div class="card-body">
@@ -201,11 +201,12 @@
                                 <th>Kategori</th>
                                 <th>Keterangan</th>
                                 <th class="text-end">Total</th>
+                                <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="expenseTableBody">
                             <tr>
-                                <td colspan="4" class="text-center">
+                                <td colspan="5" class="text-center">
                                     <div class="spinner-border spinner-border-sm" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
@@ -219,7 +220,7 @@
     </div>
 
     <!-- Top Products -->
-    <div class="col-12">
+    <!-- <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5>Produk Terlaris</h5>
@@ -249,7 +250,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 </div>
 <!-- [ Main Content ] end -->
 
@@ -329,7 +330,7 @@
     // Load expense categories
     async function loadExpenseCategories() {
         try {
-            const response = await fetch('api/expense-categories.php');
+            const response = await fetch('../../../api/expense-categories.php');
             const result = await response.json();
 
             if (result.success) {
@@ -353,7 +354,7 @@
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
 
-        let url = `api/financial-report.php?period=${period}`;
+        let url = `../../../api/financial-report.php?period=${period}`;
         if (period === 'custom' && startDate && endDate) {
             url += `&start_date=${startDate}&end_date=${endDate}`;
         }
@@ -564,46 +565,57 @@
                 <td><span class="badge bg-light-warning">${item.category_name}</span></td>
                 <td>${item.title}</td>
                 <td class="text-end text-danger fw-bold">${formatRupiah(item.amount)}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-icon btn-link-secondary" onclick="editExpense('${item.id}')" title="Edit">
+                        <i class="ti ti-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-icon btn-link-danger" onclick="deleteExpense('${item.id}')" title="Hapus">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                </td>
             </tr>
         `).join('');
         } else {
-            expenseTable.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Tidak ada data</td></tr>';
+            expenseTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>';
         }
 
         // Top products table
-        const topProductsTable = document.getElementById('topProductsTableBody');
-        if (data.top_products && data.top_products.length > 0) {
-            topProductsTable.innerHTML = data.top_products.map((item, index) => `
-            <tr>
-                <td>
-                    <span class="badge ${index === 0 ? 'bg-warning' : index === 1 ? 'bg-light-warning' : 'bg-light-secondary'}">
-                        #${index + 1}
-                    </span>
-                </td>
-                <td><strong>${item.product_name}</strong></td>
-                <td class="text-center">${item.total_quantity}</td>
-                <td class="text-end text-success fw-bold">${formatRupiah(item.total_revenue)}</td>
-                <td class="text-end">
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-success" role="progressbar" 
-                             style="width: ${item.contribution}%" 
-                             aria-valuenow="${item.contribution}" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100"></div>
-                    </div>
-                    <small class="text-muted">${item.contribution}%</small>
-                </td>
-            </tr>
-        `).join('');
-        } else {
-            topProductsTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>';
-        }
+        // const topProductsTable = document.getElementById('topProductsTableBody');
+        // if (data.top_products && data.top_products.length > 0) {
+        //     topProductsTable.innerHTML = data.top_products.map((item, index) => `
+        //     <tr>
+        //         <td>
+        //             <span class="badge ${index === 0 ? 'bg-warning' : index === 1 ? 'bg-light-warning' : 'bg-light-secondary'}">
+        //                 #${index + 1}
+        //             </span>
+        //         </td>
+        //         <td><strong>${item.product_name}</strong></td>
+        //         <td class="text-center">${item.total_quantity}</td>
+        //         <td class="text-end text-success fw-bold">${formatRupiah(item.total_revenue)}</td>
+        //         <td class="text-end">
+        //             <div class="progress" style="height: 6px;">
+        //                 <div class="progress-bar bg-success" role="progressbar" 
+        //                      style="width: ${item.contribution}%" 
+        //                      aria-valuenow="${item.contribution}" 
+        //                      aria-valuemin="0" 
+        //                      aria-valuemax="100"></div>
+        //             </div>
+        //             <small class="text-muted">${item.contribution}%</small>
+        //         </td>
+        //     </tr>
+        // `).join('');
+        // } else {
+        //     topProductsTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Tidak ada data</td></tr>';
+        // }
     }
 
     // Show expense modal
     function showExpenseModal() {
         document.getElementById('expenseForm').reset();
         document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('addExpenseModalLabel').textContent = 'Tambah Pengeluaran';
+        delete document.getElementById('expenseForm').dataset.expenseId;
+        delete document.getElementById('expenseForm').dataset.mode;
         new bootstrap.Modal(document.getElementById('addExpenseModal')).show();
     }
 
@@ -615,17 +627,24 @@
             return;
         }
 
+        const isEdit = form.dataset.mode === 'edit';
+        const expenseId = form.dataset.expenseId;
+
         const data = {
             title: document.getElementById('expenseTitle').value,
             category_id: document.getElementById('expenseCategory').value,
-            amount: document.getElementById('expenseAmount').value,
+            amount: parseFloat(document.getElementById('expenseAmount').value),
             expense_date: document.getElementById('expenseDate').value,
             description: document.getElementById('expenseDescription').value
         };
 
         try {
-            const response = await fetch('api/expenses.php', {
-                method: 'POST',
+            const url = isEdit
+                ? `../../../api/expenses.php?id=${expenseId}`
+                : '../../../api/expenses.php';
+
+            const response = await fetch(url, {
+                method: isEdit ? 'PUT' : 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -635,14 +654,83 @@
             const result = await response.json();
 
             if (result.success) {
-                showToast('Pengeluaran berhasil ditambahkan', 'success');
+                showToast(isEdit ? 'Pengeluaran berhasil diupdate' : 'Pengeluaran berhasil ditambahkan', 'success');
                 bootstrap.Modal.getInstance(document.getElementById('addExpenseModal')).hide();
                 loadFinancialData();
             } else {
-                showToast(result.message || 'Gagal menambahkan pengeluaran', 'error');
+                showToast(result.message || 'Gagal menyimpan pengeluaran', 'error');
             }
         } catch (error) {
             console.error('Error saving expense:', error);
+            showToast('Terjadi kesalahan', 'error');
+        }
+    }
+
+    // Edit expense
+    async function editExpense(expenseId) {
+        try {
+            const response = await fetch(`../../../api/expenses.php?id=${expenseId}`);
+            const result = await response.json();
+
+            if (result.success) {
+                const expense = result.data;
+
+                // Populate form
+                document.getElementById('expenseTitle').value = expense.title;
+                document.getElementById('expenseCategory').value = expense.category_id;
+                document.getElementById('expenseAmount').value = expense.amount;
+                document.getElementById('expenseDate').value = expense.expense_date;
+                document.getElementById('expenseDescription').value = expense.description || '';
+
+                // Change modal title and save button
+                document.getElementById('addExpenseModalLabel').textContent = 'Edit Pengeluaran';
+                document.getElementById('expenseForm').dataset.expenseId = expenseId;
+                document.getElementById('expenseForm').dataset.mode = 'edit';
+
+                new bootstrap.Modal(document.getElementById('addExpenseModal')).show();
+            } else {
+                showToast(result.message || 'Gagal memuat data pengeluaran', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading expense:', error);
+            showToast('Terjadi kesalahan saat memuat data', 'error');
+        }
+    }
+
+    // Delete expense
+    async function deleteExpense(expenseId) {
+        if (typeof Swal !== 'undefined') {
+            const result = await Swal.fire({
+                title: 'Hapus Pengeluaran?',
+                text: 'Data akan dihapus dari laporan',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            });
+
+            if (!result.isConfirmed) return;
+        } else {
+            if (!confirm('Apakah Anda yakin ingin menghapus pengeluaran ini?')) return;
+        }
+
+        try {
+            const response = await fetch(`../../../api/expenses.php?id=${expenseId}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Pengeluaran berhasil dihapus', 'success');
+                loadFinancialData();
+            } else {
+                showToast(result.message || 'Gagal menghapus pengeluaran', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting expense:', error);
             showToast('Terjadi kesalahan', 'error');
         }
     }
@@ -653,7 +741,7 @@
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
 
-        let url = `api/export-financial-report.php?period=${period}`;
+        let url = `../../../api/export-financial-report.php?period=${period}`;
         if (period === 'custom' && startDate && endDate) {
             url += `&start_date=${startDate}&end_date=${endDate}`;
         }

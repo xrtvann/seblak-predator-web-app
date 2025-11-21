@@ -152,14 +152,14 @@ function getCategoryById()
     $category_id = $_GET['id'];
 
     try {
-        $query = "SELECT id, name, description, color, icon,
+        $query = "SELECT id, name, description, color, icon, 
                   (CASE WHEN is_deleted = 0 THEN 1 ELSE 0 END) as is_active,
                   created_at, updated_at
                   FROM expense_categories
                   WHERE id = ?";
 
         $stmt = mysqli_prepare($koneksi, $query);
-        mysqli_stmt_bind_param($stmt, "s", $category_id);
+        mysqli_stmt_bind_param($stmt, "i", $category_id);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
 
@@ -268,7 +268,7 @@ function updateCategory()
         // Check if category exists
         $checkQuery = "SELECT id FROM expense_categories WHERE id = ?";
         $checkStmt = mysqli_prepare($koneksi, $checkQuery);
-        mysqli_stmt_bind_param($checkStmt, "s", $category_id);
+        mysqli_stmt_bind_param($checkStmt, "i", $category_id);
         mysqli_stmt_execute($checkStmt);
         $checkResult = mysqli_stmt_get_result($checkStmt);
 
@@ -313,7 +313,7 @@ function updateCategory()
         }
 
         $updateFields[] = "updated_at = CURRENT_TIMESTAMP";
-        $types .= "s";
+        $types .= "i";
         $values[] = $category_id;
 
         $updateQuery = "UPDATE expense_categories SET " . implode(", ", $updateFields) . " WHERE id = ?";

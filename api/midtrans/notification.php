@@ -38,11 +38,14 @@ try {
     }
 
     // Extract original order_number from Midtrans order_id
-    // Format: ORD-20251118-001-1234567890 -> ORD-20251118-001
+    // Format: INV-20251120-9332-1732123456 -> INV-20251120-9332
     $order_number = $order_id;
-    if (preg_match('/^(ORD-\d{8}-\d+)-\d+$/', $order_id, $matches)) {
+    if (preg_match('/^(INV-\d{8}-\d+)-\d+$/', $order_id, $matches)) {
         $order_number = $matches[1]; // Extract the original order number
         error_log('Extracted order_number: ' . $order_number . ' from order_id: ' . $order_id);
+    } else {
+        // If pattern doesn't match, use the order_id as is
+        error_log('Using order_id as order_number: ' . $order_id);
     }
 
     // Verify signature (security check) - Skip in development/sandbox
@@ -72,13 +75,13 @@ try {
         case 'capture':
             if ($fraud_status == 'accept') {
                 $payment_status = 'paid';
-                $order_status = 'processing';
+                $order_status = 'completed';
             }
             break;
 
         case 'settlement':
             $payment_status = 'paid';
-            $order_status = 'processing';
+            $order_status = 'completed';
             break;
 
         case 'pending':
