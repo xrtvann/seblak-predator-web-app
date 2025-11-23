@@ -127,10 +127,10 @@ function getAllExpenses()
 
         // Get expenses
         $query = "SELECT e.id, e.category_id, e.title, e.description, e.amount, e.expense_date,
-                         e.receipt_image, e.created_by, 
+                         e.created_by, 
                          (CASE WHEN e.is_deleted = 0 THEN 1 ELSE 0 END) as is_active,
                          e.created_at, e.updated_at,
-                         ec.name as category_name, ec.color as category_color, ec.icon as category_icon,
+                         ec.name as category_name,
                          u.username as created_by_name
                   FROM expenses e
                   JOIN expense_categories ec ON e.category_id = ec.id
@@ -204,10 +204,10 @@ function getExpenseById()
 
     try {
         $query = "SELECT e.id, e.category_id, e.title, e.description, e.amount, e.expense_date,
-                         e.receipt_image, e.created_by,
+                         e.created_by,
                          (CASE WHEN e.is_deleted = 0 THEN 1 ELSE 0 END) as is_active,
                          e.created_at, e.updated_at,
-                         ec.name as category_name, ec.color as category_color, ec.icon as category_icon,
+                         ec.name as category_name,
                          u.username as created_by_name
                   FROM expenses e
                   JOIN expense_categories ec ON e.category_id = ec.id
@@ -294,14 +294,13 @@ function createExpense()
         $title = mysqli_real_escape_string($koneksi, trim($input['title']));
         $description = isset($input['description']) ? mysqli_real_escape_string($koneksi, trim($input['description'])) : null;
         $expense_date = date('Y-m-d', strtotime($input['expense_date']));
-        $receipt_image = isset($input['receipt_image']) ? mysqli_real_escape_string($koneksi, trim($input['receipt_image'])) : null;
         $created_by = $current_user['id'] ?? null;
 
         // Insert expense (id auto increment)
-        $insertQuery = "INSERT INTO expenses (category_id, title, description, amount, expense_date, receipt_image, created_by, is_deleted, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        $insertQuery = "INSERT INTO expenses (category_id, title, description, amount, expense_date, created_by, is_deleted, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         $insertStmt = mysqli_prepare($koneksi, $insertQuery);
-        mysqli_stmt_bind_param($insertStmt, "issdsss", $input['category_id'], $title, $description, $amount, $expense_date, $receipt_image, $created_by);
+        mysqli_stmt_bind_param($insertStmt, "issdss", $input['category_id'], $title, $description, $amount, $expense_date, $created_by);
 
         if (mysqli_stmt_execute($insertStmt)) {
             $expense_id = mysqli_insert_id($koneksi);
@@ -408,12 +407,6 @@ function updateExpense()
             $updateFields[] = "expense_date = ?";
             $types .= "s";
             $values[] = date('Y-m-d', strtotime($input['expense_date']));
-        }
-
-        if (isset($input['receipt_image'])) {
-            $updateFields[] = "receipt_image = ?";
-            $types .= "s";
-            $values[] = mysqli_real_escape_string($koneksi, trim($input['receipt_image']));
         }
 
         if (empty($updateFields)) {

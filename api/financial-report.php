@@ -55,6 +55,11 @@ function getFinancialReport()
             $start_date = date('Y-01-01 00:00:00');
             $end_date = date('Y-12-31 23:59:59');
             break;
+        case 'all':
+            // Get all data from earliest to latest
+            $start_date = '1970-01-01 00:00:00';
+            $end_date = '2099-12-31 23:59:59';
+            break;
         case 'custom':
             if (isset($_GET['start_date']) && isset($_GET['end_date'])) {
                 $start_date = $_GET['start_date'] . ' 00:00:00';
@@ -151,6 +156,7 @@ function getFinancialReport()
                 'trend_labels' => $revenue_trend['labels'],
                 'expense_by_category_labels' => $expense_by_category['labels'],
                 'expense_by_category_values' => $expense_by_category['values'],
+                'expense_by_category' => $expense_by_category['details'], // Add detailed category data
                 'recent_revenues' => $recent_revenues,
                 'recent_expenses' => $recent_expenses,
                 'top_products' => $top_products
@@ -256,13 +262,17 @@ function getExpensesByCategory($start_date, $end_date)
     global $koneksi;
 
     $query = "SELECT 
+        ec.id as category_id,
         ec.name as category_name,
+        ec.description,
+        COUNT(e.id) as transaction_count,
         COALESCE(SUM(e.amount), 0) as total
         FROM expenses e
         LEFT JOIN expense_categories ec ON e.category_id = ec.id
         WHERE e.expense_date BETWEEN ? AND ?
         AND e.is_deleted = 0
-        GROUP BY e.category_id, ec.name
+        AND ec.is_deleted = 0
+        GROUP BY e.category_id, ec.id, ec.name, ec.description
         ORDER BY total DESC";
 
     $stmt = $koneksi->prepare($query);
@@ -272,13 +282,29 @@ function getExpensesByCategory($start_date, $end_date)
 
     $labels = [];
     $values = [];
+    $details = [];
 
     while ($row = $result->fetch_assoc()) {
-        $labels[] = $row['category_name'] ?? 'Tanpa Kategori';
+        $categoryName = $row['category_name'] ?? 'Tanpa Kategori';
+        $labels[] = $categoryName;
         $values[] = floatval($row['total']);
+
+        // Add detailed category information
+        $details[] = [
+            'category_id' => $row['category_id'],
+            'category_name' => $categoryName,
+            'description' => $row['description'],
+            'transaction_count' => intval($row['transaction_count']),
+            'total' => floatval($row['total']),
+            'trend' => 'stable' // You can calculate trend by comparing with previous period if needed
+        ];
     }
 
-    return ['labels' => $labels, 'values' => $values];
+    return [
+        'labels' => $labels,
+        'values' => $values,
+        'details' => $details
+    ];
 }
 
 function getRecentRevenues($start_date, $end_date, $limit = 10)

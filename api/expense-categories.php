@@ -95,7 +95,7 @@ function getAllCategories()
         $total = $totalRow['total'];
 
         // Get categories
-        $query = "SELECT id, name, description, color, icon, 
+        $query = "SELECT id, name, description, 
                   (CASE WHEN is_deleted = 0 THEN 1 ELSE 0 END) as is_active,
                   created_at, updated_at
                   FROM expense_categories
@@ -152,7 +152,7 @@ function getCategoryById()
     $category_id = $_GET['id'];
 
     try {
-        $query = "SELECT id, name, description, color, icon, 
+        $query = "SELECT id, name, description, 
                   (CASE WHEN is_deleted = 0 THEN 1 ELSE 0 END) as is_active,
                   created_at, updated_at
                   FROM expense_categories
@@ -215,14 +215,12 @@ function createCategory()
     try {
         $name = mysqli_real_escape_string($koneksi, trim($input['name']));
         $description = isset($input['description']) ? mysqli_real_escape_string($koneksi, trim($input['description'])) : null;
-        $color = isset($input['color']) ? mysqli_real_escape_string($koneksi, trim($input['color'])) : '#A8A8A8';
-        $icon = isset($input['icon']) ? mysqli_real_escape_string($koneksi, trim($input['icon'])) : 'ti ti-dots';
 
         // Insert category (is_deleted = 0 means active)
-        $insertQuery = "INSERT INTO expense_categories (name, description, color, icon, is_deleted, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+        $insertQuery = "INSERT INTO expense_categories (name, description, is_deleted, created_at, updated_at)
+                        VALUES (?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         $insertStmt = mysqli_prepare($koneksi, $insertQuery);
-        mysqli_stmt_bind_param($insertStmt, "ssss", $name, $description, $color, $icon);
+        mysqli_stmt_bind_param($insertStmt, "ss", $name, $description);
 
         if (mysqli_stmt_execute($insertStmt)) {
             $id = mysqli_insert_id($koneksi);
@@ -294,18 +292,6 @@ function updateCategory()
             $values[] = mysqli_real_escape_string($koneksi, trim($input['description']));
         }
 
-        if (isset($input['color'])) {
-            $updateFields[] = "color = ?";
-            $types .= "s";
-            $values[] = mysqli_real_escape_string($koneksi, trim($input['color']));
-        }
-
-        if (isset($input['icon'])) {
-            $updateFields[] = "icon = ?";
-            $types .= "s";
-            $values[] = mysqli_real_escape_string($koneksi, trim($input['icon']));
-        }
-
         if (empty($updateFields)) {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'No valid fields to update']);
@@ -350,39 +336,100 @@ function deleteCategory()
         return;
     }
 
-    try {
-        // Check if category is being used by expenses
-        $checkQuery = "SELECT COUNT(*) as count FROM expenses WHERE category_id = ? AND is_deleted = 0";
-        $checkStmt = mysqli_prepare($koneksi, $checkQuery);
-        mysqli_stmt_bind_param($checkStmt, "i", $category_id);
-        mysqli_stmt_execute($checkStmt);
-        $checkResult = mysqli_stmt_get_result($checkStmt);
-        $checkRow = mysqli_fetch_assoc($checkResult);
+    // Check if permanent delete is requested
+    $isPermanent = isset($_GET['permanent']) && ($_GET['permanent'] === 'true' || $_GET['permanent'] === '1');
 
-        if ($checkRow['count'] > 0) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'message' => 'Kategori tidak dapat dihapus karena masih digunakan oleh pengeluaran']);
+    try {
+        // Check if category exists
+        $existsQuery = "SELECT id, is_deleted FROM expense_categories WHERE id = ?";
+        $existsStmt = mysqli_prepare($koneksi, $existsQuery);
+        mysqli_stmt_bind_param($existsStmt, "i", $category_id);
+        mysqli_stmt_execute($existsStmt);
+        $existsResult = mysqli_stmt_get_result($existsStmt);
+
+        if (mysqli_num_rows($existsResult) === 0) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Kategori tidak ditemukan']);
             return;
         }
 
-        // Soft delete category (set is_deleted = 1)
-        $deleteQuery = "UPDATE expense_categories SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        $deleteStmt = mysqli_prepare($koneksi, $deleteQuery);
-        mysqli_stmt_bind_param($deleteStmt, "i", $category_id);
+        $categoryData = mysqli_fetch_assoc($existsResult);
 
-        if (mysqli_stmt_execute($deleteStmt)) {
-            if (mysqli_affected_rows($koneksi) > 0) {
-                http_response_code(200);
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Kategori pengeluaran berhasil dihapus'
-                ]);
+        if ($isPermanent) {
+            // Permanent delete - only allow if already soft deleted
+            if ($categoryData['is_deleted'] == 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Kategori harus dihapus terlebih dahulu sebelum dapat dihapus permanen']);
+                return;
+            }
+
+            // Check if category is being used by any expenses (including deleted ones)
+            $checkQuery = "SELECT COUNT(*) as count FROM expenses WHERE category_id = ?";
+            $checkStmt = mysqli_prepare($koneksi, $checkQuery);
+            mysqli_stmt_bind_param($checkStmt, "i", $category_id);
+            mysqli_stmt_execute($checkStmt);
+            $checkResult = mysqli_stmt_get_result($checkStmt);
+            $checkRow = mysqli_fetch_assoc($checkResult);
+
+            if ($checkRow['count'] > 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Kategori tidak dapat dihapus permanen karena masih digunakan oleh ' . $checkRow['count'] . ' pengeluaran']);
+                return;
+            }
+
+            // Perform permanent delete
+            $deleteQuery = "DELETE FROM expense_categories WHERE id = ?";
+            $deleteStmt = mysqli_prepare($koneksi, $deleteQuery);
+            mysqli_stmt_bind_param($deleteStmt, "i", $category_id);
+
+            if (mysqli_stmt_execute($deleteStmt)) {
+                if (mysqli_affected_rows($koneksi) > 0) {
+                    http_response_code(200);
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Kategori berhasil dihapus permanen'
+                    ]);
+                } else {
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'message' => 'Kategori tidak ditemukan']);
+                }
             } else {
-                http_response_code(404);
-                echo json_encode(['success' => false, 'message' => 'Kategori pengeluaran tidak ditemukan']);
+                throw new Exception('Failed to permanently delete category: ' . mysqli_error($koneksi));
             }
         } else {
-            throw new Exception('Failed to delete category: ' . mysqli_error($koneksi));
+            // Soft delete - check if category is being used by active expenses
+            $checkQuery = "SELECT COUNT(*) as count FROM expenses WHERE category_id = ? AND is_deleted = 0";
+            $checkStmt = mysqli_prepare($koneksi, $checkQuery);
+            mysqli_stmt_bind_param($checkStmt, "i", $category_id);
+            mysqli_stmt_execute($checkStmt);
+            $checkResult = mysqli_stmt_get_result($checkStmt);
+            $checkRow = mysqli_fetch_assoc($checkResult);
+
+            if ($checkRow['count'] > 0) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Kategori tidak dapat dihapus karena masih digunakan oleh pengeluaran aktif']);
+                return;
+            }
+
+            // Perform soft delete (set is_deleted = 1)
+            $deleteQuery = "UPDATE expense_categories SET is_deleted = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+            $deleteStmt = mysqli_prepare($koneksi, $deleteQuery);
+            mysqli_stmt_bind_param($deleteStmt, "i", $category_id);
+
+            if (mysqli_stmt_execute($deleteStmt)) {
+                if (mysqli_affected_rows($koneksi) > 0) {
+                    http_response_code(200);
+                    echo json_encode([
+                        'success' => true,
+                        'message' => 'Kategori berhasil dihapus'
+                    ]);
+                } else {
+                    http_response_code(404);
+                    echo json_encode(['success' => false, 'message' => 'Kategori tidak ditemukan']);
+                }
+            } else {
+                throw new Exception('Failed to delete category: ' . mysqli_error($koneksi));
+            }
         }
 
     } catch (Exception $e) {

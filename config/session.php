@@ -160,7 +160,8 @@ function hasPageAccess($page, $user = null)
         'transaksi' => ['owner', 'admin'],          // Only owner and admin can view transactions
         'laporan-keuangan' => ['owner', 'admin'],   // Only owner and admin can view financial reports
         'user' => ['owner'],                        // Only owner can manage users
-        'role' => ['owner']                         // Only owner can manage roles
+        'role' => ['owner'],                        // Only owner can manage roles
+        'account' => ['owner', 'admin']             // Only owner and admin can access account settings
     ];
 
     // Check if page has defined permissions
@@ -208,7 +209,8 @@ function getAccessiblePages($user = null)
         'transaksi' => ['owner', 'admin'],
         'laporan-keuangan' => ['owner', 'admin'],
         'user' => ['owner'],
-        'role' => ['owner']
+        'role' => ['owner'],
+        'account' => ['owner', 'admin']
     ];
 
     foreach ($page_permissions as $page => $allowed_roles) {

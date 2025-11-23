@@ -31,8 +31,8 @@
                         <i class="text-white ti ti-soup"></i>
                     </div>
                     <div class="ms-2">
-                        <h4 class="text-white mb-1">25</h4>
-                        <p class="mb-0 opacity-75 text-sm">Total Menu</p>
+                        <h4 class="text-white mb-1" id="totalTopping"><i class="ti ti-loader"></i></h4>
+                        <p class="mb-0 opacity-75 text-sm">Total Topping</p>
                     </div>
                 </div>
             </div>
@@ -48,7 +48,7 @@
                         <i class="text-white ti ti-receipt"></i>
                     </div>
                     <div class="ms-2">
-                        <h4 class="text-white mb-1">150</h4>
+                        <h4 class="text-white mb-1" id="transaksiHariIni"><i class="ti ti-loader"></i></h4>
                         <p class="mb-0 opacity-75 text-sm">Transaksi Hari Ini</p>
                     </div>
                 </div>
@@ -65,8 +65,8 @@
                         <i class="text-white ti ti-wallet"></i>
                     </div>
                     <div class="ms-2">
-                        <h4 class="text-white mb-1">2.5M</h4>
-                        <p class="mb-0 opacity-75 text-sm">Pendapatan</p>
+                        <h4 class="text-white mb-1" id="pendapatanHariIni"><i class="ti ti-loader"></i></h4>
+                        <p class="mb-0 opacity-75 text-sm">Pendapatan Hari Ini</p>
                     </div>
                 </div>
             </div>
@@ -82,7 +82,7 @@
                         <i class="text-white ti ti-users"></i>
                     </div>
                     <div class="ms-2">
-                        <h4 class="text-white mb-1">1.2K</h4>
+                        <h4 class="text-white mb-1" id="totalPelanggan"><i class="ti ti-loader"></i></h4>
                         <p class="mb-0 opacity-75 text-sm">Total Pelanggan</p>
                     </div>
                 </div>
@@ -127,3 +127,74 @@
     <!-- [ Welcome Card ] end -->
 </div>
 <!-- [ Main Content ] end -->
+
+<!-- Dashboard Stats Script -->
+<script>
+    // Format Rupiah
+    function formatRupiah(angka) {
+        if (angka >= 1000000) {
+            return 'Rp ' + (angka / 1000000).toFixed(1) + 'M';
+        } else if (angka >= 1000) {
+            return 'Rp ' + (angka / 1000).toFixed(1) + 'K';
+        }
+        return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
+    }
+
+    // Format Number dengan K
+    function formatNumber(angka) {
+        if (angka >= 1000) {
+            return (angka / 1000).toFixed(1) + 'K';
+        }
+        return angka;
+    }
+
+    // Load dashboard statistics
+    function loadDashboardStats() {
+        fetch('api/dashboard-stats.php')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update Total Topping
+                    document.getElementById('totalTopping').textContent = data.data.totalTopping;
+
+                    // Update Transaksi Hari Ini
+                    document.getElementById('transaksiHariIni').textContent = data.data.transaksiHariIni;
+
+                    // Update Pendapatan Hari Ini
+                    document.getElementById('pendapatanHariIni').textContent = formatRupiah(data.data.pendapatanHariIni);
+
+                    // Update Total Pelanggan
+                    document.getElementById('totalPelanggan').textContent = formatNumber(data.data.totalPelanggan);
+                } else {
+                    // Show zeros if API fails
+                    showDefaultValues();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading dashboard stats:', error);
+                // Show zeros if fetch fails
+                showDefaultValues();
+            });
+    }
+
+    // Show default values (0) if API fails
+    function showDefaultValues() {
+        document.getElementById('totalTopping').textContent = '0';
+        document.getElementById('transaksiHariIni').textContent = '0';
+        document.getElementById('pendapatanHariIni').textContent = 'Rp 0';
+        document.getElementById('totalPelanggan').textContent = '0';
+    }
+
+    // Load stats when page loads
+    document.addEventListener('DOMContentLoaded', function () {
+        loadDashboardStats();
+
+        // Refresh stats every 30 seconds
+        setInterval(loadDashboardStats, 30000);
+    });
+</script>

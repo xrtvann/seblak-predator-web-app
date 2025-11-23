@@ -14,7 +14,7 @@ $auth_service->checkRememberMe();
 $current_user = getCurrentSessionUser();
 
 // Check if user is logged in for protected pages
-$protected_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'expenses', 'user', 'role'];
+$protected_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'expenses', 'user', 'role', 'account'];
 $current_page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
 
 // If user is not logged in and trying to access protected page, redirect to login
@@ -39,12 +39,13 @@ $PageTitle = [
   'transaksi' => 'Transaksi',
   'laporan-keuangan' => 'Laporan Keuangan',
   'user' => 'User',
-  'role' => 'Role'
+  'role' => 'Role',
+  'account' => 'Pengaturan Akun'
 ];
 $title = isset($PageTitle[$page]) ? $PageTitle[$page] : 'Seblak Predator';
 
 // Validate page to prevent unauthorized access
-$allowed_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'laporan-keuangan', 'user', 'role'];
+$allowed_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'laporan-keuangan', 'user', 'role', 'account'];
 if (!in_array($page, $allowed_pages)) {
   $page = 'dashboard';
 }
@@ -351,7 +352,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
                       <?= date('H:i, d M Y', $_SESSION['login_time'] ?? time()) ?></small>
                   </div>
                   <hr />
-                  <a href="index.php?page=account" class="dropdown-item">
+                  <a href="?page=account" class="dropdown-item">
                     <i class="ti ti-settings"></i>
                     <span>Pengaturan Akun</span>
                   </a>
@@ -378,7 +379,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
       <!-- [ Main Content ] start -->
       <?php
       // Daftar halaman yang diizinkan
-      $allowed_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'laporan-keuangan', 'user', 'role'];
+      $allowed_pages = ['dashboard', 'dasar-seblak', 'topping', 'kategori', 'transaksi', 'laporan-keuangan', 'user', 'role', 'account'];
 
       if (in_array($page, $allowed_pages)) {
         include("dist/dashboard/pages/" . $page . ".php");
