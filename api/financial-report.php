@@ -321,6 +321,7 @@ function getRecentRevenues($start_date, $end_date, $limit = 10)
         WHERE created_at BETWEEN ? AND ?
         AND status != 'cancelled'
         AND is_deleted = 0
+        AND payment_status = 'paid'
         ORDER BY created_at DESC
         LIMIT ?";
 

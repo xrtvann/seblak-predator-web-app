@@ -41,7 +41,7 @@ try {
     }
 
     // Validate required fields
-    $required = ['order_number', 'customer_name', 'phone', 'total_amount', 'items'];
+    $required = ['order_number', 'customer_name', 'total_amount', 'items'];
     foreach ($required as $field) {
         if (!isset($input[$field]) || empty($input[$field])) {
             throw new Exception("Field '$field' is required");
@@ -50,8 +50,8 @@ try {
 
     $orderNumber = $input['order_number'];
     $customerName = $input['customer_name'];
-    $phone = $input['phone'];
     $totalAmount = floatval($input['total_amount']);
+    $phone = '08123456789'; // Default phone for Midtrans requirement
     $items = $input['items'];
 
     // Get order_id from database

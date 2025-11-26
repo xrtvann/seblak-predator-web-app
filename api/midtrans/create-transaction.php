@@ -153,13 +153,6 @@ try {
 
     // Prepare customer email (Midtrans requires valid email format)
     $customer_email = 'customer@seblakpredator.com'; // Default email
-    if (!empty($input['phone']) && trim($input['phone']) !== '') {
-        // Clean phone number (remove spaces, dashes, etc)
-        $clean_phone = preg_replace('/[^0-9]/', '', $input['phone']);
-        if (strlen($clean_phone) >= 8) {
-            $customer_email = $clean_phone . '@seblakpredator.com';
-        }
-    }
 
     // Prepare transaction data for Midtrans
     $transaction_data = [
@@ -170,7 +163,7 @@ try {
         'customer_details' => [
             'first_name' => $input['customer_name'],
             'email' => $customer_email,
-            'phone' => !empty($input['phone']) ? $input['phone'] : '08123456789'
+            'phone' => '08123456789'
         ],
         'item_details' => $item_details,
         'callbacks' => [
@@ -196,10 +189,10 @@ try {
 
         // Insert main order record
         $insert_query = "INSERT INTO orders 
-            (id, order_number, customer_name, phone, table_number, order_type, notes, 
+            (id, order_number, customer_name, table_number, order_type, 
              subtotal, tax, discount, total_amount, payment_method, payment_status, order_status, 
              order_date, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
         $stmt = mysqli_prepare($koneksi, $insert_query);
         if (!$stmt) {
@@ -208,10 +201,8 @@ try {
         }
 
         $customer_name = $input['customer_name'];
-        $phone = $input['phone'] ?? '';
         $table_number = $input['table_number'] ?? '';
         $order_type = $input['order_type'] ?? 'dine_in';
-        $notes = $input['notes'] ?? '';
         $total_amount = (float) $total;
         $payment_method = 'midtrans';
         $payment_status = 'pending';
@@ -219,14 +210,12 @@ try {
 
         mysqli_stmt_bind_param(
             $stmt,
-            'sssssssdddssss',
+            'sssssdddssss',
             $order_uuid,
             $order_id,
             $customer_name,
-            $phone,
             $table_number,
             $order_type,
-            $notes,
             $subtotal,
             $tax,
             $discount,
@@ -250,7 +239,6 @@ try {
             $item_uuid = 'item_' . uniqid() . bin2hex(random_bytes(4));
             $quantity = intval($item['quantity']) ?: 1;
             $spice_level_id = $item['spice_level'] ?? null;
-            $item_notes = $item['notes'] ?? '';
 
             // Calculate item price and get spice level details
             $item_price = 0;
@@ -303,14 +291,14 @@ try {
 
             // Insert order item
             $item_insert = "INSERT INTO order_items 
-                (id, order_id, customer_number, spice_level_id, spice_level_name, spice_level_price, quantity, subtotal, notes, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                (id, order_id, customer_number, spice_level_id, spice_level_name, spice_level_price, quantity, subtotal, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
 
             $item_stmt = mysqli_prepare($koneksi, $item_insert);
             if ($item_stmt) {
                 mysqli_stmt_bind_param(
                     $item_stmt,
-                    'ssissdids',
+                    'ssissdid',
                     $item_uuid,
                     $order_uuid,
                     $customer_counter,
@@ -318,8 +306,7 @@ try {
                     $spice_level_name,
                     $spice_level_price,
                     $quantity,
-                    $item_total,
-                    $item_notes
+                    $item_total
                 );
                 mysqli_stmt_execute($item_stmt);
                 mysqli_stmt_close($item_stmt);

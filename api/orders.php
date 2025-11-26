@@ -302,17 +302,15 @@ function handlePost($koneksi, $current_user)
 
         // Insert order
         $insertOrderQuery = "INSERT INTO orders (
-            id, order_number, customer_name, table_number, phone, notes, order_type,
+            id, order_number, customer_name, table_number, order_type,
             subtotal, tax, discount, total_amount, payment_method,
             payment_status, order_status, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $orderStmt = mysqli_prepare($koneksi, $insertOrderQuery);
 
         $customerName = $input['customer_name'];
         $tableNumber = $input['table_number'] ?? null;
-        $phone = $input['phone'] ?? null;
-        $notes = $input['notes'] ?? null;
         $orderType = $input['order_type'] ?? 'dine_in';
         $paymentMethod = $input['payment_method'] ?? 'cash';
         $paymentStatus = $input['payment_status'] ?? 'pending';
@@ -321,13 +319,11 @@ function handlePost($koneksi, $current_user)
 
         mysqli_stmt_bind_param(
             $orderStmt,
-            "sssssssdddsssss",
+            "sssssdddsssss",
             $orderId,
             $orderNumber,
             $customerName,
             $tableNumber,
-            $phone,
-            $notes,
             $orderType,
             $subtotal,
             $tax,
@@ -347,8 +343,8 @@ function handlePost($koneksi, $current_user)
             $itemSubtotal = $item['quantity'] * $item['unit_price'];
 
             $insertItemQuery = "INSERT INTO order_items (
-                id, order_id, product_id, product_name, quantity, unit_price, subtotal, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                id, order_id, product_id, product_name, quantity, unit_price, subtotal
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
             $itemStmt = mysqli_prepare($koneksi, $insertItemQuery);
 
@@ -360,15 +356,14 @@ function handlePost($koneksi, $current_user)
 
             mysqli_stmt_bind_param(
                 $itemStmt,
-                "sssiddds",
+                "sssidds",
                 $itemId,
                 $orderId,
                 $productId,
                 $productName,
                 $quantity,
                 $unitPrice,
-                $itemSubtotal,
-                $itemNotes
+                $itemSubtotal
             );
 
             mysqli_stmt_execute($itemStmt);
@@ -448,17 +443,6 @@ function handlePut($koneksi)
         $types .= 's';
     }
 
-    if (isset($input['phone'])) {
-        $updateFields[] = "phone = ?";
-        $params[] = $input['phone'];
-        $types .= 's';
-    }
-
-    if (isset($input['notes'])) {
-        $updateFields[] = "notes = ?";
-        $params[] = $input['notes'];
-        $types .= 's';
-    }
 
     if (isset($input['order_type'])) {
         $updateFields[] = "order_type = ?";

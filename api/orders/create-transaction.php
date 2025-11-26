@@ -129,35 +129,32 @@ try {
     // Insert into orders table
     $order_stmt = $conn->prepare("
         INSERT INTO orders (
-            id, order_number, customer_name, order_type, table_number, phone,
+            id, order_number, customer_name, order_type, table_number,
             pickup_time, delivery_address,
             subtotal, tax, discount, total_amount, 
-            payment_method, payment_status, order_status, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', ?, NOW())
+            payment_method, payment_status, order_status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', NOW())
     ");
 
     $payment_method = $input['payment_method'] ?? 'cash';
-    $notes = $input['notes'] ?? null;
     $table_number = $input['table_number'] ?? null;
     $pickup_time = $input['pickup_time'] ?? null;
     $delivery_address = $input['delivery_address'] ?? null;
 
     $order_stmt->bind_param(
-        "ssssssssdddsss",
+        "sssssssdddss",
         $order_id,
         $order_number,
         $input['customer_name'],
         $order_type,
         $table_number,
-        $input['phone'],
         $pickup_time,
         $delivery_address,
         $subtotal,
         $tax,
         $discount,
         $total_amount,
-        $payment_method,
-        $notes
+        $payment_method
     );
 
     if (!$order_stmt->execute()) {
@@ -220,15 +217,14 @@ try {
             INSERT INTO order_items (
                 id, order_id, customer_number, quantity,
                 spice_level_id, spice_level_name, spice_level_price,
-                subtotal, notes, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                subtotal, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ");
 
-        $item_notes = $item['notes'] ?? null;
         $item_quantity = intval($item['quantity']);
 
         $item_stmt->bind_param(
-            "ssiissdds",
+            "ssiissdd",
             $item_id,
             $order_id,
             $customer_number,
@@ -236,8 +232,7 @@ try {
             $spice_level_id,
             $spice_level_name,
             $spice_level_price,
-            $item_subtotal,
-            $item_notes
+            $item_subtotal
         );
 
         if (!$item_stmt->execute()) {

@@ -21,7 +21,7 @@
 <!-- [ Main Content ] start -->
 <div class="row">
     <!-- Profile Information -->
-    <div class="col-lg-6">
+    <div class="col-lg-12">
         <div class="card">
             <div class="card-header">
                 <h5>Informasi Profil</h5>
@@ -45,6 +45,11 @@
                             value="<?= htmlspecialchars($current_user['email'] ?? '') ?>" required>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">No Telepon </label>
+                        <input type="text" class="form-control" id="phone"
+                            value="<?= htmlspecialchars($current_user['phone'] ?? '') ?>" required>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Role</label>
                         <input type="text" class="form-control"
                             value="<?= htmlspecialchars(ucfirst($current_user['role_name'] ?? 'Customer')) ?>" readonly>
@@ -61,78 +66,7 @@
         </div>
     </div>
 
-    <!-- Change Password -->
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">
-                <h5>Ubah Password</h5>
-            </div>
-            <div class="card-body">
-                <form id="formChangePassword">
-                    <div class="mb-3">
-                        <label class="form-label">Password Lama <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="currentPassword" required>
-                            <button class="btn btn-outline-secondary" type="button"
-                                onclick="togglePassword('currentPassword')">
-                                <i class="ti ti-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password Baru <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="newPassword" required minlength="6">
-                            <button class="btn btn-outline-secondary" type="button"
-                                onclick="togglePassword('newPassword')">
-                                <i class="ti ti-eye"></i>
-                            </button>
-                        </div>
-                        <small class="text-muted">Minimal 6 karakter</small>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Konfirmasi Password Baru <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="confirmPassword" required minlength="6">
-                            <button class="btn btn-outline-secondary" type="button"
-                                onclick="togglePassword('confirmPassword')">
-                                <i class="ti ti-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-secondary" onclick="resetPasswordForm()">Reset</button>
-                        <button type="submit" class="btn btn-warning">
-                            <i class="ti ti-lock me-1"></i>Ubah Password
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
 
-        <!-- Account Information -->
-        <div class="card mt-3">
-            <div class="card-header">
-                <h5>Informasi Akun</h5>
-            </div>
-            <div class="card-body">
-                <div class="row mb-2">
-                    <div class="col-5 text-muted">ID Akun:</div>
-                    <div class="col-7"><strong><?= htmlspecialchars($current_user['id'] ?? '-') ?></strong></div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-5 text-muted">Status:</div>
-                    <div class="col-7">
-                        <span class="badge bg-success">Aktif</span>
-                    </div>
-                </div>
-                <div class="row mb-2">
-                    <div class="col-5 text-muted">Login Terakhir:</div>
-                    <div class="col-7"><?= date('d M Y, H:i', $_SESSION['login_time'] ?? time()) ?></div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 <!-- [ Main Content ] end -->
 

@@ -236,7 +236,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     let currentOrder = {
         customer_name: '',
         table_number: '',
-        phone: '',
         notes: '',
         payment_method: 'cash',
         items: []
@@ -410,7 +409,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             customer_name: '',
             order_type: 'dine_in',
             table_number: '',
-            phone: '',
             pickup_time: '',
             delivery_address: '',
             notes: '',
@@ -456,7 +454,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             customer_name: '',
             order_type: 'dine_in',
             table_number: '',
-            phone: '',
             pickup_time: '',
             delivery_address: '',
             notes: '',
@@ -670,10 +667,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                             <label class="form-label">Waktu Ambil</label>
                             <input type="time" class="form-control" id="step1_pickupTime">
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">No. Telepon</label>
-                            <input type="text" class="form-control" id="step1_phone" placeholder="08123456789">
-                        </div>
                         <div class="col-12 mb-3 take-away-field d-none">
                             <label class="form-label">Alamat Pengiriman</label>
                             <textarea class="form-control" id="step1_deliveryAddress" rows="2" placeholder="Alamat lengkap untuk pengiriman (opsional)"></textarea>
@@ -691,7 +684,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
     function populateStep1Data() {
         document.getElementById('step1_customerName').value = currentOrder.customer_name || '';
         document.getElementById('step1_tableNumber').value = currentOrder.table_number || '';
-        document.getElementById('step1_phone').value = currentOrder.phone || '';
         document.getElementById('step1_notes').value = currentOrder.notes || '';
 
         // Set order type if exists
@@ -757,7 +749,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         // Save to currentOrder
         currentOrder.customer_name = name;
         currentOrder.table_number = document.getElementById('step1_tableNumber').value.trim();
-        currentOrder.phone = document.getElementById('step1_phone').value.trim();
         currentOrder.notes = document.getElementById('step1_notes').value.trim();
         currentOrder.pickup_time = document.getElementById('step1_pickupTime').value;
         currentOrder.delivery_address = document.getElementById('step1_deliveryAddress').value.trim();
@@ -2250,10 +2241,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                                 <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; mb-1">Meja</div>
                                 <div style="font-size: 14px; font-weight: 600; color: #1f2937;" id="step3_table">-</div>
                             </div>
-                            <div class="mb-3">
-                                <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; mb-1">Telepon</div>
-                                <div style="font-size: 14px; font-weight: 600; color: #1f2937;" id="step3_phone">-</div>
-                            </div>
                             <div>
                                 <div style="font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; mb-1">Catatan</div>
                                 <div style="font-size: 13px; color: #6b7280; font-style: italic;" id="step3_notes">-</div>
@@ -2366,7 +2353,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         // Customer info
         document.getElementById('step3_name').textContent = currentOrder.customer_name || '-';
         document.getElementById('step3_table').textContent = currentOrder.table_number || '-';
-        document.getElementById('step3_phone').textContent = currentOrder.phone || '-';
         document.getElementById('step3_notes').textContent = currentOrder.notes || 'Tidak ada catatan';
 
         // Order summary - using seblak items format
@@ -2517,7 +2503,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             customer_name: currentOrder.customer_name,
             order_type: currentOrder.order_type || 'dine_in',
             table_number: currentOrder.table_number,
-            phone: currentOrder.phone,
             pickup_time: currentOrder.pickup_time || null,
             delivery_address: currentOrder.delivery_address || null,
             notes: currentOrder.notes,
@@ -2526,7 +2511,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 quantity: item.quantity || 1,
                 spice_level: item.spice_level,
                 customizations: item.customizations || {},
-                notes: item.notes || '',
                 toppings: item.toppings ? item.toppings.map(t => ({
                     topping_id: t.topping_id,
                     topping_name: t.topping_name,
@@ -2820,7 +2804,11 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 Swal.fire({
                     html: `
                         <div style="text-align: left; padding: 32px; background: #ffffff;">
-                            
+                            <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                                <button class="btn btn-dark" id="btnPrintStruk" style="font-size: 14px;">
+                                    <i class="ti ti-printer me-2"></i> Cetak Struk
+                                </button>
+                            </div>
                             <!-- Minimalist Header - Invoice Info -->
                             <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 24px; margin-bottom: 28px;">
                                 <div style="margin-bottom: 24px;">
@@ -2831,146 +2819,83 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                                         <i class="ti ti-calendar" style="font-size: 14px;"></i> ${formatDate(order.created_at)} • ${formatTime(order.created_at)}
                                     </div>
                                 </div>
-
                                 <!-- Unified Container: Info Lengkap -->
                                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
-                                    <!-- Grid 4 Kolom -->
                                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;">
-                                        
-                                        <!-- Kolom 1: Info Pelanggan -->
                                         <div style="padding: 20px; border-right: 1px solid #e2e8f0;">
-                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
-                                                👤 Pelanggan
-                                            </div>
-                                            <div style="margin-bottom: 10px;">
-                                                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 3px;">Nama</div>
-                                                <div style="color: #0f172a; font-size: 14px; font-weight: 600;">${order.customer_name}</div>
-                                            </div>
-                                            ${order.phone ? `
-                                            <div>
-                                                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 3px;">Telepon</div>
-                                                <div style="color: #0f172a; font-size: 14px; font-weight: 600;">${order.phone}</div>
-                                            </div>
-                                            ` : ''}
+                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">👤 Pelanggan</div>
+                                            <div style="margin-bottom: 10px;"><div style="color: #94a3b8; font-size: 11px; margin-bottom: 3px;">Nama</div><div style="color: #0f172a; font-size: 14px; font-weight: 600;">${order.customer_name}</div></div>
                                         </div>
-
-                                        <!-- Kolom 2: Tipe Pesanan -->
                                         <div style="padding: 20px; border-right: 1px solid #e2e8f0;">
-                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
-                                                📋 Tipe Pesanan
-                                            </div>
+                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">📋 Tipe Pesanan</div>
                                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                                                 ${order.order_type === 'dine_in'
-                            ? `<i class="ti ti-utensils" style="font-size: 24px; color: #667eea;"></i>
-                                   <div>
-                                       <div style="color: #0f172a; font-weight: 700; font-size: 15px;">Dine In</div>
-                                       <div style="color: #64748b; font-size: 11px;">Makan di Tempat</div>
-                                   </div>`
-                            : `<i class="ti ti-shopping-bag" style="font-size: 24px; color: #667eea;"></i>
-                                   <div>
-                                       <div style="color: #0f172a; font-weight: 700; font-size: 15px;">Take Away</div>
-                                       <div style="color: #64748b; font-size: 11px;">Bawa Pulang</div>
-                                   </div>`
-                        }
+                            ? `<i class="ti ti-utensils" style="font-size: 24px; color: #667eea;"></i><div><div style="color: #0f172a; font-weight: 700; font-size: 15px;">Dine In</div><div style="color: #64748b; font-size: 11px;">Makan di Tempat</div></div>`
+                            : `<i class="ti ti-shopping-bag" style="font-size: 24px; color: #667eea;"></i><div><div style="color: #0f172a; font-weight: 700; font-size: 15px;">Take Away</div><div style="color: #64748b; font-size: 11px;">Bawa Pulang</div></div>`}
                                             </div>
-                                            ${order.order_type === 'dine_in' && order.table_number ? `
-                                            <div style="background: #fff; border: 1px dashed #e2e8f0; border-radius: 6px; padding: 8px; text-align: center;">
-                                                <div style="color: #64748b; font-size: 10px; margin-bottom: 2px;">Nomor Meja</div>
-                                                <div style="color: #0f172a; font-size: 22px; font-weight: 700;">${order.table_number}</div>
-                                            </div>
-                                            ` : ''}
+                                            ${order.order_type === 'dine_in' && order.table_number ? `<div style="background: #fff; border: 1px dashed #e2e8f0; border-radius: 6px; padding: 8px; text-align: center;"><div style="color: #64748b; font-size: 10px; margin-bottom: 2px;">Nomor Meja</div><div style="color: #0f172a; font-size: 22px; font-weight: 700;">${order.table_number}</div></div>` : ''}
                                         </div>
-
-                                        <!-- Kolom 3: Metode Pembayaran -->
                                         <div style="padding: 20px; border-right: 1px solid #e2e8f0;">
-                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
-                                                💳 Pembayaran
-                                            </div>
+                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">💳 Pembayaran</div>
                                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                                                 ${order.payment_method === 'midtrans'
-                            ? `<i class="ti ti-credit-card" style="font-size: 24px; color: #3b82f6;"></i>
-                                   <div>
-                                       <div style="color: #0f172a; font-weight: 700; font-size: 15px;">Midtrans</div>
-                                       <div style="color: #64748b; font-size: 11px;">Payment Gateway</div>
-                                   </div>`
-                            : `<i class="ti ti-cash" style="font-size: 24px; color: #10b981;"></i>
-                                   <div>
-                                       <div style="color: #0f172a; font-weight: 700; font-size: 15px;">Cash</div>
-                                       <div style="color: #64748b; font-size: 11px;">Tunai</div>
-                                   </div>`
-                        }
+                            ? `<i class="ti ti-credit-card" style="font-size: 24px; color: #3b82f6;"></i><div><div style="color: #0f172a; font-weight: 700; font-size: 15px;">Midtrans</div><div style="color: #64748b; font-size: 11px;">Payment Gateway</div></div>`
+                            : `<i class="ti ti-cash" style="font-size: 24px; color: #10b981;"></i><div><div style="color: #0f172a; font-weight: 700; font-size: 15px;">Cash</div><div style="color: #64748b; font-size: 11px;">Tunai</div></div>`}
                                             </div>
                                         </div>
-
-                                        <!-- Kolom 4: Status -->
                                         <div style="padding: 20px;">
-                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
-                                                📊 Status
-                                            </div>
-                                            <div style="margin-bottom: 10px;">
-                                                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">Pesanan</div>
-                                                ${getStatusBadge(order.order_status)}
-                                            </div>
-                                            <div>
-                                                <div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">Pembayaran</div>
-                                                ${getPaymentBadge(order.payment_status)}
-                                            </div>
+                                            <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">📊 Status</div>
+                                            <div style="margin-bottom: 10px;"><div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">Pesanan</div>${getStatusBadge(order.order_status)}</div>
+                                            <div><div style="color: #94a3b8; font-size: 11px; margin-bottom: 4px;">Pembayaran</div>${getPaymentBadge(order.payment_status)}</div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Content Area dengan Scroll -->
                             <div style="max-height: 550px; overflow-y: auto; margin: 0 -8px; padding: 0 8px;">
-                                
-
-                                <!-- Items Section - Clean List -->
-                                <div style="margin-bottom: 28px;">
-                                    <div style="color: #0f172a; font-size: 15px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">
-                                        Pesanan
-                                    </div>
-                                    <div style="background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
-                                        ${itemsHTML}
-                                    </div>
+                                <div style="margin-bottom: 28px;"><div style="color: #0f172a; font-size: 15px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">Pesanan</div><div style="background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">${itemsHTML}</div></div>
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;"><div style="padding: 20px 24px;"><div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span style="color: #64748b; font-size: 14px;">Subtotal</span><span style="color: #0f172a; font-size: 14px; font-weight: 600;">Rp ${formatPrice(order.subtotal)}</span></div>${order.tax > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 10px;"><span style="color: #64748b; font-size: 14px;">Pajak</span><span style="color: #0f172a; font-size: 14px; font-weight: 600;">Rp ${formatPrice(order.tax)}</span></div>` : ''}</div><div style="background: #0f172a; padding: 20px 24px; border-top: 1px solid #e2e8f0;"><div style="display: flex; justify-content: space-between; align-items: center;"><span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Pembayaran</span><span style="color: #ffffff; font-size: 24px; font-weight: 700;">Rp ${formatPrice(order.total_amount)}</span></div></div></div>
+                                ${order.notes ? `<div style="margin-top: 20px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px;"><div style="display: flex; gap: 10px;"><i class="ti ti-message-circle" style="color: #d97706; font-size: 18px;"></i><div style="flex: 1;"><div style="color: #92400e; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Catatan</div><div style="color: #78350f; font-size: 13px; line-height: 1.5;">${order.notes}</div></div></div></div>` : ''}
+                            </div>
+                        </div>
+                        <!-- Template Struk untuk Print (hidden) -->
+                        <div id="strukPrintArea" style="display:none;">
+                            <div style="width:340px; font-family:monospace, 'Courier New', Courier, Arial; color:#222; background:#fff; padding:8px 0;">
+                                <div style="text-align:center; margin-bottom:6px;">
+                                    <img src="https://i.ibb.co/6bQw8kF/seblak-logo.png" alt="Logo" style="height:38px; margin-bottom:2px;" onerror="this.style.display='none'">
                                 </div>
-
-                                <!-- Total Summary - Minimalist -->
-                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
-                                    <div style="padding: 20px 24px;">
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                            <span style="color: #64748b; font-size: 14px;">Subtotal</span>
-                                            <span style="color: #0f172a; font-size: 14px; font-weight: 600;">Rp ${formatPrice(order.subtotal)}</span>
-                                        </div>
-                                        ${order.tax > 0 ? `
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                            <span style="color: #64748b; font-size: 14px;">Pajak</span>
-                                            <span style="color: #0f172a; font-size: 14px; font-weight: 600;">Rp ${formatPrice(order.tax)}</span>
-                                        </div>
-                                        ` : ''}
-                                    </div>
-                                    <div style="background: #0f172a; padding: 20px 24px; border-top: 1px solid #e2e8f0;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                            <span style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Total Pembayaran</span>
-                                            <span style="color: #ffffff; font-size: 24px; font-weight: 700;">Rp ${formatPrice(order.total_amount)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                ${order.notes ? `
-                                <div style="margin-top: 20px; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px;">
-                                    <div style="display: flex; gap: 10px;">
-                                        <i class="ti ti-message-circle" style="color: #d97706; font-size: 18px;"></i>
-                                        <div style="flex: 1;">
-                                            <div style="color: #92400e; font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">
-                                                Catatan
-                                            </div>
-                                            <div style="color: #78350f; font-size: 13px; line-height: 1.5;">
-                                                ${order.notes}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                ` : ''}
+                                <div style="text-align:center; font-size:17px; font-weight:bold; letter-spacing:1px; margin-bottom:2px;">SEBLAK PREDATOR</div>
+                                <div style="text-align:center; font-size:11px; margin-bottom:8px;">No: <b>${order.order_number}</b><br>${formatDate(order.created_at)} ${formatTime(order.created_at)}</div>
+                                <div style="border-bottom:1px dashed #aaa; margin-bottom:7px;"></div>
+                                <div style="font-size:12px; margin-bottom:3px;"><b>Pelanggan:</b> ${order.customer_name}</div>
+                                <div style="font-size:12px; margin-bottom:3px;"><b>Tipe:</b> ${order.order_type === 'dine_in' ? 'Dine In' : 'Take Away'}${order.table_number ? ' (Meja ' + order.table_number + ')' : ''}</div>
+                                <div style="border-bottom:1px dashed #aaa; margin-bottom:7px;"></div>
+                                <div style="font-size:12px; font-weight:bold; margin-bottom:2px;">Pesanan</div>
+                                <table style="width:100%; font-size:12px; border-collapse:collapse; margin-bottom:4px;">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align:left; border-bottom:1px solid #eee;">Menu</th>
+                                            <th style="text-align:right; border-bottom:1px solid #eee;">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${(order.items || []).map(item => `
+                                            <tr>
+                                                <td>${item.product_name} <span style='font-size:11px;'>x${item.quantity}</span>
+                                                    ${(item.toppings && item.toppings.length > 0) ? item.toppings.map(t => `<div style='font-size:11px; margin-left:8px;'>+ ${t.topping_name} (${t.quantity}x)</div>`).join('') : ''}
+                                                </td>
+                                                <td style="text-align:right; vertical-align:top;">Rp${formatPrice(item.subtotal)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                                <div style="border-bottom:1px dashed #aaa; margin:7px 0;"></div>
+                                <div style="display:flex; justify-content:space-between; font-size:12px;"><span>Subtotal</span><span>Rp${formatPrice(order.subtotal)}</span></div>
+                                ${order.tax > 0 ? `<div style='display:flex; justify-content:space-between; font-size:12px;'><span>Pajak</span><span>Rp${formatPrice(order.tax)}</span></div>` : ''}
+                                <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:bold; margin-top:2px;"><span>Total</span><span>Rp${formatPrice(order.total_amount)}</span></div>
+                                <div style="font-size:12px; margin-top:7px;"><b>Metode:</b> ${order.payment_method === 'midtrans' ? 'Midtrans' : 'Cash'}</div>
+                                <div style="font-size:12px;"><b>Status:</b> ${order.payment_status === 'paid' ? 'Sudah Bayar' : 'Belum Bayar'}</div>
+                                ${order.notes ? `<div style='font-size:12px; margin-top:7px;'><b>Catatan:</b> ${order.notes}</div>` : ''}
+                                <div style="text-align:center; font-size:12px; margin-top:10px; border-top:1px dashed #aaa; padding-top:6px;">Terima kasih telah berbelanja!<br><span style='font-size:11px;'>${new Date().getFullYear()} Seblak Predator</span></div>
                             </div>
                         </div>
                     `,
@@ -2983,8 +2908,26 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         popup: 'border-0 shadow-xl',
                         confirmButton: 'px-4 py-2'
                     },
-                    padding: '0'
+                    padding: '0',
+                    didOpen: () => {
+                        document.getElementById('btnPrintStruk').onclick = function () {
+                            printStruk();
+                        };
+                    }
                 });
+                // Fungsi untuk print struk
+                function printStruk() {
+                    const printContents = document.getElementById('strukPrintArea').innerHTML;
+                    const win = window.open('', '', 'width=400,height=600');
+                    win.document.write('<html><head><title>Cetak Struk</title>');
+                    win.document.write('<style>body{margin:0;padding:10px;}@media print{body{margin:0;}}</style>');
+                    win.document.write('</head><body>');
+                    win.document.write(printContents);
+                    win.document.write('</body></html>');
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => { win.print(); win.close(); }, 300);
+                }
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -3064,7 +3007,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                     body: JSON.stringify({
                         order_number: order.order_number,
                         customer_name: order.customer_name,
-                        phone: order.phone || '0000000000',
                         total_amount: order.total_amount,
                         items: itemDetails
                     })
