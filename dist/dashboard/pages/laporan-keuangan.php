@@ -1150,35 +1150,19 @@
         }
     }
 
-    // Export report
+    // Export report to PDF
     function exportReport() {
-        // Export the main report area as PDF using html2pdf
-        const reportArea = document.querySelector('.row');
-        function doExport() {
-            const opt = {
-                margin: 0.3,
-                filename: 'laporan-keuangan.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(reportArea).save();
+        const period = document.getElementById('periodFilter').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        let url = `../../../api/export-financial-report.php?period=${period}`;
+        if (period === 'custom' && startDate && endDate) {
+            url += `&start_date=${startDate}&end_date=${endDate}`;
         }
-        if (window.html2pdf) {
-            doExport();
-        } else {
-            // Wait for html2pdf to load (max 3s)
-            let waited = 0;
-            const interval = setInterval(function() {
-                if (window.html2pdf) {
-                    clearInterval(interval);
-                    doExport();
-                } else if ((waited += 100) > 3000) {
-                    clearInterval(interval);
-                    alert('Gagal memuat library PDF. Silakan refresh halaman.');
-                }
-            }, 100);
-        }
+
+        // Open PDF in new window/tab
+        window.open(url, '_blank');
     }
 
     // Utility functions
