@@ -1307,7 +1307,14 @@
                 // Reload data setelah alert dan modal ditutup
                 await loadExpenseCategories();
                 await updateCategoryBadges();
-                loadFinancialData(); // Refresh to update expense category dropdown
+                await loadFinancialData(); // Refresh to update expense category dropdown
+
+                // Make sure the view is properly maintained after adding a category
+                if (currentCategoryView === 'active') {
+                    await loadExpenseCategories(); // Refresh active categories view to show the new category
+                } else {
+                    await loadDeletedCategories(); // If on deleted view, maintain that view
+                }
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -1511,14 +1518,15 @@
                     showConfirmButton: false
                 });
 
-                // Reload current view and update badges setelah alert selesai
-                if (currentCategoryView === 'deleted') {
-                    await loadDeletedCategories();
-                } else {
-                    await loadExpenseCategories();
-                }
                 await updateCategoryBadges();
-                loadFinancialData();
+                await loadFinancialData(); // Update dropdown di form expense
+
+                // Reload current view after financial data is loaded to ensure proper view maintenance
+                if (currentCategoryView === 'deleted') {
+                    await loadDeletedCategories(); // Refresh deleted categories view
+                } else {
+                    await loadExpenseCategories(); // Refresh active categories view
+                }
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -1745,9 +1753,15 @@
                 });
 
                 // Reload data setelah alert selesai
-                await loadDeletedCategories();
                 await updateCategoryBadges();
-                loadFinancialData(); // Update dropdown di form expense
+                await loadFinancialData(); // Update dropdown di form expense
+
+                // Make sure the current view is properly maintained after restoring a category
+                if (currentCategoryView === 'deleted') {
+                    await loadDeletedCategories(); // Refresh deleted categories view since restored category should no longer be there
+                } else {
+                    await loadExpenseCategories(); // Refresh active categories view
+                }
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -1837,9 +1851,15 @@
                     showConfirmButton: false
                 });
 
-                // Reload data setelah alert selesai
-                await loadDeletedCategories();
                 await updateCategoryBadges();
+                await loadFinancialData(); // Update dropdown di form expense
+
+                // Make sure the current view is properly maintained after permanently deleting a category
+                if (currentCategoryView === 'deleted') {
+                    await loadDeletedCategories(); // Refresh deleted categories view since permanently deleted category should no longer be there
+                } else {
+                    await loadExpenseCategories(); // Refresh active categories view
+                }
             } else {
                 Swal.fire({
                     icon: 'error',
