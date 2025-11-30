@@ -46,6 +46,12 @@ function handlePatchRequest()
         case 'toggle-status':
             toggleUserStatus();
             break;
+        case 'permanent-delete':
+            permanentlyDeleteUser();
+            break;
+        case 'permanent-delete-inactive':
+            permanentlyDeleteInactiveUsers();
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid PATCH action']);
@@ -111,8 +117,8 @@ function getAllUsers()
 
         // Get paginated data
         $offset = ($page - 1) * $per_page;
-        $query = "SELECT u.id, u.name, u.email, u.username, u.role_id, 
-                         r.name as role_name, u.is_active, 
+        $query = "SELECT u.id, u.name, u.email, u.username, u.role_id,
+                         r.name as role_name, u.is_active,
                          u.created_at, u.updated_at
                   FROM users u
                   LEFT JOIN roles r ON u.role_id = r.id
@@ -143,7 +149,7 @@ function getAllUsers()
         mysqli_stmt_close($stmt);
 
         // Get statistics
-        $statsQuery = "SELECT 
+        $statsQuery = "SELECT
                         COUNT(*) as total,
                         SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active,
                         SUM(CASE WHEN is_active = FALSE THEN 1 ELSE 0 END) as inactive,
@@ -229,7 +235,7 @@ function createUser()
         $isActive = isset($data['is_active']) ? (bool) $data['is_active'] : true;
 
         // Insert new user
-        $query = "INSERT INTO users (id, name, email, username, password_hash, role_id, is_active, created_at, updated_at) 
+        $query = "INSERT INTO users (id, name, email, username, password_hash, role_id, is_active, created_at, updated_at)
                   VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         $stmt = mysqli_prepare($koneksi, $query);
         mysqli_stmt_bind_param(
@@ -537,6 +543,191 @@ function toggleUserStatus()
             throw new Exception('Failed to toggle user status: ' . mysqli_error($koneksi));
         }
     } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+}
+
+function permanentlyDeleteUser()
+{
+    global $koneksi;
+
+    try {
+        $id = $_GET['id'] ?? '';
+        if (empty($id)) {
+            throw new Exception('User ID is required');
+        }
+
+        // Check if user exists
+        $checkUser = mysqli_prepare($koneksi, "SELECT id, is_active FROM users WHERE id = ?");
+        mysqli_stmt_bind_param($checkUser, 's', $id);
+        mysqli_stmt_execute($checkUser);
+        $userResult = mysqli_stmt_get_result($checkUser);
+        if (mysqli_num_rows($userResult) === 0) {
+            throw new Exception("User not found");
+        }
+
+        $user = mysqli_fetch_assoc($userResult);
+        mysqli_stmt_close($checkUser);
+
+        // Only allow permanent deletion of inactive users
+        if ($user['is_active']) {
+            throw new Exception("Cannot permanently delete an active user. User must be inactive first.");
+        }
+
+        // Start transaction for data consistency
+        mysqli_autocommit($koneksi, FALSE);
+
+        // Delete related records in dependent tables
+        $relatedTables = [
+            ['table' => 'user_sessions', 'column' => 'user_id'],
+            ['table' => 'password_resets', 'column' => 'user_id']
+        ];
+
+        foreach ($relatedTables as $relatedTable) {
+            $query = "DELETE FROM {$relatedTable['table']} WHERE {$relatedTable['column']} = ?";
+            $stmt = mysqli_prepare($koneksi, $query);
+            mysqli_stmt_bind_param($stmt, 's', $id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+
+        // Delete related login attempts (these might use username instead of ID)
+        $loginAttemptsQuery = "DELETE FROM login_attempts WHERE username IN (
+            SELECT username FROM users WHERE id = ?
+        )";
+        $loginStmt = mysqli_prepare($koneksi, $loginAttemptsQuery);
+        mysqli_stmt_bind_param($loginStmt, 's', $id);
+        mysqli_stmt_execute($loginStmt);
+        mysqli_stmt_close($loginStmt);
+
+        // Permanently delete the user
+        $query = "DELETE FROM users WHERE id = ?";
+        $stmt = mysqli_prepare($koneksi, $query);
+        mysqli_stmt_bind_param($stmt, 's', $id);
+
+        if (mysqli_stmt_execute($stmt)) {
+            mysqli_stmt_close($stmt);
+            mysqli_commit($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'User permanently deleted successfully'
+            ]);
+        } else {
+            mysqli_rollback($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+            throw new Exception('Failed to permanently delete user: ' . mysqli_error($koneksi));
+        }
+    } catch (Exception $e) {
+        if (mysqli_connect_errno() === 0) { // Only rollback if connection is still valid
+            mysqli_rollback($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+        }
+        http_response_code(400);
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+}
+
+function permanentlyDeleteInactiveUsers()
+{
+    global $koneksi;
+
+    try {
+        // Start transaction for data consistency
+        mysqli_autocommit($koneksi, FALSE);
+
+        // Get inactive user IDs first to process related records properly
+        $getInactiveQuery = "SELECT id, username FROM users WHERE is_active = FALSE";
+        $result = mysqli_query($koneksi, $getInactiveQuery);
+        $inactiveUsers = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $inactiveUsers[] = $row;
+        }
+
+        $inactiveCount = count($inactiveUsers);
+
+        if ($inactiveCount === 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'No inactive users to delete',
+                'deleted_count' => 0
+            ]);
+            mysqli_autocommit($koneksi, TRUE);
+            return;
+        }
+
+        // Delete related records in dependent tables for inactive users
+        $relatedTables = [
+            ['table' => 'user_sessions', 'column' => 'user_id'],
+            ['table' => 'password_resets', 'column' => 'user_id']
+        ];
+
+        foreach ($relatedTables as $relatedTable) {
+            $userIds = [];
+            $userParams = [];
+            $types = '';
+            foreach ($inactiveUsers as $user) {
+                $userParams[] = $user['id'];
+                $types .= 's';
+            }
+
+            if (!empty($userParams)) {
+                $placeholders = str_repeat('?,', count($userParams) - 1) . '?';
+                $query = "DELETE FROM {$relatedTable['table']} WHERE {$relatedTable['column']} IN ($placeholders)";
+                $stmt = mysqli_prepare($koneksi, $query);
+                mysqli_stmt_bind_param($stmt, $types, ...$userParams);
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_close($stmt);
+            }
+        }
+
+        // Delete related login attempts
+        $loginUsernames = [];
+        $usernameParams = [];
+        $types = '';
+        foreach ($inactiveUsers as $user) {
+            $usernameParams[] = $user['username'];
+            $types .= 's';
+        }
+
+        if (!empty($usernameParams)) {
+            $placeholders = str_repeat('?,', count($usernameParams) - 1) . '?';
+            $loginQuery = "DELETE FROM login_attempts WHERE username IN ($placeholders)";
+            $loginStmt = mysqli_prepare($koneksi, $loginQuery);
+            mysqli_stmt_bind_param($loginStmt, $types, ...$usernameParams);
+            mysqli_stmt_execute($loginStmt);
+            mysqli_stmt_close($loginStmt);
+        }
+
+        // Permanently delete all inactive users
+        $deleteQuery = "DELETE FROM users WHERE is_active = FALSE";
+        if (mysqli_query($koneksi, $deleteQuery)) {
+            mysqli_commit($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+
+            echo json_encode([
+                'success' => true,
+                'message' => "Successfully permanently deleted {$inactiveCount} inactive user(s)",
+                'deleted_count' => $inactiveCount
+            ]);
+        } else {
+            mysqli_rollback($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+            throw new Exception('Failed to permanently delete inactive users: ' . mysqli_error($koneksi));
+        }
+    } catch (Exception $e) {
+        if (mysqli_connect_errno() === 0) { // Only rollback if connection is still valid
+            mysqli_rollback($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+        }
         http_response_code(400);
         echo json_encode([
             'success' => false,

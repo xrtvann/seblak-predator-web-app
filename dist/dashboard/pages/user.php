@@ -1263,6 +1263,19 @@
         });
     }
 
+    // Update permanent delete button visibility
+    function updatePermanentDeleteButtonVisibility() {
+        const permanentDeleteSection = document.getElementById('permanentDeleteSection');
+        if (!permanentDeleteSection) return;
+
+        // Show the button only when viewing inactive users
+        if (currentViewMode === 'deleted') {
+            permanentDeleteSection.style.display = 'block';
+        } else {
+            permanentDeleteSection.style.display = 'none';
+        }
+    }
+
     // Remove specific filter
     function removeFilter(filterKey) {
         const filter = activeFilters.get(filterKey);
@@ -1306,6 +1319,7 @@
 
         updateFilterBadge();
         updateActiveFiltersDisplay();
+        updatePermanentDeleteButtonVisibility();
     }
 
     // Close dropdown when clicking outside
@@ -1377,6 +1391,7 @@
                 }
 
                 applyFilters();
+                updatePermanentDeleteButtonVisibility();
             } else {
                 throw new Error(result.message || 'Failed to load data');
             }
@@ -1604,6 +1619,13 @@
                         <div class="active-filters-tags" id="activeFiltersTags"></div>
                     </div>
                 </div>
+
+                <!-- Permanent Delete Inactive Users Button -->
+                <div class="permanent-delete-section mt-4" id="permanentDeleteSection" style="display: none;">
+                    <button type="button" class="btn btn-danger" id="btnPermanentDeleteInactive" onclick="permanentDeleteInactiveUsers()">
+                        <i class="ti ti-trash me-1"></i>Hapus Permanen Semua User Inaktif
+                    </button>
+                </div>
             </div>
             
             <!-- Table Container -->
@@ -1785,6 +1807,9 @@
                         ` : `
                             <button type="button" class="btn btn-sm btn-outline-success me-2" onclick="restoreUser('${item.id}', '${escapeHtml(item.name)}')" title="Activate">
                                 <i class="ti ti-user-check"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="permanentDeleteUser('${item.id}', '${escapeHtml(item.name)}')" title="Hapus Permanen">
+                                <i class="ti ti-trash"></i>
                             </button>
                         `}
                     </div>
@@ -1993,6 +2018,34 @@
         });
     }
 
+    // Permanently delete all inactive users
+    function permanentDeleteInactiveUsers() {
+        showPermanentDeleteAllInactiveConfirmation(async () => {
+            showLoading('Menghapus Permanen...', 'Sedang menghapus semua user inaktif secara permanen...');
+
+            try {
+                const response = await fetch(`api/users.php?action=permanent-delete-inactive`, {
+                    method: 'PATCH'
+                });
+
+                const result = await response.json();
+                hideAlert();
+
+                if (result.success) {
+                    showSuccess('Berhasil!', result.message, () => {
+                        loadUserData(true);
+                    });
+                } else {
+                    showError('Gagal!', result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                hideAlert();
+                showError('Kesalahan!', 'Terjadi kesalahan saat menghubungi server');
+            }
+        });
+    }
+
     // SweetAlert helper functions
     function showDeleteConfirmation(itemName, onConfirm) {
         if (typeof Swal !== 'undefined') {
@@ -2071,6 +2124,42 @@
             });
         } else {
             if (confirm(`PERINGATAN: Anda akan menghapus PERMANEN "${itemName}". Data tidak dapat dikembalikan. Apakah Anda yakin?`)) {
+                onConfirm();
+            }
+        }
+    }
+
+    function showPermanentDeleteAllInactiveConfirmation(onConfirm) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'PERINGATAN!',
+                html: `<div style="text-align: left;">
+                    <p><strong>Anda akan menghapus PERMANEN SEMUA user inaktif!</strong></p>
+                    <br>
+                    <p style="color: #dc3545;"><i class="ti ti-alert-triangle"></i> <strong>PERHATIAN:</strong></p>
+                    <ul style="text-align: left; color: #dc3545;">
+                        <li>Semua user inaktif akan dihapus SELAMANYA</li>
+                        <li>Data tidak dapat dikembalikan</li>
+                        <li>Semua riwayat user akan terhapus</li>
+                        <li>Tindakan ini tidak dapat dibatalkan</li>
+                    </ul>
+                    <p style="margin-top: 15px;"><strong>Apakah Anda yakin?</strong></p>
+                </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="ti ti-trash-x"></i> Ya, Hapus Semua!',
+                cancelButtonText: '<i class="ti ti-x"></i> Batal',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    onConfirm();
+                }
+            });
+        } else {
+            if (confirm('PERINGATAN: Anda akan menghapus PERMANEN semua user inaktif. Data tidak dapat dikembalikan. Apakah Anda yakin?')) {
                 onConfirm();
             }
         }

@@ -91,6 +91,14 @@
 
                         <hr />
 
+                        <!-- Mobile App Information -->
+
+                        <div class="d-grid mt-4 mb-3">
+                            <a href="https://play.google.com/store" target="_blank" class="btn btn-success">
+                                <i class="ti ti-download me-2"></i>Download di Google Play
+                            </a>
+                        </div>
+
                         <!-- Help Information -->
                         <h5 class="d-flex justify-content-center text-muted">
                             <i class="ti ti-help-circle me-2"></i>
