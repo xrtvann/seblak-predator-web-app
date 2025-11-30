@@ -20,7 +20,7 @@
 
 <!-- [ Main Content ] start -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<div class="row">
+<div class="row mt-4">
     <!-- Filter Period -->
     <div class="col-12">
         <div class="card">

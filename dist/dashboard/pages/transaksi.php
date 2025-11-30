@@ -2860,9 +2860,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         <!-- Template Struk untuk Print (hidden) -->
                         <div id="strukPrintArea" style="display:none;">
                             <div style="width:340px; font-family:monospace, 'Courier New', Courier, Arial; color:#222; background:#fff; padding:8px 0;">
-                                <div style="text-align:center; margin-bottom:6px;">
-                                    <img src="https://i.ibb.co/6bQw8kF/seblak-logo.png" alt="Logo" style="height:38px; margin-bottom:2px;" onerror="this.style.display='none'">
-                                </div>
                                 <div style="text-align:center; font-size:17px; font-weight:bold; letter-spacing:1px; margin-bottom:2px;">SEBLAK PREDATOR</div>
                                 <div style="text-align:center; font-size:11px; margin-bottom:8px;">No: <b>${order.order_number}</b><br>${formatDate(order.created_at)} ${formatTime(order.created_at)}</div>
                                 <div style="border-bottom:1px dashed #aaa; margin-bottom:7px;"></div>

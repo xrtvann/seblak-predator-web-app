@@ -277,11 +277,6 @@ if (isLoggedIn() && !canAccessPage($page)) {
       <!-- [Mobile Media Block end] -->
       <div class="ms-auto">
         <ul class="list-unstyled">
-          <li class="dropdown pc-h-item">
-            <a class="pc-head-link head-link-secondary dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown"
-              href="#" role="button" aria-haspopup="false" aria-expanded="false">
-              <i class="ti ti-bell"></i>
-            </a>
             <div class="dropdown-menu dropdown-notification dropdown-menu-end pc-h-dropdown">
               <div class="dropdown-header">
                 <a href="#!" class="link-primary float-end text-decoration-underline">Mark as all read</a>
