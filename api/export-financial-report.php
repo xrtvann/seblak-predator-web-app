@@ -35,6 +35,7 @@ function exportFinancialReportPDF()
     $period = $_GET['period'] ?? 'month';
     $start_date = null;
     $end_date = null;
+    $preview = isset($_GET['preview']); // Check if preview parameter is set
 
     // Determine date range based on period
     switch ($period) {
@@ -129,43 +130,72 @@ function exportFinancialReportPDF()
         // Get recent expenses (last 10)
         $recent_expenses = getRecentExpenses($start_date, $end_date, 10);
 
-        // Create PDF content
+        // Create HTML content
         $html = generatePDFContent($total_revenue, $total_expenses, $net_profit, $profit_margin, $expense_by_category, $recent_revenues, $recent_expenses, $period, $start_date, $end_date);
 
-        // Setup dompdf options
-        $options = new Options();
-        $options->set('defaultFont', 'DejaVu Sans');
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
+        // Check if preview mode is requested
+        if ($preview) {
+            // Output as HTML preview
+            header('Content-Type: text/html; charset=utf-8');
+            echo $html;
+        } else {
+            // Setup dompdf options for actual PDF generation
+            $options = new Options();
+            $options->set('defaultFont', 'DejaVu Sans');
+            $options->set('isRemoteEnabled', true);
+            $options->set('isHtml5ParserEnabled', true);
 
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
+            $dompdf = new Dompdf($options);
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
 
-        // Output the generated PDF
-        $dompdf->stream("laporan-keuangan-" . date('Y-m-d') . ".pdf", ["Attachment" => true]);
+            // Output the generated PDF
+            $dompdf->stream("laporan-keuangan-" . date('Y-m-d') . ".pdf", ["Attachment" => true]);
+        }
 
     } catch (Exception $e) {
-        // If there's an error, return a simple error page as HTML
-        $error_html = '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Error - Laporan Keuangan</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                .error { color: #d9534f; }
-            </style>
-        </head>
-        <body>
-            <h1 class="error">Error Generating PDF Report</h1>
-            <p>Error: ' . htmlspecialchars($e->getMessage()) . '</p>
-            <button onclick="window.history.back()">Kembali</button>
-        </body>
-        </html>';
+        if ($preview) {
+            // If in preview mode, show error as HTML
+            $error_html = '
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Error - Laporan Keuangan Preview</title>
+                <style>
+                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                    .error { color: #d9534f; }
+                </style>
+            </head>
+            <body>
+                <h1 class="error">Error Generating Report Preview</h1>
+                <p>Error: ' . htmlspecialchars($e->getMessage()) . '</p>
+                <button onclick="window.history.back()">Kembali</button>
+            </body>
+            </html>';
 
-        echo $error_html;
+            echo $error_html;
+        } else {
+            // For PDF mode, show error in same format as before
+            $error_html = '
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Error - Laporan Keuangan</title>
+                <style>
+                    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                    .error { color: #d9534f; }
+                </style>
+            </head>
+            <body>
+                <h1 class="error">Error Generating PDF Report</h1>
+                <p>Error: ' . htmlspecialchars($e->getMessage()) . '</p>
+                <button onclick="window.history.back()">Kembali</button>
+            </body>
+            </html>';
+
+            echo $error_html;
+        }
     }
 }
 
@@ -282,7 +312,7 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
     $period_label = getPeriodLabel($period);
     $start_date_display = date('d M Y', strtotime($start_date));
     $end_date_display = date('d M Y', strtotime($end_date));
-    
+
     // Format currency
     $format_rupiah = function($amount) {
         return 'Rp ' . number_format($amount, 0, ',', '.');
@@ -295,9 +325,18 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
         <meta charset="utf-8">
         <title>Laporan Keuangan</title>
         <style>
-            body {
-                font-family: Arial, sans-serif;
+            @page {
+                size: A4 portrait;
                 margin: 20px;
+            }
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                margin: 20px auto;
+                max-width: 210mm; /* A4 width */
+                min-height: 297mm; /* A4 height */
+                padding: 15px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                background-color: white;
             }
             .header {
                 text-align: center;
@@ -323,17 +362,56 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
             }
             .summary-cards {
                 display: flex;
+                flex-wrap: wrap;
                 gap: 15px;
                 margin-bottom: 25px;
-                flex-wrap: wrap;
             }
             .summary-card {
                 flex: 1;
-                min-width: 200px;
+                min-width: 140px;
                 padding: 15px;
                 border-radius: 8px;
                 color: white;
                 text-align: center;
+                box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            }
+            /* Make sure PDF export also uses horizontal layout */
+            @media print {
+                .summary-cards {
+                    display: -webkit-box !important;
+                    display: -ms-flexbox !important;
+                    display: flex !important;
+                    -webkit-flex-wrap: nowrap !important;
+                    -ms-flex-wrap: nowrap !important;
+                    flex-wrap: nowrap !important;
+                    gap: 15px !important;
+                    width: 100% !important;
+                    overflow-x: visible !important;
+                }
+                .summary-card {
+                    -webkit-flex: 1 !important;
+                    -ms-flex: 1 !important;
+                    flex: 1 !important;
+                    min-width: 140px !important;
+                    max-width: 25% !important;
+                    margin-bottom: 0 !important;
+                    -webkit-flex-shrink: 0 !important;
+                    -ms-flex-negative: 0 !important;
+                    flex-shrink: 0 !important;
+                }
+            }
+            .summary-card h3 {
+                margin: 0 0 8px 0;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            .summary-card p {
+                margin: 0;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .summary-card::before {
+                display: none;
             }
             .revenue-card {
                 background-color: #28a745;
@@ -349,12 +427,13 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                 color: #000;
             }
             .summary-card h3 {
-                margin: 0 0 5px 0;
+                margin: 0 0 10px 0;
                 font-size: 16px;
+                font-weight: 600;
             }
             .summary-card p {
                 margin: 0;
-                font-size: 20px;
+                font-size: 22px;
                 font-weight: bold;
             }
             .section {
@@ -368,27 +447,35 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                 border-bottom: 1px solid #ccc;
                 color: #333;
             }
-            .table {
+            /* Excel-like table styling */
+            .excel-table {
                 width: 100%;
                 border-collapse: collapse;
                 margin-bottom: 15px;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                font-size: 12px;
             }
-            .table th, .table td {
-                border: 1px solid #ccc;
-                padding: 8px;
+            .excel-table th, .excel-table td {
+                border: 1px solid #d0d0d0;
+                padding: 8px 10px;
                 text-align: left;
             }
-            .table th {
-                background-color: #f8f9fa;
-                font-weight: bold;
+            .excel-table th {
+                background-color: #f0f0f0;
+                font-weight: 600;
+                color: #333;
+                text-align: center;
             }
-            .revenue-table .table th, .revenue-table .table td {
-                text-align: left;
+            .excel-table tbody tr:nth-child(odd) {
+                background-color: #f9f9f9;
             }
-            .text-right {
+            .excel-table tbody tr:nth-child(even) {
+                background-color: #ffffff;
+            }
+            .excel-table .text-right {
                 text-align: right !important;
             }
-            .text-center {
+            .excel-table .text-center {
                 text-align: center !important;
             }
             .text-success {
@@ -407,7 +494,9 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                 display: inline-block;
                 padding: 2px 6px;
                 border-radius: 4px;
-                font-size: 12px;
+                font-size: 10px;
+                background-color: #6c757d;
+                color: white;
             }
             .badge-primary {
                 background-color: #007bff;
@@ -424,36 +513,36 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
             <h1>LAPORAN KEUANGAN</h1>
             <p>Seblak Predator Restaurant Management System</p>
         </div>
-        
+
         <div class="period-info">
             Periode: <strong>' . $period_label . '</strong> (' . $start_date_display . ' - ' . $end_date_display . ')
         </div>
-        
+
         <div class="summary-cards">
             <div class="summary-card revenue-card">
                 <h3>Total Pendapatan</h3>
                 <p>' . $format_rupiah($total_revenue) . '</p>
             </div>
-            
+
             <div class="summary-card expense-card">
                 <h3>Total Pengeluaran</h3>
                 <p>' . $format_rupiah($total_expenses) . '</p>
             </div>
-            
+
             <div class="summary-card profit-card">
                 <h3>Keuntungan Bersih</h3>
                 <p>' . $format_rupiah($net_profit) . '</p>
             </div>
-            
+
             <div class="summary-card margin-card">
                 <h3>Margin Keuntungan</h3>
                 <p>' . round($profit_margin, 1) . '%</p>
             </div>
         </div>
-        
+
         <div class="section">
             <div class="section-title">Rincian Pengeluaran Berdasarkan Kategori</div>
-            <table class="table">
+            <table class="excel-table">
                 <thead>
                     <tr>
                         <th>Kategori</th>
@@ -462,7 +551,7 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                     </tr>
                 </thead>
                 <tbody>
-                    ' . (count($expense_by_category) > 0 
+                    ' . (count($expense_by_category) > 0
                         ? implode('', array_map(function($item) use ($format_rupiah) {
                             return '
                             <tr>
@@ -475,10 +564,10 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                 </tbody>
             </table>
         </div>
-        
+
         <div class="section">
             <div class="section-title">Rincian Pendapatan Terbaru</div>
-            <table class="table revenue-table">
+            <table class="excel-table">
                 <thead>
                     <tr>
                         <th>Tanggal</th>
@@ -488,7 +577,7 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                     </tr>
                 </thead>
                 <tbody>
-                    ' . (count($recent_revenues) > 0 
+                    ' . (count($recent_revenues) > 0
                         ? implode('', array_map(function($item) use ($format_rupiah) {
                             return '
                             <tr>
@@ -502,10 +591,10 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                 </tbody>
             </table>
         </div>
-        
+
         <div class="section">
             <div class="section-title">Rincian Pengeluaran Terbaru</div>
-            <table class="table">
+            <table class="excel-table">
                 <thead>
                     <tr>
                         <th>Tanggal</th>
@@ -515,7 +604,7 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                     </tr>
                 </thead>
                 <tbody>
-                    ' . (count($recent_expenses) > 0 
+                    ' . (count($recent_expenses) > 0
                         ? implode('', array_map(function($item) use ($format_rupiah) {
                             return '
                             <tr>
@@ -529,7 +618,7 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                 </tbody>
             </table>
         </div>
-        
+
         <div class="section">
             <p class="mb-0"><small>Dicetak pada: ' . date('d M Y H:i:s') . '</small></p>
         </div>

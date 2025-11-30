@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 require_once __DIR__ . '/middleware.php';
 
 try {
-    // Authenticate request - require admin or staff roles
-    $user = JWTMiddleware::authenticate(['role_admin', 'role_staff']);
+    // Authenticate request - require admin or Cashier roles
+    $user = JWTMiddleware::authenticate(['role_admin', 'role_cashier']);
 
     if (!$user) {
         // Authentication failed - middleware already sent error response
@@ -73,7 +73,7 @@ try {
                     ],
                     'permissions' => [
                         'is_admin' => JWTMiddleware::hasRole('role_admin'),
-                        'is_staff' => JWTMiddleware::hasRole('role_staff'),
+                        'is_cashier' => JWTMiddleware::hasRole('role_cashier'),
                         'is_customer' => JWTMiddleware::hasRole('role_customer')
                     ]
                 ]

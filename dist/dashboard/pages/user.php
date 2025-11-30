@@ -1371,6 +1371,7 @@
                         active: allUsersData.filter(u => u.is_active).length,
                         inactive: allUsersData.filter(u => !u.is_active).length,
                         admin_count: allUsersData.filter(u => u.role_id === 'role_admin' && u.is_active).length,
+                        cashier_count: allUsersData.filter(u => u.role_id === 'role_cashier' && u.is_active).length,
                         new_users: 0
                     });
                 }
@@ -1561,6 +1562,11 @@
                                                 <span class="filter-label">Owner</span>
                                             </label>
                                             <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="role" data-value="role_cashier" onchange="handleFilterChange(this)">
+                                                <span class="filter-icon">💰</span>
+                                                <span class="filter-label">Cashier</span>
+                                            </label>
+                                            <label class="filter-option">
                                                 <input type="checkbox" class="filter-checkbox" data-filter="role" data-value="role_admin" onchange="handleFilterChange(this)">
                                                 <span class="filter-icon">🛡️</span>
                                                 <span class="filter-label">Admin</span>
@@ -1679,6 +1685,7 @@
                                         <option value="">Pilih Role</option>
                                         <option value="role_owner">Owner</option>
                                         <option value="role_admin">Admin</option>
+                                        <option value="role_cashier">Cashier</option>
                                         <option value="role_customer">Customer</option>
                                     </select>
                                     <div class="invalid-feedback">Role wajib dipilih</div>
@@ -1745,7 +1752,9 @@
 
         paginatedData.forEach((item, index) => {
             const actualIndex = startIndex + index + 1;
-            const roleBadgeClass = item.role_id === 'role_owner' ? 'danger' : item.role_id === 'role_admin' ? 'warning' : 'info';
+            const roleBadgeClass = item.role_id === 'role_owner' ? 'danger' :
+                                  item.role_id === 'role_admin' ? 'warning' :
+                                  item.role_id === 'role_cashier' ? 'success' : 'info';
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${actualIndex}</td>

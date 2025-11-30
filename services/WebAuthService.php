@@ -296,6 +296,7 @@ class WebAuthService
         $permissions = [
             'role_admin' => ['*'], // Admin can do everything
             'role_staff' => ['menu.read', 'menu.write', 'orders.read', 'orders.write'],
+            'role_cashier' => ['menu.read', 'orders.read', 'orders.write'], // Cashier can view menu and handle orders
             'role_customer' => ['orders.read']
         ];
 

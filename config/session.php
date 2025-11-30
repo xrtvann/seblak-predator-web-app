@@ -153,15 +153,15 @@ function hasPageAccess($page, $user = null)
 
     // Define page access permissions
     $page_permissions = [
-        'dashboard' => ['owner', 'admin'],          // Only owner and admin can access dashboard
-        'dasar-seblak' => ['owner', 'admin'],       // Only owner and admin can manage dasar seblak
-        'topping' => ['owner', 'admin'],            // Only owner and admin can manage topping
-        'kategori' => ['owner', 'admin'],           // Only owner and admin can manage categories
-        'transaksi' => ['owner', 'admin'],          // Only owner and admin can view transactions
-        'laporan-keuangan' => ['owner', 'admin'],   // Only owner and admin can view financial reports
-        'user' => ['owner'],                        // Only owner can manage users
-        'role' => ['owner'],                        // Only owner can manage roles
-        'account' => ['owner', 'admin']             // Only owner and admin can access account settings
+        'dashboard' => ['owner', 'admin', 'Cashier'], // Owner, admin, and Cashier can access dashboard
+        'dasar-seblak' => ['owner', 'admin'],         // Only owner and admin can manage dasar seblak
+        'topping' => ['owner', 'admin'],              // Only owner and admin can manage topping
+        'kategori' => ['owner', 'admin'],             // Only owner and admin can manage categories
+        'transaksi' => ['owner', 'admin', 'Cashier'], // Owner, admin, and Cashier can view transactions
+        'laporan-keuangan' => ['owner', 'admin'],     // Only owner and admin can view financial reports
+        'user' => ['owner'],                          // Only owner can manage users
+        'role' => ['owner'],                          // Only owner can manage roles
+        'account' => ['owner', 'admin', 'Cashier']    // Owner, admin, and Cashier can access account settings
     ];
 
     // Check if page has defined permissions
@@ -202,15 +202,15 @@ function getAccessiblePages($user = null)
 
     // Define page access permissions
     $page_permissions = [
-        'dashboard' => ['owner', 'admin'],
+        'dashboard' => ['owner', 'admin', 'Cashier'],
         'dasar-seblak' => ['owner', 'admin'],
         'topping' => ['owner', 'admin'],
         'kategori' => ['owner', 'admin'],
-        'transaksi' => ['owner', 'admin'],
+        'transaksi' => ['owner', 'admin', 'Cashier'],
         'laporan-keuangan' => ['owner', 'admin'],
         'user' => ['owner'],
         'role' => ['owner'],
-        'account' => ['owner', 'admin']
+        'account' => ['owner', 'admin', 'Cashier']
     ];
 
     foreach ($page_permissions as $page => $allowed_roles) {

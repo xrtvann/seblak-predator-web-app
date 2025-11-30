@@ -48,8 +48,11 @@
                         <label class="form-label">Tanggal Akhir</label>
                         <input type="date" class="form-control" id="endDate" onchange="loadFinancialData()">
                     </div>
-                    <div class="col-md-3">
-                        <button class="btn btn-primary w-100" onclick="exportReport()">
+                    <div class="col-md-6 d-flex gap-2">
+                        <button class="btn btn-secondary" onclick="previewReport()">
+                            <i class="ti ti-eye me-2"></i>Preview
+                        </button>
+                        <button class="btn btn-primary" onclick="exportReport()">
                             <i class="ti ti-download me-2"></i>Export PDF
                         </button>
                     </div>
@@ -1148,6 +1151,21 @@
                 confirmButtonColor: '#dc2626'
             });
         }
+    }
+
+    // Preview report in HTML
+    function previewReport() {
+        const period = document.getElementById('periodFilter').value;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        let url = `../../../api/export-financial-report.php?period=${period}&preview`;
+        if (period === 'custom' && startDate && endDate) {
+            url += `&start_date=${startDate}&end_date=${endDate}`;
+        }
+
+        // Open preview in new window/tab
+        window.open(url, '_blank');
     }
 
     // Export report to PDF
