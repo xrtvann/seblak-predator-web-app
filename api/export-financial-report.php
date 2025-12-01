@@ -307,14 +307,15 @@ function getRecentExpenses($start_date, $end_date, $limit = 10)
     return $expenses;
 }
 
-function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profit_margin, $expense_by_category, $recent_revenues, $recent_expenses, $period, $start_date, $end_date) {
+function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profit_margin, $expense_by_category, $recent_revenues, $recent_expenses, $period, $start_date, $end_date)
+{
     // Format dates for display
     $period_label = getPeriodLabel($period);
     $start_date_display = date('d M Y', strtotime($start_date));
     $end_date_display = date('d M Y', strtotime($end_date));
 
     // Format currency
-    $format_rupiah = function($amount) {
+    $format_rupiah = function ($amount) {
         return 'Rp ' . number_format($amount, 0, ',', '.');
     };
 
@@ -323,154 +324,168 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
     <html>
     <head>
         <meta charset="utf-8">
-        <title>Laporan Keuangan</title>
+        <title>Laporan Keuangan - Seblak Predator</title>
         <style>
             @page {
                 size: A4 portrait;
-                margin: 20px;
+                margin: 20mm;
+            }
+            * {
+                box-sizing: border-box;
             }
             body {
                 font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-                margin: 20px auto;
-                max-width: 210mm; /* A4 width */
-                min-height: 297mm; /* A4 height */
-                padding: 15px;
-                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                margin: 0;
+                padding: 20px;
+                background-color: #f8f9fa;
+            }
+            .report-container {
+                max-width: 210mm;
+                margin: 0 auto;
                 background-color: white;
+                padding: 40px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             }
             .header {
+                border-bottom: 3px solid #2c3e50;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
                 text-align: center;
-                border-bottom: 2px solid #000;
-                padding-bottom: 15px;
-                margin-bottom: 20px;
             }
             .header h1 {
-                margin: 0;
-                font-size: 24px;
-                color: #333;
+                margin: 0 0 10px 0;
+                font-size: 28px;
+                font-weight: 700;
+                color: #2c3e50;
+                text-transform: uppercase;
+                letter-spacing: 1px;
             }
             .header p {
                 margin: 5px 0 0 0;
-                color: #666;
                 font-size: 14px;
+                color: #666;
+                font-weight: 500;
             }
             .period-info {
-                text-align: center;
-                margin-bottom: 20px;
+                background-color: #ecf0f1;
+                border-left: 4px solid #3498db;
+                padding: 12px 20px;
+                margin-bottom: 30px;
                 font-size: 14px;
-                color: #555;
+                color: #2c3e50;
+                font-weight: 500;
             }
             .summary-cards {
                 display: flex;
                 flex-wrap: wrap;
-                gap: 15px;
-                margin-bottom: 25px;
+                gap: 18px;
+                margin-bottom: 35px;
             }
             .summary-card {
                 flex: 1;
-                min-width: 140px;
-                padding: 15px;
-                border-radius: 8px;
+                min-width: 150px;
+                padding: 20px;
+                border-radius: 4px;
                 color: white;
                 text-align: center;
-                box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-top: 4px solid rgba(0,0,0,0.1);
+            }
+            .summary-card h3 {
+                margin: 0 0 12px 0;
+                font-size: 13px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                opacity: 0.9;
+            }
+            .summary-card p {
+                margin: 0;
+                font-size: 24px;
+                font-weight: 700;
+            }
+            .revenue-card {
+                background-color: #27ae60;
+                border-top-color: #1e8449;
+            }
+            .expense-card {
+                background-color: #e74c3c;
+                border-top-color: #c0392b;
+            }
+            .profit-card {
+                background-color: #3498db;
+                border-top-color: #2980b9;
+            }
+            .margin-card {
+                background-color: #f39c12;
+                border-top-color: #d68910;
             }
             /* Make sure PDF export also uses horizontal layout */
             @media print {
+                body {
+                    background: white;
+                    padding: 0;
+                }
+                .report-container {
+                    box-shadow: none;
+                }
                 .summary-cards {
-                    display: -webkit-box !important;
-                    display: -ms-flexbox !important;
                     display: flex !important;
-                    -webkit-flex-wrap: nowrap !important;
-                    -ms-flex-wrap: nowrap !important;
                     flex-wrap: nowrap !important;
                     gap: 15px !important;
-                    width: 100% !important;
-                    overflow-x: visible !important;
                 }
                 .summary-card {
-                    -webkit-flex: 1 !important;
-                    -ms-flex: 1 !important;
                     flex: 1 !important;
-                    min-width: 140px !important;
-                    max-width: 25% !important;
-                    margin-bottom: 0 !important;
-                    -webkit-flex-shrink: 0 !important;
-                    -ms-flex-negative: 0 !important;
-                    flex-shrink: 0 !important;
+                    page-break-inside: avoid;
                 }
             }
-            .summary-card h3 {
-                margin: 0 0 8px 0;
-                font-size: 14px;
-                font-weight: 600;
-            }
-            .summary-card p {
-                margin: 0;
-                font-size: 18px;
-                font-weight: bold;
-            }
-            .summary-card::before {
-                display: none;
-            }
-            .revenue-card {
-                background-color: #28a745;
-            }
-            .expense-card {
-                background-color: #dc3545;
-            }
-            .profit-card {
-                background-color: #007bff;
-            }
-            .margin-card {
-                background-color: #ffc107;
-                color: #000;
-            }
-            .summary-card h3 {
-                margin: 0 0 10px 0;
-                font-size: 16px;
-                font-weight: 600;
-            }
-            .summary-card p {
-                margin: 0;
-                font-size: 22px;
-                font-weight: bold;
-            }
             .section {
-                margin-bottom: 25px;
+                margin-bottom: 35px;
+                page-break-inside: avoid;
             }
             .section-title {
-                font-size: 18px;
-                font-weight: bold;
-                margin-bottom: 10px;
-                padding-bottom: 5px;
-                border-bottom: 1px solid #ccc;
-                color: #333;
+                font-size: 16px;
+                font-weight: 700;
+                margin-bottom: 15px;
+                padding: 10px 15px;
+                background-color: #34495e;
+                color: white;
+                border-left: 5px solid #3498db;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
-            /* Excel-like table styling */
+            /* Professional table styling */
             .excel-table {
                 width: 100%;
                 border-collapse: collapse;
-                margin-bottom: 15px;
+                margin-bottom: 20px;
                 font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 12px;
+                font-size: 13px;
+                border: 1px solid #ddd;
             }
             .excel-table th, .excel-table td {
-                border: 1px solid #d0d0d0;
-                padding: 8px 10px;
+                padding: 12px 15px;
                 text-align: left;
+                border-bottom: 1px solid #e0e0e0;
             }
             .excel-table th {
-                background-color: #f0f0f0;
+                background-color: #34495e;
                 font-weight: 600;
-                color: #333;
+                color: white;
                 text-align: center;
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 2px solid #2c3e50;
             }
-            .excel-table tbody tr:nth-child(odd) {
-                background-color: #f9f9f9;
+            .excel-table tbody tr {
+                background-color: #ffffff;
             }
             .excel-table tbody tr:nth-child(even) {
-                background-color: #ffffff;
+                background-color: #f8f9fa;
+            }
+            .excel-table tbody tr:hover {
+                background-color: #ecf0f1;
             }
             .excel-table .text-right {
                 text-align: right !important;
@@ -492,141 +507,162 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
             }
             .badge {
                 display: inline-block;
-                padding: 2px 6px;
-                border-radius: 4px;
-                font-size: 10px;
-                background-color: #6c757d;
-                color: white;
+                padding: 4px 10px;
+                border-radius: 3px;
+                font-size: 11px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
             }
             .badge-primary {
-                background-color: #007bff;
+                background-color: #3498db;
                 color: white;
             }
             .badge-warning {
-                background-color: #ffc107;
-                color: #000;
+                background-color: #f39c12;
+                color: white;
+            }
+            .badge-success {
+                background-color: #27ae60;
+                color: white;
+            }
+            .footer-info {
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 2px solid #ecf0f1;
+                text-align: center;
+                font-size: 12px;
+                color: #7f8c8d;
+            }
+            .footer-info strong {
+                color: #2c3e50;
             }
         </style>
     </head>
     <body>
-        <div class="header">
-            <h1>LAPORAN KEUANGAN</h1>
-            <p>Seblak Predator Restaurant Management System</p>
-        </div>
-
-        <div class="period-info">
-            Periode: <strong>' . $period_label . '</strong> (' . $start_date_display . ' - ' . $end_date_display . ')
-        </div>
-
-        <div class="summary-cards">
-            <div class="summary-card revenue-card">
-                <h3>Total Pendapatan</h3>
-                <p>' . $format_rupiah($total_revenue) . '</p>
+        <div class="report-container">
+            <div class="header">
+                <h1>Laporan Keuangan</h1>
+                <p>Seblak Predator Restaurant Management System</p>
             </div>
 
-            <div class="summary-card expense-card">
-                <h3>Total Pengeluaran</h3>
-                <p>' . $format_rupiah($total_expenses) . '</p>
+            <div class="period-info">
+                <strong>Periode:</strong> ' . $period_label . ' (' . $start_date_display . ' - ' . $end_date_display . ')
             </div>
 
-            <div class="summary-card profit-card">
-                <h3>Keuntungan Bersih</h3>
-                <p>' . $format_rupiah($net_profit) . '</p>
+            <div class="summary-cards">
+                <div class="summary-card revenue-card">
+                    <h3>Total Pendapatan</h3>
+                    <p>' . $format_rupiah($total_revenue) . '</p>
+                </div>
+
+                <div class="summary-card expense-card">
+                    <h3>Total Pengeluaran</h3>
+                    <p>' . $format_rupiah($total_expenses) . '</p>
+                </div>
+
+                <div class="summary-card profit-card">
+                    <h3>Keuntungan Bersih</h3>
+                    <p>' . $format_rupiah($net_profit) . '</p>
+                </div>
+
+                <div class="summary-card margin-card">
+                    <h3>Margin Keuntungan</h3>
+                    <p>' . round($profit_margin, 1) . '%</p>
+                </div>
             </div>
 
-            <div class="summary-card margin-card">
-                <h3>Margin Keuntungan</h3>
-                <p>' . round($profit_margin, 1) . '%</p>
+            <div class="section">
+                <div class="section-title">Rincian Pengeluaran Berdasarkan Kategori</div>
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th>Kategori</th>
+                            <th>Keterangan</th>
+                            <th>Jumlah Transaksi</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ' . (count($expense_by_category) > 0
+            ? implode('', array_map(function ($item) use ($format_rupiah) {
+                return '
+                                <tr>
+                                    <td><strong>' . htmlspecialchars($item['category_name']) . '</strong></td>
+                                    <td>' . htmlspecialchars($item['description'] ?? '-') . '</td>
+                                    <td class="text-center">' . $item['transaction_count'] . '</td>
+                                    <td class="text-right text-danger fw-bold">' . $format_rupiah($item['total']) . '</td>
+                                </tr>';
+            }, $expense_by_category))
+            : '<tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">Tidak ada data pengeluaran</td></tr>') . '
+                    </tbody>
+                </table>
             </div>
-        </div>
 
-        <div class="section">
-            <div class="section-title">Rincian Pengeluaran Berdasarkan Kategori</div>
-            <table class="excel-table">
-                <thead>
-                    <tr>
-                        <th>Kategori</th>
-                        <th>Jumlah Transaksi</th>
-                        <th class="text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ' . (count($expense_by_category) > 0
-                        ? implode('', array_map(function($item) use ($format_rupiah) {
-                            return '
-                            <tr>
-                                <td>' . htmlspecialchars($item['category_name']) . '</td>
-                                <td class="text-center">' . $item['transaction_count'] . '</td>
-                                <td class="text-right text-danger fw-bold">' . $format_rupiah($item['total']) . '</td>
-                            </tr>';
-                        }, $expense_by_category))
-                        : '<tr><td colspan="3" class="text-center">Tidak ada data</td></tr>') . '
-                </tbody>
-            </table>
-        </div>
+            <div class="section">
+                <div class="section-title">Rincian Pendapatan Terbaru (10 Terakhir)</div>
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>No. Order</th>
+                            <th>Metode Pembayaran</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ' . (count($recent_revenues) > 0
+            ? implode('', array_map(function ($item) use ($format_rupiah) {
+                return '
+                                <tr>
+                                    <td>' . date('d M Y H:i', strtotime($item['created_at'])) . '</td>
+                                    <td><span class="badge badge-primary">' . htmlspecialchars($item['order_number']) . '</span></td>
+                                    <td><span class="badge badge-success">' . htmlspecialchars($item['payment_method']) . '</span></td>
+                                    <td class="text-right text-success fw-bold">' . $format_rupiah($item['total_amount']) . '</td>
+                                </tr>';
+            }, $recent_revenues))
+            : '<tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">Tidak ada data pendapatan</td></tr>') . '
+                    </tbody>
+                </table>
+            </div>
 
-        <div class="section">
-            <div class="section-title">Rincian Pendapatan Terbaru</div>
-            <table class="excel-table">
-                <thead>
-                    <tr>
-                        <th>Tanggal</th>
-                        <th>Order ID</th>
-                        <th>Metode</th>
-                        <th class="text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ' . (count($recent_revenues) > 0
-                        ? implode('', array_map(function($item) use ($format_rupiah) {
-                            return '
-                            <tr>
-                                <td>' . date('d M Y', strtotime($item['created_at'])) . '</td>
-                                <td><span class="badge badge-primary">#' . $item['id'] . '</span></td>
-                                <td>' . htmlspecialchars($item['payment_method']) . '</td>
-                                <td class="text-right text-success fw-bold">' . $format_rupiah($item['total_amount']) . '</td>
-                            </tr>';
-                        }, $recent_revenues))
-                        : '<tr><td colspan="4" class="text-center">Tidak ada data</td></tr>') . '
-                </tbody>
-            </table>
-        </div>
+            <div class="section">
+                <div class="section-title">Rincian Pengeluaran Terbaru (10 Terakhir)</div>
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Kategori</th>
+                            <th>Keterangan</th>
+                            <th class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ' . (count($recent_expenses) > 0
+            ? implode('', array_map(function ($item) use ($format_rupiah) {
+                return '
+                                <tr>
+                                    <td>' . date('d M Y', strtotime($item['expense_date'])) . '</td>
+                                    <td><span class="badge badge-warning">' . htmlspecialchars($item['category_name']) . '</span></td>
+                                    <td>' . htmlspecialchars($item['title']) . '</td>
+                                    <td class="text-right text-danger fw-bold">' . $format_rupiah($item['amount']) . '</td>
+                                </tr>';
+            }, $recent_expenses))
+            : '<tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">Tidak ada data pengeluaran</td></tr>') . '
+                    </tbody>
+                </table>
+            </div>
 
-        <div class="section">
-            <div class="section-title">Rincian Pengeluaran Terbaru</div>
-            <table class="excel-table">
-                <thead>
-                    <tr>
-                        <th>Tanggal</th>
-                        <th>Kategori</th>
-                        <th>Keterangan</th>
-                        <th class="text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ' . (count($recent_expenses) > 0
-                        ? implode('', array_map(function($item) use ($format_rupiah) {
-                            return '
-                            <tr>
-                                <td>' . date('d M Y', strtotime($item['expense_date'])) . '</td>
-                                <td><span class="badge badge-warning">' . htmlspecialchars($item['category_name']) . '</span></td>
-                                <td>' . htmlspecialchars($item['title']) . '</td>
-                                <td class="text-right text-danger fw-bold">' . $format_rupiah($item['amount']) . '</td>
-                            </tr>';
-                        }, $recent_expenses))
-                        : '<tr><td colspan="4" class="text-center">Tidak ada data</td></tr>') . '
-                </tbody>
-            </table>
-        </div>
-
-        <div class="section">
-            <p class="mb-0"><small>Dicetak pada: ' . date('d M Y H:i:s') . '</small></p>
+            <div class="footer-info">
+                <p>Dicetak pada: <strong>' . date('d M Y, H:i:s') . ' WIB</strong></p>
+                <p>&copy; ' . date('Y') . ' Seblak Predator - Restaurant Management System</p>
+            </div>
         </div>
     </body>
     </html>';
 }
 
-function getPeriodLabel($period) {
+function getPeriodLabel($period)
+{
     switch ($period) {
         case 'today':
             return 'Hari Ini';
