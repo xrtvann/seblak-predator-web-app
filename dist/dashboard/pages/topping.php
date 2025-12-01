@@ -348,6 +348,7 @@
 
         updateFilterBadge();
         updateActiveFiltersDisplay();
+        updatePermanentDeleteButtonVisibility();
     }
 
     // Populate category filter options
@@ -695,6 +696,7 @@
 
             if (result.success) {
                 displayMenuData(result.data, showDeleted);
+                updatePermanentDeleteButtonVisibility(); // Update button visibility after loading data
             } else {
                 console.error('Failed to load topping data:', result.message);
                 showNotification('Error loading topping data: ' + result.message, 'error');
@@ -1047,6 +1049,13 @@
                                     <!-- Active filter tags will appear here -->
                                 </div>
                             </div>
+                        </div>
+                        
+                        <!-- Permanent Delete Inactive Button -->
+                        <div class="permanent-delete-section mt-3" id="permanentDeleteSection" style="display: none;">
+                            <button type="button" class="btn btn-danger" id="btnPermanentDeleteInactive" onclick="permanentDeleteInactiveToppings()">
+                                <i class="ti ti-trash me-1"></i>Hapus Permanen Semua Topping Inaktif
+                            </button>
                         </div>
                     </div>
                     
@@ -1910,6 +1919,71 @@
             if (confirm(`PERINGATAN: Anda akan menghapus PERMANEN "${itemName}". Data tidak dapat dikembalikan. Apakah Anda yakin?`)) {
                 onConfirm();
             }
+        }
+    }
+
+    // Permanently delete all inactive toppings
+    async function permanentDeleteInactiveToppings() {
+        const result = await Swal.fire({
+            title: 'PERINGATAN!',
+            html: `<div style="text-align: left;">
+                <p><strong>Anda akan menghapus PERMANEN SEMUA topping inaktif!</strong></p>
+                <br>
+                <p style="color: #dc3545;"><i class="ti ti-alert-triangle"></i> <strong>PERHATIAN:</strong></p>
+                <ul style="text-align: left; color: #dc3545;">
+                    <li>Semua topping inaktif akan dihapus SELAMANYA</li>
+                    <li>Data tidak dapat dikembalikan</li>
+                    <li>Semua riwayat topping akan terhapus</li>
+                    <li>Tindakan ini tidak dapat dibatalkan</li>
+                </ul>
+                <p style="margin-top: 15px;"><strong>Apakah Anda yakin?</strong></p>
+            </div>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="ti ti-trash-x"></i> Ya, Hapus Semua!',
+            cancelButtonText: '<i class="ti ti-x"></i> Batal',
+            reverseButtons: true,
+            focusCancel: true
+        });
+
+        if (result.isConfirmed) {
+            showLoading('Menghapus Permanen...', 'Sedang menghapus semua topping inaktif secara permanen...');
+
+            try {
+                const response = await fetch(`api/menu/toppings.php?action=permanent-delete-inactive`, {
+                    method: 'PATCH'
+                });
+
+                const data = await response.json();
+                hideAlert();
+
+                if (data.success) {
+                    showSuccess('Berhasil!', data.message, () => {
+                        loadMenuData(true); // Reload deleted items view
+                    });
+                } else {
+                    showError('Gagal!', data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                hideAlert();
+                showError('Kesalahan!', 'Terjadi kesalahan saat menghubungi server');
+            }
+        }
+    }
+
+    // Update permanent delete button visibility
+    function updatePermanentDeleteButtonVisibility() {
+        const permanentDeleteSection = document.getElementById('permanentDeleteSection');
+        if (!permanentDeleteSection) return;
+
+        // Show the button only when viewing inactive/deleted items
+        if (currentViewMode === 'deleted') {
+            permanentDeleteSection.style.display = 'block';
+        } else {
+            permanentDeleteSection.style.display = 'none';
         }
     }
 

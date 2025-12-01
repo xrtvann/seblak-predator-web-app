@@ -35,6 +35,8 @@ switch ($method) {
             restoreTopping();
         } elseif (isset($_GET['action']) && $_GET['action'] === 'permanent_delete') {
             permanentDeleteTopping();
+        } elseif (isset($_GET['action']) && $_GET['action'] === 'permanent-delete-inactive') {
+            permanentlyDeleteInactiveToppings();
         } else {
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid action']);
@@ -460,6 +462,64 @@ function permanentDeleteTopping()
     } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Internal server error: ' . $e->getMessage()]);
+    }
+}
+
+function permanentlyDeleteInactiveToppings()
+{
+    global $koneksi;
+
+    try {
+        // Start transaction for data consistency
+        mysqli_autocommit($koneksi, FALSE);
+
+        // Get count of inactive toppings first
+        $countQuery = "SELECT COUNT(*) as total FROM toppings WHERE is_available = FALSE";
+        $countResult = mysqli_query($koneksi, $countQuery);
+        $countRow = mysqli_fetch_assoc($countResult);
+        $inactiveCount = $countRow['total'];
+
+        if ($inactiveCount === 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Tidak ada topping inaktif yang perlu dihapus',
+                'deleted_count' => 0
+            ]);
+            mysqli_autocommit($koneksi, TRUE);
+            return;
+        }
+
+        // Delete all inactive toppings
+        $deleteQuery = "DELETE FROM toppings WHERE is_available = FALSE";
+        $deleteResult = mysqli_query($koneksi, $deleteQuery);
+
+        if ($deleteResult) {
+            $deletedCount = mysqli_affected_rows($koneksi);
+
+            // Commit transaction
+            mysqli_commit($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => "Berhasil menghapus {$deletedCount} topping inaktif secara permanen",
+                'deleted_count' => $deletedCount
+            ]);
+        } else {
+            mysqli_rollback($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+            throw new Exception('Failed to delete inactive toppings: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        mysqli_rollback($koneksi);
+        mysqli_autocommit($koneksi, TRUE);
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+        ]);
     }
 }
 

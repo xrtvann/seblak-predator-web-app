@@ -68,6 +68,9 @@ function handlePatchRequest()
         case 'permanent-delete':
             permanentDeleteOption();
             break;
+        case 'permanent-delete-inactive':
+            permanentlyDeleteInactiveOptions();
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid PATCH action']);
@@ -525,6 +528,64 @@ function permanentDeleteOption()
         echo json_encode([
             'success' => false,
             'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function permanentlyDeleteInactiveOptions()
+{
+    global $koneksi;
+
+    try {
+        // Start transaction for data consistency
+        mysqli_autocommit($koneksi, FALSE);
+
+        // Get count of inactive options first
+        $countQuery = "SELECT COUNT(*) as total FROM customization_options WHERE is_active = FALSE";
+        $countResult = mysqli_query($koneksi, $countQuery);
+        $countRow = mysqli_fetch_assoc($countResult);
+        $inactiveCount = $countRow['total'];
+
+        if ($inactiveCount === 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Tidak ada komponen dasar seblak inaktif yang perlu dihapus',
+                'deleted_count' => 0
+            ]);
+            mysqli_autocommit($koneksi, TRUE);
+            return;
+        }
+
+        // Delete all inactive customization options
+        $deleteQuery = "DELETE FROM customization_options WHERE is_active = FALSE";
+        $deleteResult = mysqli_query($koneksi, $deleteQuery);
+
+        if ($deleteResult) {
+            $deletedCount = mysqli_affected_rows($koneksi);
+
+            // Commit transaction
+            mysqli_commit($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => "Berhasil menghapus {$deletedCount} komponen dasar seblak inaktif secara permanen",
+                'deleted_count' => $deletedCount
+            ]);
+        } else {
+            mysqli_rollback($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+            throw new Exception('Failed to delete inactive options: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        mysqli_rollback($koneksi);
+        mysqli_autocommit($koneksi, TRUE);
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
         ]);
     }
 }

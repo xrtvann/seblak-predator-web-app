@@ -269,7 +269,6 @@ if (isLoggedIn() && !canAccessPage($page)) {
             <form class="header-search">
               <i data-feather="search" class="icon-search"></i>
               <input type="search" class="form-control" placeholder="Search here. . ." />
-              <button class="btn btn-light-secondary btn-search"><i class="ti ti-adjustments-horizontal"></i></button>
             </form>
           </li>
         </ul>

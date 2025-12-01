@@ -46,6 +46,9 @@ function handlePatchRequest()
         case 'permanent-delete':
             permanentDeleteCategory();
             break;
+        case 'permanent-delete-inactive':
+            permanentlyDeleteInactiveCategories();
+            break;
         default:
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => 'Invalid PATCH action']);
@@ -342,7 +345,7 @@ function deleteCategory()
         $category = mysqli_fetch_assoc($getCategoryResult);
 
         // Check if category has associated active toppings
-        $toppingCheckQuery = "SELECT COUNT(*) as topping_count FROM toppings WHERE category = ? AND is_available = TRUE";
+        $toppingCheckQuery = "SELECT COUNT(*) as topping_count FROM toppings WHERE category_id = ? AND is_available = TRUE";
         $toppingCheckStmt = mysqli_prepare($koneksi, $toppingCheckQuery);
         mysqli_stmt_bind_param($toppingCheckStmt, "s", $category_id);
         mysqli_stmt_execute($toppingCheckStmt);
@@ -582,6 +585,92 @@ function permanentDeleteCategory()
         echo json_encode([
             'success' => false,
             'message' => 'Internal server error: ' . $e->getMessage()
+        ]);
+    }
+}
+
+function permanentlyDeleteInactiveCategories()
+{
+    global $koneksi;
+
+    try {
+        // Start transaction for data consistency
+        mysqli_autocommit($koneksi, FALSE);
+
+        // Get count of inactive categories first
+        $countQuery = "SELECT COUNT(*) as total FROM categories WHERE is_active = FALSE";
+        $countResult = mysqli_query($koneksi, $countQuery);
+        $countRow = mysqli_fetch_assoc($countResult);
+        $inactiveCount = $countRow['total'];
+
+        if ($inactiveCount === 0) {
+            echo json_encode([
+                'success' => true,
+                'message' => 'Tidak ada kategori inaktif yang perlu dihapus',
+                'deleted_count' => 0
+            ]);
+            mysqli_autocommit($koneksi, TRUE);
+            return;
+        }
+
+        // Check if any inactive categories have dependencies
+        $checkQuery = "SELECT c.id, c.name, 
+                       (SELECT COUNT(*) FROM toppings WHERE category_id = c.id) as topping_count,
+                       (SELECT COUNT(*) FROM customization_options WHERE category_id = c.id) as option_count
+                       FROM categories c 
+                       WHERE c.is_active = FALSE";
+        $checkResult = mysqli_query($koneksi, $checkQuery);
+
+        $hasConstraints = false;
+        $constraintMessages = [];
+
+        while ($row = mysqli_fetch_assoc($checkResult)) {
+            if ($row['topping_count'] > 0 || $row['option_count'] > 0) {
+                $hasConstraints = true;
+                $constraintMessages[] = "Kategori '{$row['name']}' memiliki {$row['topping_count']} topping dan {$row['option_count']} opsi";
+            }
+        }
+
+        if ($hasConstraints) {
+            mysqli_autocommit($koneksi, TRUE);
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Tidak dapat menghapus kategori yang memiliki dependensi. ' . implode('; ', $constraintMessages)
+            ]);
+            return;
+        }
+
+        // Delete all inactive categories
+        $deleteQuery = "DELETE FROM categories WHERE is_active = FALSE";
+        $deleteResult = mysqli_query($koneksi, $deleteQuery);
+
+        if ($deleteResult) {
+            $deletedCount = mysqli_affected_rows($koneksi);
+
+            // Commit transaction
+            mysqli_commit($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => "Berhasil menghapus {$deletedCount} kategori inaktif secara permanen",
+                'deleted_count' => $deletedCount
+            ]);
+        } else {
+            mysqli_rollback($koneksi);
+            mysqli_autocommit($koneksi, TRUE);
+            throw new Exception('Failed to delete inactive categories: ' . mysqli_error($koneksi));
+        }
+
+    } catch (Exception $e) {
+        mysqli_rollback($koneksi);
+        mysqli_autocommit($koneksi, TRUE);
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Terjadi kesalahan: ' . $e->getMessage()
         ]);
     }
 }
