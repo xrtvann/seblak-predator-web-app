@@ -289,7 +289,7 @@ function createOption()
                     'image' => $image,
                     'sort_order' => $sort_order
                 ],
-                'message' => 'Option created successfully'
+                'message' => 'Item berhasil ditambahkan.'
             ]);
         } else {
             throw new Exception('Failed to create option: ' . mysqli_error($koneksi));

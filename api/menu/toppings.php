@@ -255,7 +255,7 @@ function createTopping()
 
         if (mysqli_stmt_execute($stmt)) {
             http_response_code(201);
-            echo json_encode(['success' => true, 'data' => ['id' => $id, 'name' => $name, 'price' => $price], 'message' => 'Topping created successfully']);
+            echo json_encode(['success' => true, 'data' => ['id' => $id, 'name' => $name, 'price' => $price], 'message' => 'Topping berhasil ditambahkan.']);
         } else {
             throw new Exception('Failed to create topping: ' . mysqli_error($koneksi));
         }
@@ -358,7 +358,7 @@ function updateTopping()
 
         if (mysqli_stmt_execute($ustmt)) {
             http_response_code(200);
-            echo json_encode(['success' => true, 'message' => 'Topping updated successfully']);
+            echo json_encode(['success' => true, 'message' => 'Topping berhasil diperbarui.']);
         } else {
             throw new Exception('Failed to update topping: ' . mysqli_error($koneksi));
         }
@@ -386,7 +386,7 @@ function deleteTopping()
         if (mysqli_stmt_execute($stmt)) {
             if (mysqli_affected_rows($koneksi) > 0) {
                 http_response_code(200);
-                echo json_encode(['success' => true, 'message' => 'Topping deleted successfully (soft delete)']);
+                echo json_encode(['success' => true, 'message' => 'Topping berhasil dihapus.']);
             } else {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Topping not found']);
@@ -418,7 +418,7 @@ function restoreTopping()
         if (mysqli_stmt_execute($stmt)) {
             if (mysqli_affected_rows($koneksi) > 0) {
                 http_response_code(200);
-                echo json_encode(['success' => true, 'message' => 'Topping restored successfully']);
+                echo json_encode(['success' => true, 'message' => 'Topping berhasil dipulihkan.']);
             } else {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Topping not found']);
@@ -450,7 +450,7 @@ function permanentDeleteTopping()
         if (mysqli_stmt_execute($stmt)) {
             if (mysqli_affected_rows($koneksi) > 0) {
                 http_response_code(200);
-                echo json_encode(['success' => true, 'message' => 'Topping permanently deleted']);
+                echo json_encode(['success' => true, 'message' => 'Topping berhasil dihapus secara permanen']);
             } else {
                 http_response_code(404);
                 echo json_encode(['success' => false, 'message' => 'Topping not found']);
@@ -482,7 +482,7 @@ function permanentlyDeleteInactiveToppings()
         if ($inactiveCount === 0) {
             echo json_encode([
                 'success' => true,
-                'message' => 'Tidak ada topping inaktif yang perlu dihapus',
+                'message' => 'Tidak ada topping yang perlu dihapus',
                 'deleted_count' => 0
             ]);
             mysqli_autocommit($koneksi, TRUE);
@@ -503,7 +503,7 @@ function permanentlyDeleteInactiveToppings()
             http_response_code(200);
             echo json_encode([
                 'success' => true,
-                'message' => "Berhasil menghapus {$deletedCount} topping inaktif secara permanen",
+                'message' => "Berhasil menghapus {$deletedCount} topping secara permanen",
                 'deleted_count' => $deletedCount
             ]);
         } else {

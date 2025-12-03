@@ -9,6 +9,9 @@ header('Content-Type: application/json');
 require_once '../config/koneksi.php';
 require_once '../config/session.php';
 
+// Set timezone to WIB
+date_default_timezone_set('Asia/Jakarta');
+
 // Enable CORS if needed
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH');

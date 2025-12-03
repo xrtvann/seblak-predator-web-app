@@ -200,6 +200,7 @@ class WebAuthService
         $_SESSION['username'] = $user['username'];
         $_SESSION['email'] = $user['email'];
         $_SESSION['name'] = $user['name'];
+        $_SESSION['phone_number'] = $user['phone_number'] ?? null;
         $_SESSION['role_id'] = $user['role_id'];
         $_SESSION['role_name'] = $role['name'] ?? 'Customer';
         $_SESSION['login_time'] = time();

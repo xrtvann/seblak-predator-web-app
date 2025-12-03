@@ -65,7 +65,7 @@
                             </button>
                             <button type="button" class="btn btn-secondary d-none" id="btnKembali"
                                 onclick="showDataMenu()">
-                                <i class="ti ti-arrow-left"></i> Kembali
+                                <i class="ti ti-arrow-left me-2"></i> Kembali
                             </button>
                         </div>
                     </div>
@@ -931,6 +931,7 @@
         // Toggle buttons
         document.getElementById('btnTambahMenu').classList.add('d-none');
         document.getElementById('btnKembali').classList.remove('d-none');
+        document.getElementById('btnKembali').classList.add('d-flex');
         const viewToggleTabs = document.getElementById('viewToggleTabs');
         viewToggleTabs.classList.add('d-none', 'force-hide');
         viewToggleTabs.style.display = 'none'; // Force hide with inline style
@@ -1054,7 +1055,7 @@
                         <!-- Permanent Delete Inactive Button -->
                         <div class="permanent-delete-section mt-3" id="permanentDeleteSection" style="display: none;">
                             <button type="button" class="btn btn-danger" id="btnPermanentDeleteInactive" onclick="permanentDeleteInactiveToppings()">
-                                <i class="ti ti-trash me-1"></i>Hapus Permanen Semua Topping Inaktif
+                                <i class="ti ti-trash me-1"></i>Hapus Permanen Semua Topping
                             </button>
                         </div>
                     </div>

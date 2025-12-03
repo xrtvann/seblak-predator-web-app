@@ -9,6 +9,9 @@ require_once __DIR__ . '/database.php';
 // Use the new secure database connection
 $koneksi = DatabaseConnection::getInstance();
 
+// Set MySQL timezone to Asia/Jakarta (WIB)
+mysqli_query($koneksi, "SET time_zone = '+07:00'");
+
 // Verify connection is working
 if (!DatabaseConnection::testConnection()) {
     $errorMessage = EnvLoader::isProduction()

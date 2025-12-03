@@ -1,4 +1,3 @@
-
 <!-- [ breadcrumb ] start -->
 <div class="page-header">
     <div class="page-block">
@@ -92,6 +91,20 @@
     </div>
     <!-- [ Statistics Cards ] end -->
 
+    <!-- [ Sales Chart ] start -->
+    <div class="col-sm-12 col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Penjualan 7 Hari Terakhir</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- [ Sales Chart ] end -->
+    <!-- [ Statistics Cards ] end -->
+
     <!-- [ Welcome Card ] start -->
     <div class="col-sm-12">
         <div class="card">
@@ -101,14 +114,14 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <p>Sistem manajemen untuk warung seblak Anda. Kelola menu, transaksi, dan laporan dengan mudah.
+                        <p>Sistem manajemen untuk usaha seblak anda. Kelola transaksi, dan laporan dengan mudah.
                         </p>
 
                         <h6>Fitur Utama:</h6>
                         <ul class="list-unstyled">
-                            <li><i class="ti ti-check text-success me-2"></i>Manajemen Menu & Kategori</li>
+                            <li><i class="ti ti-check text-success me-2"></i>Manajemen Topping & Kategori</li>
                             <li><i class="ti ti-check text-success me-2"></i>Pencatatan Transaksi</li>
-                            <li><i class="ti ti-check text-success me-2"></i>Laporan Penjualan</li>
+                            <li><i class="ti ti-check text-success me-2"></i>Laporan Keuangan</li>
                             <li><i class="ti ti-check text-success me-2"></i>Manajemen User</li>
                         </ul>
                     </div>
@@ -130,6 +143,7 @@
 <!-- [ Main Content ] end -->
 
 <!-- Dashboard Stats Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
     // Format Rupiah
     function formatRupiah(angka) {
@@ -149,6 +163,63 @@
         return angka;
     }
 
+    let salesChart = null;
+
+    // Render Sales Chart
+    function renderSalesChart(salesData) {
+        const ctx = document.getElementById('salesChart');
+
+        // Destroy existing chart if exists
+        if (salesChart) {
+            salesChart.destroy();
+        }
+
+        const labels = salesData.map(item => item.date);
+        const data = salesData.map(item => item.total);
+
+        salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Penjualan (Rp)',
+                    data: data,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return formatRupiah(context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return formatRupiah(value);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // Load dashboard statistics
     function loadDashboardStats() {
         fetch('api/dashboard-stats.php')
@@ -160,17 +231,14 @@
             })
             .then(data => {
                 if (data.success) {
-                    // Update Total Topping
+                    // Update existing cards
                     document.getElementById('totalTopping').textContent = data.data.totalTopping;
-
-                    // Update Transaksi Hari Ini
                     document.getElementById('transaksiHariIni').textContent = data.data.transaksiHariIni;
-
-                    // Update Pendapatan Hari Ini
                     document.getElementById('pendapatanHariIni').textContent = formatRupiah(data.data.pendapatanHariIni);
-
-                    // Update Total Pelanggan
                     document.getElementById('totalPelanggan').textContent = formatNumber(data.data.totalPelanggan);
+
+                    // Render chart and top products
+                    renderSalesChart(data.data.penjualan7Hari);
                 } else {
                     // Show zeros if API fails
                     showDefaultValues();
@@ -189,6 +257,8 @@
         document.getElementById('transaksiHariIni').textContent = '0';
         document.getElementById('pendapatanHariIni').textContent = 'Rp 0';
         document.getElementById('totalPelanggan').textContent = '0';
+
+        renderSalesChart([]);
     }
 
     // Load stats when page loads

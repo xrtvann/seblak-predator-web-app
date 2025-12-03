@@ -279,7 +279,7 @@ function createLevel()
                     'category_id' => $category_id,
                     'sort_order' => $sort_order
                 ],
-                'message' => 'Spice level created successfully'
+                'message' => 'Item berhasil ditambahkan.'
             ]);
         } else {
             throw new Exception('Failed to create spice level: ' . mysqli_error($koneksi));

@@ -97,6 +97,7 @@ function getCurrentSessionUser()
         'username' => $_SESSION['username'] ?? null,
         'email' => $_SESSION['email'] ?? null,
         'name' => $_SESSION['name'] ?? null,
+        'phone' => $_SESSION['phone_number'] ?? null,
         'role_id' => $_SESSION['role_id'] ?? null,
         'role_name' => $_SESSION['role_name'] ?? null
     ];

@@ -59,13 +59,13 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avtar avtar-s bg-light-warning">
-                            <i class="ti ti-shield f-20"></i>
+                        <div class="avtar avtar-s bg-light-success">
+                            <i class="ti ti-cash f-20"></i>
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="mb-0">Admin</h6>
-                        <b class="text-warning" id="adminCount">0</b>
+                        <h6 class="mb-0">Cashier</h6>
+                        <b class="text-success" id="cashierCount">0</b>
                     </div>
                 </div>
             </div>
@@ -1384,7 +1384,6 @@
                         total: allUsersData.length,
                         active: allUsersData.filter(u => u.is_active).length,
                         inactive: allUsersData.filter(u => !u.is_active).length,
-                        admin_count: allUsersData.filter(u => u.role_id === 'role_admin' && u.is_active).length,
                         cashier_count: allUsersData.filter(u => u.role_id === 'role_cashier' && u.is_active).length,
                         new_users: 0
                     });
@@ -1423,6 +1422,9 @@
 
         document.getElementById('btnTambahUser').classList.remove('d-none');
         document.getElementById('btnKembali').classList.add('d-none');
+
+        // Reset currentEditId when going back to data view
+        currentEditId = null;
 
         mainContent.innerHTML = getDataUserHTML();
 
@@ -1523,6 +1525,13 @@
             passwordField.required = true;
             passwordField.placeholder = 'Masukkan password (minimal 6 karakter)';
             document.getElementById('submitText').textContent = 'Simpan User';
+
+            // Ensure Owner option is not in the dropdown for new users
+            const roleSelect = document.getElementById('userRole');
+            const ownerOption = Array.from(roleSelect.options).find(opt => opt.value === 'role_owner');
+            if (ownerOption) {
+                roleSelect.removeChild(ownerOption);
+            }
         }
     }
 
@@ -1572,19 +1581,9 @@
                                         <label class="filter-group-label">Role</label>
                                         <div class="filter-options">
                                             <label class="filter-option">
-                                                <input type="checkbox" class="filter-checkbox" data-filter="role" data-value="role_owner" onchange="handleFilterChange(this)">
-                                                <span class="filter-icon">👑</span>
-                                                <span class="filter-label">Owner</span>
-                                            </label>
-                                            <label class="filter-option">
                                                 <input type="checkbox" class="filter-checkbox" data-filter="role" data-value="role_cashier" onchange="handleFilterChange(this)">
                                                 <span class="filter-icon">💰</span>
                                                 <span class="filter-label">Cashier</span>
-                                            </label>
-                                            <label class="filter-option">
-                                                <input type="checkbox" class="filter-checkbox" data-filter="role" data-value="role_admin" onchange="handleFilterChange(this)">
-                                                <span class="filter-icon">🛡️</span>
-                                                <span class="filter-label">Admin</span>
                                             </label>
                                             <label class="filter-option">
                                                 <input type="checkbox" class="filter-checkbox" data-filter="role" data-value="role_customer" onchange="handleFilterChange(this)">
@@ -1623,7 +1622,7 @@
                 <!-- Permanent Delete Inactive Users Button -->
                 <div class="permanent-delete-section mt-4" id="permanentDeleteSection" style="display: none;">
                     <button type="button" class="btn btn-danger" id="btnPermanentDeleteInactive" onclick="permanentDeleteInactiveUsers()">
-                        <i class="ti ti-trash me-1"></i>Hapus Permanen Semua User Inaktif
+                        <i class="ti ti-trash me-1"></i>Hapus Permanen Semua User
                     </button>
                 </div>
             </div>
@@ -1705,8 +1704,6 @@
                                     <label for="userRole" class="form-label">Role <span class="text-danger">*</span></label>
                                     <select class="form-select" id="userRole" name="role_id" required>
                                         <option value="">Pilih Role</option>
-                                        <option value="role_owner">Owner</option>
-                                        <option value="role_admin">Admin</option>
                                         <option value="role_cashier">Cashier</option>
                                         <option value="role_customer">Customer</option>
                                     </select>
@@ -1775,8 +1772,7 @@
         paginatedData.forEach((item, index) => {
             const actualIndex = startIndex + index + 1;
             const roleBadgeClass = item.role_id === 'role_owner' ? 'danger' :
-                                  item.role_id === 'role_admin' ? 'warning' :
-                                  item.role_id === 'role_cashier' ? 'success' : 'info';
+                item.role_id === 'role_cashier' ? 'success' : 'info';
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${actualIndex}</td>
@@ -1823,7 +1819,7 @@
     function updateInformationCards(stats) {
         document.getElementById('totalUsersCount').textContent = stats.total || 0;
         document.getElementById('activeUsersCount').textContent = stats.active || 0;
-        document.getElementById('adminCount').textContent = stats.admin_count || 0;
+        document.getElementById('cashierCount').textContent = stats.cashier_count || 0;
         document.getElementById('newUsersCount').textContent = stats.new_users || 0;
     }
 
@@ -1920,7 +1916,23 @@
         document.getElementById('userName').value = data.name || '';
         document.getElementById('userUsername').value = data.username || '';
         document.getElementById('userEmail').value = data.email || '';
-        document.getElementById('userRole').value = data.role_id || '';
+
+        // Get role select element
+        const roleSelect = document.getElementById('userRole');
+
+        // If user being edited is Owner, add Owner option temporarily
+        if (data.role_id === 'role_owner') {
+            // Check if Owner option already exists
+            const ownerOption = Array.from(roleSelect.options).find(opt => opt.value === 'role_owner');
+            if (!ownerOption) {
+                const option = document.createElement('option');
+                option.value = 'role_owner';
+                option.textContent = 'Owner';
+                roleSelect.insertBefore(option, roleSelect.firstChild.nextSibling); // Insert after "Pilih Role"
+            }
+        }
+
+        roleSelect.value = data.role_id || '';
         document.getElementById('userStatus').value = data.is_active ? '1' : '0';
 
         // Make password optional for edit mode

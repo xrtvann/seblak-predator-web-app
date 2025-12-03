@@ -47,13 +47,7 @@
                     <div class="mb-3">
                         <label class="form-label">No Telepon </label>
                         <input type="text" class="form-control" id="phone"
-                            value="<?= htmlspecialchars($current_user['phone'] ?? '') ?>" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Role</label>
-                        <input type="text" class="form-control"
-                            value="<?= htmlspecialchars(ucfirst($current_user['role_name'] ?? 'Customer')) ?>" readonly>
-                        <small class="text-muted">Role ditentukan oleh administrator</small>
+                            value="<?= htmlspecialchars($current_user['phone'] ?? '') ?>">
                     </div>
                     <div class="d-flex justify-content-end gap-2">
                         <button type="button" class="btn btn-secondary" onclick="resetProfileForm()">Reset</button>
@@ -92,6 +86,7 @@
         document.getElementById('formUpdateProfile').reset();
         document.getElementById('name').value = '<?= htmlspecialchars($current_user['name'] ?? '') ?>';
         document.getElementById('email').value = '<?= htmlspecialchars($current_user['email'] ?? '') ?>';
+        document.getElementById('phone').value = '<?= htmlspecialchars($current_user['phone'] ?? '') ?>';
     }
 
     // Reset password form
@@ -105,6 +100,7 @@
 
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
+        const phone = document.getElementById('phone').value;
 
         showLoading('Memperbarui Profil', 'Mohon tunggu...');
 
@@ -115,7 +111,8 @@
             },
             body: JSON.stringify({
                 name: name,
-                email: email
+                email: email,
+                phone: phone
             })
         })
             .then(response => response.json())
@@ -176,7 +173,7 @@
                 } else {
                     showError('Gagal!', data.message || 'Gagal mengubah password');
                 }
-            })
+   })
             .catch(error => {
                 console.error('Error:', error);
                 showError('Error!', 'Terjadi kesalahan saat mengubah password');

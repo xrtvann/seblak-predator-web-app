@@ -309,18 +309,17 @@
                                     <th class="text-center" style="min-width: 120px;">Jumlah Transaksi</th>
                                     <th class="text-end" style="min-width: 150px;">Total Pengeluaran</th>
                                     <th class="text-end" style="min-width: 120px;">Persentase</th>
-                                    <th class="text-center" style="min-width: 80px;">Trend</th>
                                     <th class="text-center" style="min-width: 150px;">Aksi</th>
                                 </tr>
                                 <tr id="table-header-deleted" class="d-none">
                                     <th style="min-width: 350px;">Informasi Kategori</th>
                                     <th class="text-center" style="min-width: 120px;">Status</th>
-                                    <th class="text-center" colspan="4" style="min-width: 180px;">Aksi</th>
+                                    <th class="text-center" colspan="3" style="min-width: 180px;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="expenseCategoryTableBody">
                                 <tr>
-                                    <td colspan="6" class="text-center py-4">
+                                    <td colspan="5" class="text-center py-4">
                                         <div class="spinner-border spinner-border-sm text-primary" role="status">
                                             <span class="visually-hidden">Loading...</span>
                                         </div>
@@ -858,11 +857,6 @@
 
             categoryTable.innerHTML = data.expense_by_category.map(item => {
                 const percentage = totalExpenses > 0 ? ((item.total / totalExpenses) * 100).toFixed(1) : 0;
-                const trendIcon = item.trend === 'up' ?
-                    '<i class="ti ti-trending-up text-danger"></i>' :
-                    item.trend === 'down' ?
-                        '<i class="ti ti-trending-down text-success"></i>' :
-                        '<i class="ti ti-minus text-muted"></i>';
 
                 return `
                 <tr>
@@ -899,9 +893,6 @@
                         </div>
                     </td>
                     <td class="text-center">
-                        ${trendIcon}
-                    </td>
-                    <td class="text-center">
                         <button class="btn btn-sm btn-icon btn-link-secondary" onclick="editCategory(${item.category_id})" title="Edit">
                             <i class="ti ti-edit"></i>
                         </button>
@@ -913,7 +904,7 @@
                 `;
             }).join('');
         } else {
-            categoryTable.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data kategori</td></tr>';
+            categoryTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data kategori</td></tr>';
         }
     }
 
@@ -1418,13 +1409,6 @@
                 const transactionCount = expenseData ? expenseData.transaction_count : 0;
                 const total = expenseData ? parseFloat(expenseData.total) : 0;
                 const percentage = totalExpenses > 0 ? ((total / totalExpenses) * 100).toFixed(1) : 0;
-                const trend = expenseData ? expenseData.trend : 'stable';
-
-                const trendIcon = trend === 'up' ?
-                    '<i class="ti ti-trending-up text-danger"></i>' :
-                    trend === 'down' ?
-                        '<i class="ti ti-trending-down text-success"></i>' :
-                        '<i class="ti ti-minus text-muted"></i>';
 
                 return `
                 <tr>
@@ -1470,9 +1454,6 @@
                     }
                     </td>
                     <td class="text-center">
-                        ${total > 0 ? trendIcon : '<i class="ti ti-minus text-muted"></i>'}
-                    </td>
-                    <td class="text-center">
                         <button class="btn btn-sm btn-icon btn-link-secondary" onclick="editCategory(${category.id})" title="Edit">
                             <i class="ti ti-edit"></i>
                         </button>
@@ -1485,7 +1466,7 @@
             }).join('');
         } catch (error) {
             console.error('Error updating categories table:', error);
-            categoryTable.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4"><i class="ti ti-alert-circle me-2"></i>Error memuat data kategori</td></tr>';
+            categoryTable.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4"><i class="ti ti-alert-circle me-2"></i>Error memuat data kategori</td></tr>';
         }
     }
 

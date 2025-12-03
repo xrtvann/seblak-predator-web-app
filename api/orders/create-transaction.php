@@ -9,6 +9,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
+date_default_timezone_set('Asia/Jakarta');
+
 require_once '../../config/database.php';
 
 // Handle preflight OPTIONS request

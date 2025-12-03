@@ -9,8 +9,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, PUT, PATCH');
 header('Access-Control-Allow-Headers: Content-Type');
 
-require_once __DIR__ . '/../../config/session.php';
-require_once __DIR__ . '/../../config/koneksi.php';
+require_once __DIR__ . '/../config/session.php';
+require_once __DIR__ . '/../config/koneksi.php';
 
 // Handle preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -77,6 +77,7 @@ function updateProfile($koneksi, $current_user)
 
     $name = trim($input['name']);
     $email = trim($input['email']);
+    $phone = isset($input['phone']) ? trim($input['phone']) : null;
 
     // Validate email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -104,13 +105,14 @@ function updateProfile($koneksi, $current_user)
     }
 
     // Update user profile
-    $stmt = mysqli_prepare($koneksi, "UPDATE users SET name = ?, email = ?, updated_at = NOW() WHERE id = ?");
-    mysqli_stmt_bind_param($stmt, "sss", $name, $email, $current_user['id']);
+    $stmt = mysqli_prepare($koneksi, "UPDATE users SET name = ?, email = ?, phone_number = ?, updated_at = NOW() WHERE id = ?");
+    mysqli_stmt_bind_param($stmt, "ssss", $name, $email, $phone, $current_user['id']);
 
     if (mysqli_stmt_execute($stmt)) {
         // Update session data
         $_SESSION['name'] = $name;
         $_SESSION['email'] = $email;
+        $_SESSION['phone_number'] = $phone;
 
         http_response_code(200);
         echo json_encode([
@@ -118,7 +120,8 @@ function updateProfile($koneksi, $current_user)
             'message' => 'Profil berhasil diperbarui',
             'data' => [
                 'name' => $name,
-                'email' => $email
+                'email' => $email,
+                'phone' => $phone
             ]
         ]);
     } else {

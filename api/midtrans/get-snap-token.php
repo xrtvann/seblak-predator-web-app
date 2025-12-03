@@ -68,23 +68,34 @@ try {
 
     $orderId = $orderData['id'];
 
-    // Check if snap_token already exists for this order
-    $tokenQuery = "SELECT snap_token FROM midtrans_snap_tokens WHERE order_id = ?";
+    // Check if snap_token already exists for this order AND if it's not expired
+    // Midtrans Snap tokens expire after 24 hours
+    $tokenQuery = "SELECT snap_token, created_at FROM midtrans_snap_tokens WHERE order_id = ?";
     $tokenStmt = mysqli_prepare($koneksi, $tokenQuery);
     mysqli_stmt_bind_param($tokenStmt, "s", $orderId);
     mysqli_stmt_execute($tokenStmt);
     $tokenResult = mysqli_stmt_get_result($tokenStmt);
     $existingToken = mysqli_fetch_assoc($tokenResult);
 
-    // If snap_token exists, return it (reuse existing token)
+    // Check if token exists and is not expired (less than 24 hours old)
     if ($existingToken && !empty($existingToken['snap_token'])) {
-        echo json_encode([
-            'success' => true,
-            'snap_token' => $existingToken['snap_token'],
-            'order_number' => $orderNumber,
-            'reused' => true // Indicate this is a reused token
-        ]);
-        exit();
+        $tokenAge = time() - strtotime($existingToken['created_at']);
+        $tokenExpired = $tokenAge > (24 * 60 * 60); // 24 hours in seconds
+
+        // If token is still valid, return it
+        if (!$tokenExpired) {
+            echo json_encode([
+                'success' => true,
+                'snap_token' => $existingToken['snap_token'],
+                'order_number' => $orderNumber,
+                'reused' => true, // Indicate this is a reused token
+                'token_age_hours' => round($tokenAge / 3600, 1)
+            ]);
+            exit();
+        } else {
+            // Token expired, will generate new one
+            error_log("Snap token for order $orderNumber has expired (age: " . round($tokenAge / 3600, 1) . " hours). Generating new token...");
+        }
     }
 
     // Prepare item details for Midtrans
@@ -174,11 +185,11 @@ try {
 
     $snapToken = $result['token'];
 
-    // Save snap_token to database for reuse
-    $saveTokenQuery = "INSERT INTO midtrans_snap_tokens (order_id, snap_token) VALUES (?, ?) 
-                       ON DUPLICATE KEY UPDATE snap_token = ?";
+    // Save or update snap_token to database
+    // Use REPLACE to ensure fresh token with new timestamp
+    $saveTokenQuery = "REPLACE INTO midtrans_snap_tokens (order_id, snap_token, created_at) VALUES (?, ?, NOW())";
     $saveStmt = mysqli_prepare($koneksi, $saveTokenQuery);
-    mysqli_stmt_bind_param($saveStmt, "sss", $orderId, $snapToken, $snapToken);
+    mysqli_stmt_bind_param($saveStmt, "ss", $orderId, $snapToken);
     mysqli_stmt_execute($saveStmt);
 
     // Return success with snap token

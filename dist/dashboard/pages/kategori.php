@@ -78,7 +78,7 @@
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
                         <div class="avtar avtar-s bg-light-info">
-                            <i class="ti ti-bowl-rice f-20"></i>
+                            <i class="ti ti-soup f-20"></i>
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
@@ -114,7 +114,7 @@
                             </button>
                             <button type="button" class="btn btn-secondary d-none" id="btnKembali"
                                 onclick="showDataKategori()">
-                                <i class="ti ti-arrow-left"></i> Kembali
+                                <i class="ti ti-arrow-left me-2"></i> Kembali
                             </button>
                         </div>
                     </div>
@@ -1469,6 +1469,7 @@
 
         document.getElementById('btnTambahKategori').classList.add('d-none');
         document.getElementById('btnKembali').classList.remove('d-none');
+        document.getElementById('btnKembali').classList.add('d-flex');
 
         mainContent.innerHTML = getFormHTML();
 
@@ -1570,7 +1571,7 @@
                 <!-- Permanent Delete Inactive Button -->
                 <div class="permanent-delete-section mt-3" id="permanentDeleteSection" style="display: none;">
                     <button type="button" class="btn btn-danger" id="btnPermanentDeleteInactive" onclick="permanentDeleteInactiveCategories()">
-                        <i class="ti ti-trash me-1"></i>Hapus Permanen Semua Kategori Inaktif
+                        <i class="ti ti-trash me-1"></i>Hapus Permanen Semua Kategori
                     </button>
                 </div>
             </div>
@@ -1642,10 +1643,10 @@
                         </div>
 
                         <div class="d-flex justify-content-between mt-4">
-                            <button type="button" class="btn btn-light border" onclick="showDataKategori()">
-                                <i class="ti ti-arrow-left me-1"></i> Kembali
+                            <button type="button" class="d-flex align-items-center btn btn-light border" onclick="showDataKategori()">
+                                <i class="ti ti-arrow-left me-2"></i> Kembali
                             </button>
-                            <button type="submit" class="btn btn-success">
+                            <button type="submit" class="d-flex btn btn-success align-items-center">
                                 <i class="ti ti-check me-2"></i> <span id="submitText">Simpan Kategori</span>
                             </button>
                         </div>

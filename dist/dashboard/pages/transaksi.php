@@ -410,7 +410,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             order_type: 'dine_in',
             table_number: '',
             pickup_time: '',
-            delivery_address: '',
             notes: '',
             payment_method: 'cash',
             items: [],
@@ -455,7 +454,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             order_type: 'dine_in',
             table_number: '',
             pickup_time: '',
-            delivery_address: '',
             notes: '',
             payment_method: 'cash',
             items: [],
@@ -511,9 +509,9 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 <div class="col-12">
                     <div class="d-flex justify-content-between">
                         <button type="button" class="btn btn-secondary" id="btnPrevStep" onclick="previousStep()" style="display: none;">
-                            <i class="ti ti-arrow-left"></i> Kembali
+                            <i class="ti ti-arrow-left me-2"></i> Kembali
                         </button>
-                        <button type="button" class="btn btn-primary" id="btnNextStep" onclick="nextStep()">
+                        <button type="button" class="d-flex btn btn-primary align-items-center" id="btnNextStep" onclick="nextStep()">
                             Selanjutnya <i class="ti ti-arrow-right"></i>
                         </button>
                     </div>
@@ -582,7 +580,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
         // Show/hide buttons
         btnPrev.style.display = step === 1 ? 'none' : 'inline-block';
-        btnNext.innerHTML = step === 3 ? '<i class="ti ti-check"></i> Proses Transaksi' : 'Selanjutnya <i class="ti ti-arrow-right"></i>';
+        btnNext.innerHTML = step === 3 ? '<i class="ti ti-check"></i> Proses Transaksi' : 'Selanjutnya <i class="ti ti-arrow-right ms-2"></i>';
 
         // Render step content
         switch (step) {
@@ -667,10 +665,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                             <label class="form-label">Waktu Ambil</label>
                             <input type="time" class="form-control" id="step1_pickupTime">
                         </div>
-                        <div class="col-12 mb-3 take-away-field d-none">
-                            <label class="form-label">Alamat Pengiriman</label>
-                            <textarea class="form-control" id="step1_deliveryAddress" rows="2" placeholder="Alamat lengkap untuk pengiriman (opsional)"></textarea>
-                        </div>
                         <div class="col-12 mb-3">
                             <label class="form-label">Catatan</label>
                             <textarea class="form-control" id="step1_notes" rows="3" placeholder="Catatan tambahan (opsional)"></textarea>
@@ -697,7 +691,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
         // Populate take away fields
         document.getElementById('step1_pickupTime').value = currentOrder.pickup_time || '';
-        document.getElementById('step1_deliveryAddress').value = currentOrder.delivery_address || '';
     }
 
     // Change order type
@@ -751,7 +744,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         currentOrder.table_number = document.getElementById('step1_tableNumber').value.trim();
         currentOrder.notes = document.getElementById('step1_notes').value.trim();
         currentOrder.pickup_time = document.getElementById('step1_pickupTime').value;
-        currentOrder.delivery_address = document.getElementById('step1_deliveryAddress').value.trim();
 
         return true;
     }
@@ -885,9 +877,9 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
                 <!-- Right Column: Order Summary -->
                 <div class="col-lg-4">
-                    <div class="card sticky-top" style="top: 20px;">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0"><i class="ti ti-file-invoice me-2"></i>Ringkasan Pesanan</h6>
+                    <div class="card sticky-top border border-dark-subtle" style="top: 20px;">
+                        <div class="card-header bg-success">
+                            <h4 class="mb-0 text-white"><i class="ti ti-file-invoice me-2"></i>Ringkasan Pesanan</h4>
                         </div>
                         <div class="card-body" style="max-height: 600px; overflow-y: auto;">
                             <div id="orderSummary">
@@ -1168,14 +1160,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         `}
                     </div>
 
-                    <!-- Notes -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold"><i class="ti ti-note me-2"></i>Catatan</label>
-                        <textarea class="form-control" rows="2" 
-                                  placeholder="Catatan khusus untuk pesanan ini..."
-                                  onchange="updateOrderNotes('${order.id}', this.value)">${order.notes || ''}</textarea>
-                    </div>
-
                     <!-- Price Summary -->
                     <div class="mt-4 pt-3 border-top">
                         <div class="row">
@@ -1308,14 +1292,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
         order.spice_level = levelId;
         renderSeblakOrdersList();
         updateOrderSummary();
-    }
-
-    // Update order notes
-    function updateOrderNotes(orderId, notes) {
-        const order = currentOrder.items.find(o => o.id === orderId);
-        if (!order) return;
-
-        order.notes = notes;
     }
 
     // Remove topping from order
@@ -2504,7 +2480,6 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             order_type: currentOrder.order_type || 'dine_in',
             table_number: currentOrder.table_number,
             pickup_time: currentOrder.pickup_time || null,
-            delivery_address: currentOrder.delivery_address || null,
             notes: currentOrder.notes,
             payment_method: currentOrder.payment_method,
             items: currentOrder.items.map(item => ({
@@ -2915,15 +2890,40 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                 // Fungsi untuk print struk
                 function printStruk() {
                     const printContents = document.getElementById('strukPrintArea').innerHTML;
-                    const win = window.open('', '', 'width=400,height=600');
+                    const win = window.open('', '_blank', 'width=400,height=600');
+
                     win.document.write('<html><head><title>Cetak Struk</title>');
-                    win.document.write('<style>body{margin:0;padding:10px;}@media print{body{margin:0;}}</style>');
+                    win.document.write(`
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 10px;
+                                font-family: monospace;
+                            }
+                            @media print {
+                                body {
+                                    margin: 0;
+                                }
+                            }
+                        </style>
+                    `);
                     win.document.write('</head><body>');
                     win.document.write(printContents);
                     win.document.write('</body></html>');
                     win.document.close();
-                    win.focus();
-                    setTimeout(() => { win.print(); win.close(); }, 300);
+
+                    // Wait for content to load, then print
+                    win.onload = function () {
+                        win.focus();
+                        // Use setTimeout to ensure content is fully rendered
+                        setTimeout(() => {
+                            win.print();
+                            // Close window after print dialog is closed
+                            setTimeout(() => {
+                                win.close();
+                            }, 100);
+                        }, 500);
+                    };
                 }
             } else {
                 Swal.fire({
@@ -3267,10 +3267,10 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
             <!-- Pagination -->
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div class="d-flex align-items-center">
-                    <small class="text-muted" id="paginationInfo">Showing 0 - 0 of 0 entries</small>
+                    <small class="text-muted fs-5" id="paginationInfo">Showing 0 - 0 of 0 entries</small>
                 </div>
                 <nav aria-label="Order pagination">
-                    <ul class="pagination pagination-sm mb-0" id="paginationControls"></ul>
+                    <ul class="pagination mb-0" id="paginationControls"></ul>
                 </nav>
             </div>
         `;
@@ -3374,8 +3374,15 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
     // Format date
     function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        // Parse date string and ensure it's treated as Asia/Jakarta time
+        // Add 'Z' suffix removal and explicit timezone handling
+        const dateStr = dateString.replace(' ', 'T').replace('Z', '');
+        const date = new Date(dateStr + '+07:00'); // Force WIB timezone
+        return date.toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
     }
 
     // Pagination functions
@@ -3465,8 +3472,13 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
     // Format time
     function formatTime(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        // Parse date string and ensure it's treated as Asia/Jakarta time
+        const dateStr = dateString.replace(' ', 'T').replace('Z', '');
+        const date = new Date(dateStr + '+07:00'); // Force WIB timezone
+        return date.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     }
 
     // Show notification

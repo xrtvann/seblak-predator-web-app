@@ -219,7 +219,7 @@ function createCategory()
             http_response_code(201);
             echo json_encode([
                 'success' => true,
-                'message' => 'Category created successfully',
+                'message' => 'Kategori berhasil ditambahkan.',
                 'category_id' => $id
             ]);
         } else {
@@ -302,7 +302,7 @@ function updateCategory()
             http_response_code(200);
             echo json_encode([
                 'success' => true,
-                'message' => 'Category updated successfully'
+                'message' => 'Kategori berhasil diperbarui.'
             ]);
         } else {
             throw new Exception('Failed to update category: ' . mysqli_error($koneksi));
@@ -405,7 +405,7 @@ function deleteCategory()
                 http_response_code(200);
                 echo json_encode([
                     'success' => true,
-                    'message' => "Category '{$category['name']}' has been deactivated successfully"
+                    'message' => "Kategori '{$category['name']}' berhasil dihapus."
                 ]);
             } else {
                 http_response_code(404);
@@ -460,7 +460,7 @@ function restoreCategory()
             http_response_code(200);
             echo json_encode([
                 'success' => true,
-                'message' => "Category '{$category['name']}' has been restored successfully"
+                'message' => "Kategori '{$category['name']}' berhasil dipulihkan."
             ]);
         } else {
             throw new Exception('Failed to restore category: ' . mysqli_error($koneksi));
@@ -655,7 +655,7 @@ function permanentlyDeleteInactiveCategories()
             http_response_code(200);
             echo json_encode([
                 'success' => true,
-                'message' => "Berhasil menghapus {$deletedCount} kategori inaktif secara permanen",
+                'message' => "Berhasil menghapus {$deletedCount} kategori secara permanen",
                 'deleted_count' => $deletedCount
             ]);
         } else {

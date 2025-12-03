@@ -153,7 +153,7 @@ function getAllUsers()
                         COUNT(*) as total,
                         SUM(CASE WHEN is_active = TRUE THEN 1 ELSE 0 END) as active,
                         SUM(CASE WHEN is_active = FALSE THEN 1 ELSE 0 END) as inactive,
-                        SUM(CASE WHEN role_id = 'role_admin' AND is_active = TRUE THEN 1 ELSE 0 END) as admin_count,
+                        SUM(CASE WHEN role_id = 'role_cashier' AND is_active = TRUE THEN 1 ELSE 0 END) as cashier_count,
                         SUM(CASE WHEN DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as new_users
                        FROM users";
         $statsResult = mysqli_query($koneksi, $statsQuery);
@@ -172,7 +172,7 @@ function getAllUsers()
                 'total' => (int) $stats['total'],
                 'active' => (int) $stats['active'],
                 'inactive' => (int) $stats['inactive'],
-                'admin_count' => (int) $stats['admin_count'],
+                'cashier_count' => (int) $stats['cashier_count'],
                 'new_users' => (int) $stats['new_users']
             ]
         ]);
@@ -202,7 +202,7 @@ function createUser()
 
         // Validate email format
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("Invalid email format");
+            throw new Exception("Format email tidak tepat.");
         }
 
         // Check if email already exists
@@ -211,7 +211,7 @@ function createUser()
         mysqli_stmt_execute($checkEmail);
         $emailResult = mysqli_stmt_get_result($checkEmail);
         if (mysqli_num_rows($emailResult) > 0) {
-            throw new Exception("Email already exists");
+            throw new Exception("Email sudah digunakan.");
         }
         mysqli_stmt_close($checkEmail);
 
@@ -221,7 +221,7 @@ function createUser()
         mysqli_stmt_execute($checkUsername);
         $usernameResult = mysqli_stmt_get_result($checkUsername);
         if (mysqli_num_rows($usernameResult) > 0) {
-            throw new Exception("Username already exists");
+            throw new Exception("Username sudah digunakan.");
         }
         mysqli_stmt_close($checkUsername);
 
@@ -267,7 +267,7 @@ function createUser()
 
             echo json_encode([
                 'success' => true,
-                'message' => 'User created successfully',
+                'message' => 'User berhasil ditambahkan.',
                 'data' => $user
             ]);
         } else {
@@ -300,7 +300,7 @@ function updateUser()
         mysqli_stmt_execute($checkUser);
         $userResult = mysqli_stmt_get_result($checkUser);
         if (mysqli_num_rows($userResult) === 0) {
-            throw new Exception("User not found");
+            throw new Exception("User tidak ditemukan.");
         }
         mysqli_stmt_close($checkUser);
 
@@ -318,7 +318,7 @@ function updateUser()
         if (isset($data['email'])) {
             // Validate email
             if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-                throw new Exception("Invalid email format");
+                throw new Exception("Format email tidak tepat.");
             }
             // Check if email exists for other users
             $checkEmail = mysqli_prepare($koneksi, "SELECT id FROM users WHERE email = ? AND id != ?");
@@ -326,7 +326,7 @@ function updateUser()
             mysqli_stmt_execute($checkEmail);
             $emailResult = mysqli_stmt_get_result($checkEmail);
             if (mysqli_num_rows($emailResult) > 0) {
-                throw new Exception("Email already exists");
+                throw new Exception("Email sudah digunakan.");
             }
             mysqli_stmt_close($checkEmail);
 
@@ -342,7 +342,7 @@ function updateUser()
             mysqli_stmt_execute($checkUsername);
             $usernameResult = mysqli_stmt_get_result($checkUsername);
             if (mysqli_num_rows($usernameResult) > 0) {
-                throw new Exception("Username already exists");
+                throw new Exception("Username sudah digunakan.");
             }
             mysqli_stmt_close($checkUsername);
 
@@ -400,7 +400,7 @@ function updateUser()
 
             echo json_encode([
                 'success' => true,
-                'message' => 'User updated successfully',
+                'message' => 'User berhasil diperbarui.',
                 'data' => $user
             ]);
         } else {
@@ -445,7 +445,7 @@ function deleteUser()
 
             echo json_encode([
                 'success' => true,
-                'message' => 'User deactivated successfully'
+                'message' => 'User berhasil dinonaktifkan.'
             ]);
         } else {
             throw new Exception('Failed to deactivate user: ' . mysqli_error($koneksi));
@@ -475,7 +475,7 @@ function restoreUser()
         mysqli_stmt_execute($checkUser);
         $userResult = mysqli_stmt_get_result($checkUser);
         if (mysqli_num_rows($userResult) === 0) {
-            throw new Exception("User not found");
+            throw new Exception("User tidak ditemukan.");
         }
         mysqli_stmt_close($checkUser);
 
@@ -489,7 +489,7 @@ function restoreUser()
 
             echo json_encode([
                 'success' => true,
-                'message' => 'User activated successfully'
+                'message' => 'User berhasil diaktifkan.'
             ]);
         } else {
             throw new Exception('Failed to activate user: ' . mysqli_error($koneksi));
@@ -616,7 +616,7 @@ function permanentlyDeleteUser()
 
             echo json_encode([
                 'success' => true,
-                'message' => 'User permanently deleted successfully'
+                'message' => 'User berhasil dihapus secara permanen.'
             ]);
         } else {
             mysqli_rollback($koneksi);
@@ -715,7 +715,7 @@ function permanentlyDeleteInactiveUsers()
 
             echo json_encode([
                 'success' => true,
-                'message' => "Successfully permanently deleted {$inactiveCount} inactive user(s)",
+                'message' => "Berhasil menghapus permanent {$inactiveCount}  user.",
                 'deleted_count' => $inactiveCount
             ]);
         } else {

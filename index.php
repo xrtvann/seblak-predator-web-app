@@ -1,4 +1,7 @@
 <?php
+// Set timezone to WIB (Asia/Jakarta)
+date_default_timezone_set('Asia/Jakarta');
+
 // Initialize secure session and authentication
 require_once 'config/session.php';
 require_once 'services/WebAuthService.php';
@@ -260,7 +263,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
               <form class="px-3">
                 <div class="mb-0 d-flex align-items-center">
                   <i data-feather="search"></i>
-                  <input type="search" class="form-control border-0 shadow-none" placeholder="Search here. . ." />
+                  <input type="search" class="form-control border-0 shadow-none" placeholder="Cari" />
                 </div>
               </form>
             </div>
@@ -268,7 +271,7 @@ if (isLoggedIn() && !canAccessPage($page)) {
           <li class="pc-h-item d-none d-md-inline-flex">
             <form class="header-search">
               <i data-feather="search" class="icon-search"></i>
-              <input type="search" class="form-control" placeholder="Search here. . ." />
+              <input type="search" class="form-control" placeholder="Cari" />
             </form>
           </li>
         </ul>
