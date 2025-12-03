@@ -549,26 +549,36 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                 <strong>Periode:</strong> ' . $period_label . ' (' . $start_date_display . ' - ' . $end_date_display . ')
             </div>
 
-            <div class="summary-cards">
-                <div class="summary-card revenue-card">
-                    <h3>Total Pendapatan</h3>
-                    <p>' . $format_rupiah($total_revenue) . '</p>
-                </div>
-
-                <div class="summary-card expense-card">
-                    <h3>Total Pengeluaran</h3>
-                    <p>' . $format_rupiah($total_expenses) . '</p>
-                </div>
-
-                <div class="summary-card profit-card">
-                    <h3>Keuntungan Bersih</h3>
-                    <p>' . $format_rupiah($net_profit) . '</p>
-                </div>
-
-                <div class="summary-card margin-card">
-                    <h3>Margin Keuntungan</h3>
-                    <p>' . round($profit_margin, 1) . '%</p>
-                </div>
+            <div class="section">
+                <div class="section-title">Ringkasan Keuangan</div>
+                <table class="excel-table">
+                    <thead>
+                        <tr>
+                            <th>Keterangan</th>
+                            <th class="text-right">Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Total Pendapatan</strong></td>
+                            <td class="text-right text-success fw-bold">' . $format_rupiah($total_revenue) . '</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Pengeluaran</strong></td>
+                            <td class="text-right text-danger fw-bold">' . $format_rupiah($total_expenses) . '</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td><strong>KEUNTUNGAN BERSIH</strong></td>
+                            <td class="text-right"><strong>' . $format_rupiah($net_profit) . '</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>MARGIN KEUNTUNGAN</strong></td>
+                            <td class="text-right"><strong>' . round($profit_margin, 1) . '%</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
 
             <div class="section">
@@ -584,17 +594,23 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                     </thead>
                     <tbody>
                         ' . (count($expense_by_category) > 0
-            ? implode('', array_map(function ($item) use ($format_rupiah) {
-                return '
+        ? implode('', array_map(function ($item) use ($format_rupiah) {
+            return '
                                 <tr>
                                     <td><strong>' . htmlspecialchars($item['category_name']) . '</strong></td>
                                     <td>' . htmlspecialchars($item['description'] ?? '-') . '</td>
                                     <td class="text-center">' . $item['transaction_count'] . '</td>
                                     <td class="text-right text-danger fw-bold">' . $format_rupiah($item['total']) . '</td>
                                 </tr>';
-            }, $expense_by_category))
-            : '<tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">Tidak ada data pengeluaran</td></tr>') . '
+        }, $expense_by_category))
+        : '<tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">Tidak ada data pengeluaran</td></tr>') . '
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right"><strong>TOTAL PENGELUARAN</strong></td>
+                            <td class="text-right"><strong>' . $format_rupiah($total_expenses) . '</strong></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 
@@ -611,17 +627,23 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                     </thead>
                     <tbody>
                         ' . (count($recent_revenues) > 0
-            ? implode('', array_map(function ($item) use ($format_rupiah) {
-                return '
+        ? implode('', array_map(function ($item) use ($format_rupiah) {
+            return '
                                 <tr>
                                     <td>' . date('d M Y H:i', strtotime($item['created_at'])) . '</td>
                                     <td><span class="badge badge-primary">' . htmlspecialchars($item['order_number']) . '</span></td>
                                     <td><span class="badge badge-success">' . htmlspecialchars($item['payment_method']) . '</span></td>
                                     <td class="text-right text-success fw-bold">' . $format_rupiah($item['total_amount']) . '</td>
                                 </tr>';
-            }, $recent_revenues))
-            : '<tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">Tidak ada data pendapatan</td></tr>') . '
+        }, $recent_revenues))
+        : '<tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">Tidak ada data pendapatan</td></tr>') . '
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right"><strong>TOTAL PENDAPATAN</strong></td>
+                            <td class="text-right"><strong>' . $format_rupiah($total_revenue) . '</strong></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 
@@ -638,17 +660,23 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
                     </thead>
                     <tbody>
                         ' . (count($recent_expenses) > 0
-            ? implode('', array_map(function ($item) use ($format_rupiah) {
-                return '
+        ? implode('', array_map(function ($item) use ($format_rupiah) {
+            return '
                                 <tr>
                                     <td>' . date('d M Y', strtotime($item['expense_date'])) . '</td>
                                     <td><span class="badge badge-warning">' . htmlspecialchars($item['category_name']) . '</span></td>
                                     <td>' . htmlspecialchars($item['title']) . '</td>
                                     <td class="text-right text-danger fw-bold">' . $format_rupiah($item['amount']) . '</td>
                                 </tr>';
-            }, $recent_expenses))
-            : '<tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">Tidak ada data pengeluaran</td></tr>') . '
+        }, $recent_expenses))
+        : '<tr><td colspan="4" class="text-center" style="padding: 30px; color: #999;">Tidak ada data pengeluaran</td></tr>') . '
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-right"><strong>SUBTOTAL PENGELUARAN</strong></td>
+                            <td class="text-right"><strong>' . $format_rupiah(array_sum(array_column($recent_expenses, 'amount'))) . '</strong></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 
