@@ -1,22 +1,465 @@
-# Seblak Predator API Documentation
+# 🍲 Seblak Predator - Restaurant Management System
 
-## Overview
+<p align="center">
+  <img src="https://img.shields.io/badge/PHP-7.4+-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP">
+  <img src="https://img.shields.io/badge/MySQL-8.0+-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
+  <img src="https://img.shields.io/badge/Bootstrap-5.3.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
+</p>
 
-Seblak Predator is a comprehensive restaurant management system API built with PHP and MySQL. The system provides complete functionality for managing restaurant operations including menu management, order processing, expense tracking, user authentication, and payment integration.
+## 📖 Deskripsi Project
 
-### Base URL
+**Seblak Predator** adalah sistem manajemen restoran berbasis web yang komprehensif untuk mengelola operasional restoran prasmanan seblak. Sistem ini menyediakan dashboard admin untuk mengelola menu, pesanan, pengeluaran, laporan keuangan, serta integrasi pembayaran digital dengan Midtrans.
+
+Project ini dibangun dengan arsitektur **RESTful API** menggunakan PHP native dan MySQL, dilengkapi dengan dashboard admin yang modern dan responsif menggunakan Bootstrap 5.
+
+### 🎯 Tujuan Project
+- Digitalisasi manajemen operasional restoran prasmanan
+- Otomasi proses pemesanan dan pembayaran
+- Monitoring keuangan real-time dengan laporan PDF
+- Integrasi pembayaran digital (Midtrans Snap)
+- Manajemen multi-role user (Owner, Admin, Staff, Customer)
+- Support untuk delivery orders via mobile API
+
+---
+
+## 🚀 Fitur Utama
+
+### 🔐 Authentication & Authorization
+- **JWT-based Authentication** dengan access & refresh tokens
+- **Role-based Access Control** (Owner, Admin, Staff, Customer)
+- **Session Management** dengan encryption
+- Password reset via email
+- Login/Register dengan validasi
+
+### 🍽️ Menu Management
+- CRUD Categories (Product & Topping)
+- CRUD Products dengan image upload
+- CRUD Toppings dengan harga dinamis
+- Spice Levels customization (10 level kepedasan)
+- Customization Options (Kencur, Kuah, Telur, dll)
+- Soft delete dengan restore capability
+
+### 🧾 Order Management (Transaksi)
+- **3 Tipe Pesanan**: Dine In, Take Away, Delivery
+- Multi-item orders dengan customizations
+- Real-time order tracking (Pending → Processing → Completed)
+- Invoice generation dengan print receipt
+- Midtrans Snap integration untuk pembayaran digital
+- Token regeneration untuk expired Midtrans transactions
+- Mobile API endpoint untuk delivery orders
+
+### 💰 Financial Management
+- Expense tracking dengan categories
+- Income vs Expense analysis
+- Financial reports dengan filter (Today, Week, Month, Year, Custom)
+- **Export to PDF** dengan dompdf (full-page layout)
+- Dashboard statistics (Total Revenue, Expenses, Net Profit)
+- Profit margin calculation
+
+### 📊 Dashboard & Analytics
+- Real-time statistics cards
+- Order status overview (Pending, Completed, Cancelled)
+- Revenue charts dengan ApexCharts
+- Daily/Weekly/Monthly trends
+- Top performing products/toppings
+
+### 👥 User Management
+- User CRUD dengan role assignment
+- Profile management (upload avatar, update info)
+- Account settings (optional phone number)
+- Activity logs & security features
+
+### 📱 Mobile App Support
+- **Mobile API** untuk delivery orders
+- Sync endpoints untuk categories & products
+- Image upload API untuk menu items
+
+### 🔔 Additional Features
+- File upload dengan validation
+- Responsive design (mobile-friendly)
+- SweetAlert2 notifications
+- Real-time search & filtering
+- Pagination dengan customizable page size
+- Timezone support (WIB/Asia Jakarta)
+
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+| Technology | Version | Description |
+|------------|---------|-------------|
+| **PHP** | 7.4+ | Server-side scripting language |
+| **MySQL** | 8.0+ | Relational database management |
+| **MySQLi** | - | Database driver dengan prepared statements |
+| **Apache** | 2.4+ | Web server (Laragon/XAMPP) |
+
+### Frontend
+| Technology | Version | Description |
+|------------|---------|-------------|
+| **HTML5** | - | Markup language |
+| **CSS3** | - | Styling dengan custom variables |
+| **JavaScript ES6** | - | Client-side scripting |
+| **Bootstrap** | 5.3.3 | UI framework |
+| **SCSS/Sass** | 1.77.6 | CSS preprocessor |
+
+### Libraries & Plugins
+
+#### PHP Dependencies (Composer)
+```json
+{
+  "firebase/php-jwt": "^6.11",      // JWT authentication
+  "phpmailer/phpmailer": "^6.8",    // Email service
+  "dompdf/dompdf": "^3.1",          // PDF generation
+  "phpunit/phpunit": "^12.4"        // Unit testing
+}
 ```
-http://localhost/seblak-predator/api
+
+#### JavaScript Dependencies (NPM)
+```json
+{
+  "bootstrap": "5.3.3",             // UI framework
+  "apexcharts": "^3.54.0",          // Interactive charts
+  "@popperjs/core": "^2.11.8",      // Tooltip positioning
+  "simplebar": "^6.2.7",            // Custom scrollbars
+  "feather-icons": "^4.29.2",       // Icon library
+  "clipboard": "^2.0.11"            // Copy to clipboard
+}
 ```
 
-### Features
-- **Menu Management**: Categories and products with toppings support
-- **Order Management**: Complete order lifecycle with transaction processing
-- **Authentication**: JWT-based authentication system
-- **Expense Tracking**: Financial management and reporting
-- **Payment Integration**: Midtrans payment gateway integration
-- **Synchronization**: Mobile app sync capabilities
-- **User Management**: Role-based access control
+#### Frontend Libraries (CDN)
+- **Tabler Icons** - Modern icon set
+- **SweetAlert2** - Beautiful alert modals
+- **Chart.js 4.4.0** - Canvas-based charts
+- **Midtrans Snap.js** - Payment gateway integration
+
+### Build Tools
+- **Gulp** 4.0.2 - Task automation
+- **Babel** - JavaScript transpiler
+- **Autoprefixer** - CSS vendor prefixing
+- **Sass Compiler** - SCSS to CSS compilation
+- **Prettier** - Code formatter
+
+### Payment Gateway
+- **Midtrans Snap** - Digital payment integration (Production & Sandbox)
+
+### PDF Generation
+- **Dompdf 3.1** - HTML to PDF converter dengan custom styling
+
+---
+
+## 📂 Struktur Project
+
+```
+seblak-predator/
+├── api/                          # REST API endpoints
+│   ├── auth/                    # Authentication (login, register, JWT)
+│   ├── menu/                    # Menu management (categories, products, toppings)
+│   ├── midtrans/                # Midtrans payment integration
+│   ├── mobile/                  # Mobile app endpoints
+│   ├── orders/                  # Order management
+│   ├── sync/                    # Data synchronization
+│   ├── upload/                  # File upload handlers
+│   ├── dashboard-stats.php      # Dashboard statistics
+│   ├── expense-categories.php   # Expense category management
+│   ├── expenses.php             # Expense tracking
+│   ├── export-financial-report.php  # PDF export
+│   ├── financial-report.php     # Financial reports API
+│   ├── orders.php               # Order CRUD operations
+│   └── users.php                # User management
+│
+├── config/                       # Configuration files
+│   ├── config.php               # General configuration
+│   ├── database.php             # Database connection manager
+│   ├── env.php                  # Environment loader
+│   ├── koneksi.php              # MySQLi connection
+│   └── session.php              # Session management
+│
+├── dist/                         # Compiled dashboard assets
+│   └── dashboard/               # Admin dashboard pages
+│       └── pages/               # Dashboard UI pages
+│
+├── handler/                      # Request handlers
+│   ├── auth.php                 # Authentication handler
+│   ├── forgot_password.php      # Password reset
+│   └── logout.php               # Logout handler
+│
+├── pages/                        # Public pages
+│   └── auth/                    # Login, register, forgot password
+│
+├── services/                     # Service classes
+│   ├── EmailService.php         # Email sending service
+│   ├── SessionEncryption.php    # Session security
+│   └── WebAuthService.php       # Web authentication
+│
+├── src/                          # Source files (SCSS, JS)
+│   ├── assets/                  # Static assets
+│   │   ├── fonts/              # Custom fonts
+│   │   ├── images/             # Images
+│   │   ├── js/                 # JavaScript modules
+│   │   └── scss/               # SCSS stylesheets
+│   └── html/                    # HTML templates
+│
+├── tests/                        # PHPUnit test files
+├── uploads/                      # User uploaded files
+│   └── menu-images/             # Product images
+│
+├── vendor/                       # Composer dependencies
+├── composer.json                 # PHP dependencies
+├── package.json                  # NPM dependencies
+├── gulpfile.js                   # Gulp build configuration
+└── index.php                     # Application entry point
+```
+
+---
+
+## ⚙️ Cara Install
+
+### Prerequisites
+Pastikan sistem Anda sudah terinstall:
+- **PHP** >= 7.4 (dengan ekstensi: mysqli, pdo, gd, mbstring, json)
+- **MySQL** >= 8.0 atau **MariaDB** >= 10.4
+- **Composer** (untuk PHP dependencies)
+- **Node.js & NPM** (untuk frontend build)
+- **Apache/Nginx** web server
+- **Git** (optional)
+
+### Recommended: Menggunakan Laragon (Windows)
+Laragon sudah include PHP, MySQL, Apache, dan Composer.
+Download: https://laragon.org/download/
+
+---
+
+### 🔧 Langkah Instalasi
+
+#### 1. Clone atau Download Project
+```bash
+# Clone dengan Git
+git clone https://github.com/xrtvann/seblak-predator-web-app.git
+
+# Atau download ZIP dan extract ke folder web server
+# Contoh: C:/laragon/www/seblak-predator (Laragon)
+#         C:/xampp/htdocs/seblak-predator (XAMPP)
+```
+
+#### 2. Install PHP Dependencies
+```bash
+cd seblak-predator
+composer install
+```
+
+#### 3. Install NPM Dependencies (Optional - untuk development)
+```bash
+npm install
+```
+
+#### 4. Setup Database
+
+**a. Buat Database**
+```sql
+CREATE DATABASE seblak_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+**b. Import Database Schema**
+- Locate file SQL schema (biasanya `database.sql` atau `seblak_app.sql`)
+- Import via phpMyAdmin atau command line:
+```bash
+mysql -u root -p seblak_app < database.sql
+```
+
+**c. Konfigurasi Database Connection**
+
+Buat file `.env` di root folder (copy dari `.env.example` jika ada):
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=seblak_app
+DB_PORT=3306
+
+JWT_SECRET=your-secret-key-here
+JWT_EXPIRY=3600
+```
+
+Atau edit langsung `config/database.php` jika tidak menggunakan .env.
+
+#### 5. Generate JWT Keys (Optional)
+```bash
+php generate_keys.php
+```
+
+#### 6. Setup Midtrans (Payment Gateway)
+
+Edit `api/midtrans/config.php`:
+```php
+// Sandbox (Testing)
+$serverKey = 'SB-Mid-server-xxxxxxxxxxxxx';
+$clientKey = 'SB-Mid-client-xxxxxxxxxxxxx';
+$isProduction = false;
+
+// Production (Live)
+// $serverKey = 'Mid-server-xxxxxxxxxxxxx';
+// $clientKey = 'Mid-client-xxxxxxxxxxxxx';
+// $isProduction = true;
+```
+
+Dapatkan credentials dari: https://dashboard.midtrans.com/
+
+#### 7. Set Permissions (Linux/Mac)
+```bash
+chmod -R 755 uploads/
+chmod -R 755 logs/
+```
+
+#### 8. Build Frontend Assets (Optional - untuk development)
+```bash
+# Development mode dengan watch
+npm start
+
+# Production build (minified)
+npm run build-prod
+```
+
+#### 9. Akses Aplikasi
+
+**Web Dashboard:**
+```
+http://localhost/seblak-predator/
+```
+
+**API Base URL:**
+```
+http://localhost/seblak-predator/api/
+```
+
+#### 10. Login ke Dashboard
+
+Default credentials (setelah seeding database):
+```
+Username: admin
+Password: admin123
+```
+
+⚠️ **PENTING**: Ganti password default setelah login pertama!
+
+---
+
+## 🧪 Testing
+
+### Run PHPUnit Tests
+```bash
+vendor/bin/phpunit tests/
+```
+
+### API Testing dengan Postman
+1. Import collection: `api/Seblak_Predator_API.postman_collection.json`
+2. Import environment: `api/Seblak_Predator_Environment.postman_environment.json`
+3. Update environment variables (base_url, access_token)
+4. Run requests
+
+---
+
+## 📚 Database Schema
+
+### Tabel Utama
+- **users** - User accounts dengan roles
+- **orders** - Transaksi pesanan (dine_in, take_away, delivery)
+- **order_items** - Item pesanan dengan spice level
+- **order_item_customizations** - Kustomisasi per item
+- **order_item_toppings** - Topping per item
+- **categories** - Kategori menu
+- **products** - Produk menu
+- **toppings** - Daftar topping
+- **spice_levels** - Level kepedasan (10 levels)
+- **customization_options** - Opsi kustomisasi
+- **expenses** - Pengeluaran
+- **expense_categories** - Kategori pengeluaran
+
+---
+
+## 🔒 Security Features
+- ✅ JWT Authentication dengan token expiry
+- ✅ Password hashing (bcrypt)
+- ✅ SQL Injection prevention (Prepared Statements)
+- ✅ XSS Protection (Input sanitization)
+- ✅ CSRF Protection
+- ✅ Session encryption
+- ✅ Rate limiting
+- ✅ Input validation
+- ✅ Secure file upload
+
+---
+
+## 📱 Mobile API Endpoints
+
+### Create Delivery Order (Mobile Only)
+```http
+POST /api/mobile/create-order.php
+Content-Type: application/json
+
+{
+  "user_id": "user_123",
+  "delivery_address": "Jl. Merdeka No. 123",
+  "items": [
+    {
+      "spice_level_id": "lvl_001",
+      "quantity": 2,
+      "customizations": [...],
+      "toppings": [...]
+    }
+  ]
+}
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 👨‍💻 Developer
+
+**Project Name**: Seblak Predator Web App  
+**Repository**: https://github.com/xrtvann/seblak-predator-web-app  
+**Developer**: xrtvann  
+**Version**: 1.0.0  
+
+---
+
+## 📞 Support
+
+Untuk pertanyaan atau bantuan teknis:
+- 📧 Email: support@seblakpredator.com
+- 🐛 Issues: [GitHub Issues](https://github.com/xrtvann/seblak-predator-web-app/issues)
+- 📖 Documentation: [API Docs](#authentication)
+
+---
+
+## 🎉 Acknowledgments
+
+- **Berry Admin Template** - Dashboard UI framework
+- **Midtrans** - Payment gateway integration
+- **Dompdf** - PDF generation library
+- **Firebase PHP-JWT** - JWT authentication
+- **Bootstrap Team** - UI framework
+
+---
+
+<p align="center">Made with ❤️ for Indonesian Seblak Lovers</p>
 
 ## Authentication
 
