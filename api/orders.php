@@ -216,7 +216,7 @@ function handleGet($koneksi)
 
     // Get orders
     $query = "SELECT o.id, o.order_number, o.customer_name, o.order_type, o.table_number,
-              o.total_amount, o.payment_method, o.payment_status, o.order_status,
+              o.delivery_address, o.total_amount, o.payment_method, o.payment_status, o.order_status,
               o.created_at,
               (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count,
               (SELECT SUM(quantity) FROM order_items WHERE order_id = o.id) as total_items
@@ -225,13 +225,13 @@ function handleGet($koneksi)
               ORDER BY o.created_at DESC 
               LIMIT ? OFFSET ?";
 
-    $params[] = $perPage;
-    $params[] = $offset;
-    $types .= 'ii';
+    // Create separate arrays for the main query
+    $queryParams = array_merge($params, [$perPage, $offset]);
+    $queryTypes = $types . 'ii';
 
     $stmt = mysqli_prepare($koneksi, $query);
-    if (count($params) > 0) {
-        mysqli_stmt_bind_param($stmt, $types, ...$params);
+    if (count($queryParams) > 0) {
+        mysqli_stmt_bind_param($stmt, $queryTypes, ...$queryParams);
     }
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);

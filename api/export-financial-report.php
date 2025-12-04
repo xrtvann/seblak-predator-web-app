@@ -328,7 +328,7 @@ function generatePDFContent($total_revenue, $total_expenses, $net_profit, $profi
         <style>
             @page {
                 size: A4 portrait;
-                margin: 20mm;
+                margin: 0mm;
             }
             * {
                 box-sizing: border-box;

@@ -2806,9 +2806,12 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                                                 ${order.order_type === 'dine_in'
                             ? `<i class="ti ti-utensils" style="font-size: 24px; color: #667eea;"></i><div><div style="color: #0f172a; font-weight: 700; font-size: 15px;">Dine In</div><div style="color: #64748b; font-size: 11px;">Makan di Tempat</div></div>`
-                            : `<i class="ti ti-shopping-bag" style="font-size: 24px; color: #667eea;"></i><div><div style="color: #0f172a; font-weight: 700; font-size: 15px;">Take Away</div><div style="color: #64748b; font-size: 11px;">Bawa Pulang</div></div>`}
+                            : order.order_type === 'delivery'
+                                ? `<i class="ti ti-truck-delivery" style="font-size: 24px; color: #f59e0b;"></i><div><div style="color: #0f172a; font-weight: 700; font-size: 15px;">Delivery</div><div style="color: #64748b; font-size: 11px;">Pesan Antar</div></div>`
+                                : `<i class="ti ti-shopping-bag" style="font-size: 24px; color: #667eea;"></i><div><div style="color: #0f172a; font-weight: 700; font-size: 15px;">Take Away</div><div style="color: #64748b; font-size: 11px;">Bawa Pulang</div></div>`}
                                             </div>
                                             ${order.order_type === 'dine_in' && order.table_number ? `<div style="background: #fff; border: 1px dashed #e2e8f0; border-radius: 6px; padding: 8px; text-align: center;"><div style="color: #64748b; font-size: 10px; margin-bottom: 2px;">Nomor Meja</div><div style="color: #0f172a; font-size: 22px; font-weight: 700;">${order.table_number}</div></div>` : ''}
+                                            ${order.order_type === 'delivery' && order.delivery_address ? `<div style="background: #fff; border: 1px dashed #e2e8f0; border-radius: 6px; padding: 10px;"><div style="color: #64748b; font-size: 10px; margin-bottom: 4px;">📍 Alamat Pengiriman</div><div style="color: #0f172a; font-size: 12px; line-height: 1.4;">${order.delivery_address}</div></div>` : ''}
                                         </div>
                                         <div style="padding: 20px; border-right: 1px solid #e2e8f0;">
                                             <div style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">💳 Pembayaran</div>
@@ -2839,7 +2842,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                                 <div style="text-align:center; font-size:11px; margin-bottom:8px;">No: <b>${order.order_number}</b><br>${formatDate(order.created_at)} ${formatTime(order.created_at)}</div>
                                 <div style="border-bottom:1px dashed #aaa; margin-bottom:7px;"></div>
                                 <div style="font-size:12px; margin-bottom:3px;"><b>Pelanggan:</b> ${order.customer_name}</div>
-                                <div style="font-size:12px; margin-bottom:3px;"><b>Tipe:</b> ${order.order_type === 'dine_in' ? 'Dine In' : 'Take Away'}${order.table_number ? ' (Meja ' + order.table_number + ')' : ''}</div>
+                                <div style="font-size:12px; margin-bottom:3px;"><b>Tipe:</b> ${order.order_type === 'dine_in' ? 'Dine In' : order.order_type === 'delivery' ? 'Delivery' : 'Take Away'}${order.table_number ? ' (Meja ' + order.table_number + ')' : ''}${order.delivery_address ? '<br><b>Alamat:</b> ' + order.delivery_address : ''}</div>
                                 <div style="border-bottom:1px dashed #aaa; margin-bottom:7px;"></div>
                                 <div style="font-size:12px; font-weight:bold; margin-bottom:2px;">Pesanan</div>
                                 <table style="width:100%; font-size:12px; border-collapse:collapse; margin-bottom:4px;">
@@ -2922,7 +2925,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                             setTimeout(() => {
                                 win.close();
                             }, 100);
-                        }, 500);
+                        }, 1000);
                     };
                 }
             } else {
@@ -3201,7 +3204,7 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
                         <div class="search-input-wrapper">
                             <i class="ti ti-search search-icon"></i>
                             <input type="text" class="form-control search-input" id="searchOrder" 
-                                   placeholder="Cari no. transaksi, customer, atau no. meja..." 
+                                   placeholder="Cari nomor transaksi..." 
                                    onkeyup="searchOrders()" 
                                    onchange="searchOrders()">
                             <button type="button" class="btn-clear-search" id="btnClearSearch" 
@@ -3512,12 +3515,8 @@ if (file_exists(__DIR__ . '/../../../api/midtrans/config.php')) {
 
         const filteredOrders = allOrders.filter(order => {
             const orderNumber = (order.order_number || '').toLowerCase();
-            const customerName = (order.customer_name || '').toLowerCase();
-            const tableNumber = (order.table_number || '').toLowerCase();
 
-            return orderNumber.includes(searchTerm) ||
-                customerName.includes(searchTerm) ||
-                tableNumber.includes(searchTerm);
+            return orderNumber.includes(searchTerm);
         });
 
         // Update display with filtered orders

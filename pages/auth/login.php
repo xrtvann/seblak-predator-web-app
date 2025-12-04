@@ -108,8 +108,8 @@ $flash_messages = getFlashMessages();
             <div class="row">
               <div class="d-flex justify-content-center">
                 <div class="auth-header">
-                  <h2 class="text-red-500 mt-5"><b>Hi, Welcome Back</b></h2>
-                  <p class="f-16 mt-2">Enter your credentials to continue</p>
+                  <h2 class="text-red-500 mt-5"><b>Selamat Datang</b></h2>
+                  <p class="f-16 mt-2">Isi kredensial untuk melanjutkan.</p>
                 </div>
               </div>
             </div>
@@ -200,22 +200,21 @@ $flash_messages = getFlashMessages();
               <div class="form-check">
                 <input class="form-check-input input-primary" type="checkbox" name="remember_me" id="customCheckc1"
                   <?= $rate_limit_status['is_limited'] ? 'disabled' : '' ?> />
-                <label class="form-check-label text-muted" for="customCheckc1">Remember me</label>
+                <label class="form-check-label text-muted" for="customCheckc1">Ingat Saya</label>
               </div>
               <a href="forgot-password.php">
-                <h5 class="text-primary">Forgot Password?</h5>
+                <h5 class="text-primary">Lupa Password ?</h5>
               </a>
             </div>
             <div class="d-grid mt-4">
               <button type="submit" class="btn btn-danger" id="loginButton" <?= $rate_limit_status['is_limited'] ? 'disabled' : '' ?>>
-                <?= $rate_limit_status['is_limited'] ? 'Sedang Diblokir...' : 'Sign In' ?>
+                <?= $rate_limit_status['is_limited'] ? 'Sedang Diblokir...' : 'Login' ?>
               </button>
             </div>
 
 
             <hr />
-            <h5 class="d-flex justify-content-center">Don't have an account?<a href="register.php" class="ms-2">Sign
-                Up</a></h5>
+            <h5 class="d-flex justify-content-center">Belum punya akun ?<a href="register.php" class="ms-2">Daftar</a></h5>
           </div>
         </div>
       </div>
@@ -276,7 +275,7 @@ $flash_messages = getFlashMessages();
         if (rememberCheckbox) rememberCheckbox.disabled = false;
         if (loginButton) {
           loginButton.disabled = false;
-          loginButton.textContent = 'Sign In';
+          loginButton.textContent = 'Login';
         }
 
         // Hide alert

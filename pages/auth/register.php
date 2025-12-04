@@ -7,7 +7,7 @@ require_once '../../config/session.php';
 <!-- [Head] start -->
 
 <head>
-  <title>SignUp | Seblak Predator</title>
+  <title>Daftar | Seblak Predator</title>
   <!-- [Meta] -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui" />
@@ -62,19 +62,17 @@ require_once '../../config/session.php';
               <div class="row">
                 <div class="d-flex justify-content-center">
                   <div class="auth-header">
-                    <h2 class="text-red-500 mt-5"><b>Sign up</b></h2>
-                    <p class="f-16 mt-2">Enter your credentials to continue</p>
+                    <h2 class="text-red-500 mt-5"><b>Buat Akun Baru</b></h2>
+                    <p class="f-16 mt-2">Isi kredensial untuk melanjutkan.</p>
                   </div>
                 </div>
               </div>
 
-              <h5 class="my-4 d-flex justify-content-center">Sign Up with Email address</h5>
-
-              <div class="form-floating mb-3">
+              <div class="form-floating mb-3 mt-3">
                 <input type="hidden" name="action" value="register">
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <input type="text" class="form-control" id="floatingInput" name="field_name" required />
-                <label for="floatingInput">Name</label>
+                <label for="floatingInput">Nama</label>
               </div>
               <div class="form-floating mb-3">
                 <input type="text" class="form-control" id="floatingInput2" name="field_username" required />
@@ -96,13 +94,12 @@ require_once '../../config/session.php';
                 </label>
               </div> -->
               <div class="d-grid mt-4">
-                <button type="submit" class="btn btn-danger p-2">Sign Up</button>
+                <button type="submit" class="btn btn-danger p-2">Daftar</button>
               </div>
 
 
               <hr />
-              <h5 class="d-flex justify-content-center">Already have an account?<a href="login.php" class="ms-2">Sign
-                  In</a></h5>
+              <h5 class="d-flex justify-content-center">Sudah mempunyai akun ?<a href="login.php" class="ms-2">Login</a></h5>
             </div>
           </div>
         </div>
