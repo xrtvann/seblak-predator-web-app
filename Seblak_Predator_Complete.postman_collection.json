@@ -1,0 +1,1281 @@
+{
+	"info": {
+		"_postman_id": "seblak-predator-2025",
+		"name": "Seblak Predator - Complete API Collection",
+		"description": "Complete API collection for Seblak Predator Restaurant Management System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\",\n    \"full_name\": \"Test User\",\n    \"phone\": \"08123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register.php"]
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.success && jsonData.data.access_token) {",
+									"        pm.environment.set('access_token', jsonData.data.access_token);",
+									"        pm.environment.set('refresh_token', jsonData.data.refresh_token);",
+									"        console.log('Token saved successfully');",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login.php"]
+						}
+					}
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/profile.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "profile.php"]
+						}
+					}
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"full_name\": \"Updated Name\",\n    \"email\": \"updated@example.com\",\n    \"phone\": \"08987654321\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/profile.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "profile.php"]
+						}
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refresh_token\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/refresh.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "refresh.php"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/logout.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "logout.php"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "Get All Transactions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/transactions.php?status=&date=&page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions.php"],
+							"query": [
+								{
+									"key": "status",
+									"value": "",
+									"description": "pending, processing, completed, cancelled"
+								},
+								{
+									"key": "date",
+									"value": "",
+									"description": "YYYY-MM-DD format"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Transaction by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/transactions.php?id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions.php"],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customer_name\": \"John Doe\",\n    \"order_type\": \"dine_in\",\n    \"table_number\": \"5\",\n    \"notes\": \"Extra pedas\",\n    \"payment_method\": \"cash\",\n    \"items\": [\n        {\n            \"quantity\": 2,\n            \"spice_level\": \"1\",\n            \"customizations\": {\n                \"kencur_level\": \"1\",\n                \"broth_flavor\": \"2\"\n            },\n            \"toppings\": [\n                {\n                    \"topping_id\": \"1\",\n                    \"topping_name\": \"Bakso\",\n                    \"quantity\": 2,\n                    \"unit_price\": 5000\n                },\n                {\n                    \"topping_id\": \"2\",\n                    \"topping_name\": \"Keju\",\n                    \"quantity\": 1,\n                    \"unit_price\": 8000\n                }\n            ]\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions/create-transaction.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions", "create-transaction.php"]
+						}
+					}
+				},
+				{
+					"name": "Create Transaction - Take Away",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"customer_name\": \"Jane Doe\",\n    \"order_type\": \"take_away\",\n    \"pickup_time\": \"2025-12-05 18:00:00\",\n    \"notes\": \"Bungkus terpisah\",\n    \"payment_method\": \"midtrans\",\n    \"items\": [\n        {\n            \"quantity\": 1,\n            \"spice_level\": \"2\",\n            \"customizations\": {\n                \"kencur_level\": \"2\"\n            },\n            \"toppings\": [\n                {\n                    \"topping_id\": \"3\",\n                    \"topping_name\": \"Sosis\",\n                    \"quantity\": 2,\n                    \"unit_price\": 6000\n                }\n            ]\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions/create-transaction.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions", "create-transaction.php"]
+						}
+					}
+				},
+				{
+					"name": "Update Transaction Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"1\",\n    \"order_status\": \"completed\",\n    \"payment_status\": \"paid\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions.php"]
+						}
+					}
+				},
+				{
+					"name": "Cancel Transaction",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"1\",\n    \"order_status\": \"cancelled\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions.php"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Menu Management",
+			"item": [
+				{
+					"name": "Categories",
+					"item": [
+						{
+							"name": "Get All Categories",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/menu/categories.php",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "categories.php"]
+								}
+							}
+						},
+						{
+							"name": "Get Category by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/menu/categories.php?id=1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "categories.php"],
+									"query": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Category",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Seblak Spesial\",\n    \"description\": \"Menu seblak dengan bahan premium\",\n    \"is_active\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/menu/categories.php",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "categories.php"]
+								}
+							}
+						},
+						{
+							"name": "Update Category",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id\": \"1\",\n    \"name\": \"Seblak Premium\",\n    \"description\": \"Menu seblak terbaik\",\n    \"is_active\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/menu/categories.php",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "categories.php"]
+								}
+							}
+						},
+						{
+							"name": "Delete Category",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/menu/categories.php?id=1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "categories.php"],
+									"query": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Products",
+					"item": [
+						{
+							"name": "Get All Products",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/menu/products.php",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "products.php"]
+								}
+							}
+						},
+						{
+							"name": "Get Product by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/menu/products.php?id=1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "products.php"],
+									"query": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Product",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"category_id\": \"1\",\n    \"name\": \"Seblak Ceker\",\n    \"description\": \"Seblak dengan ceker ayam\",\n    \"price\": 15000,\n    \"is_available\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/menu/products.php",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "products.php"]
+								}
+							}
+						},
+						{
+							"name": "Update Product",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id\": \"1\",\n    \"category_id\": \"1\",\n    \"name\": \"Seblak Ceker Jumbo\",\n    \"description\": \"Seblak dengan ceker ayam jumbo\",\n    \"price\": 18000,\n    \"is_available\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/menu/products.php",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "products.php"]
+								}
+							}
+						},
+						{
+							"name": "Delete Product",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/menu/products.php?id=1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "products.php"],
+									"query": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Toppings",
+					"item": [
+						{
+							"name": "Get All Toppings",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/menu/toppings.php",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "toppings.php"]
+								}
+							}
+						},
+						{
+							"name": "Get Topping by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/menu/toppings.php?id=1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "toppings.php"],
+									"query": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Topping",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Bakso\",\n    \"category_name\": \"Protein\",\n    \"description\": \"Bakso sapi\",\n    \"price\": 5000,\n    \"is_available\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/menu/toppings.php",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "toppings.php"]
+								}
+							}
+						},
+						{
+							"name": "Update Topping",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"id\": \"1\",\n    \"name\": \"Bakso Jumbo\",\n    \"category_name\": \"Protein\",\n    \"description\": \"Bakso sapi jumbo\",\n    \"price\": 7000,\n    \"is_available\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/menu/toppings.php",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "toppings.php"]
+								}
+							}
+						},
+						{
+							"name": "Delete Topping",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/menu/toppings.php?id=1",
+									"host": ["{{base_url}}"],
+									"path": ["api", "menu", "toppings.php"],
+									"query": [
+										{
+											"key": "id",
+											"value": "1"
+										}
+									]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Spice Levels & Customization",
+			"item": [
+				{
+					"name": "Get All Spice Levels",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/spice-levels.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "spice-levels.php"]
+						}
+					}
+				},
+				{
+					"name": "Get Spice Level by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/spice-levels.php?id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "spice-levels.php"],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Spice Level",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Level 5 - Super Pedas\",\n    \"level\": 5,\n    \"price\": 15000,\n    \"description\": \"Untuk pecinta pedas ekstrim\",\n    \"is_available\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/spice-levels.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "spice-levels.php"]
+						}
+					}
+				},
+				{
+					"name": "Update Spice Level",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"1\",\n    \"name\": \"Level 1 - Mild\",\n    \"level\": 1,\n    \"price\": 10000,\n    \"description\": \"Pedas ringan\",\n    \"is_available\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/spice-levels.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "spice-levels.php"]
+						}
+					}
+				},
+				{
+					"name": "Delete Spice Level",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/spice-levels.php?id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "spice-levels.php"],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Customization Options",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/customization-options.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "customization-options.php"]
+						}
+					}
+				},
+				{
+					"name": "Create Customization Option",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Kencur Extra\",\n    \"price\": 2000,\n    \"description\": \"Tambah kencur lebih banyak\",\n    \"is_available\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/customization-options.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "customization-options.php"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Financial Reports",
+			"item": [
+				{
+					"name": "Get Financial Report - Today",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/financial-report.php?period=today",
+							"host": ["{{base_url}}"],
+							"path": ["api", "financial-report.php"],
+							"query": [
+								{
+									"key": "period",
+									"value": "today"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Financial Report - This Week",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/financial-report.php?period=week",
+							"host": ["{{base_url}}"],
+							"path": ["api", "financial-report.php"],
+							"query": [
+								{
+									"key": "period",
+									"value": "week"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Financial Report - This Month",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/financial-report.php?period=month",
+							"host": ["{{base_url}}"],
+							"path": ["api", "financial-report.php"],
+							"query": [
+								{
+									"key": "period",
+									"value": "month"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Financial Report - Custom Date Range",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/financial-report.php?period=custom&start_date=2025-12-01&end_date=2025-12-05",
+							"host": ["{{base_url}}"],
+							"path": ["api", "financial-report.php"],
+							"query": [
+								{
+									"key": "period",
+									"value": "custom"
+								},
+								{
+									"key": "start_date",
+									"value": "2025-12-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2025-12-05"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Export Financial Report - PDF",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/export-financial-report.php?period=month",
+							"host": ["{{base_url}}"],
+							"path": ["api", "export-financial-report.php"],
+							"query": [
+								{
+									"key": "period",
+									"value": "month"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Expenses",
+			"item": [
+				{
+					"name": "Get All Expenses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/expenses.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "expenses.php"]
+						}
+					}
+				},
+				{
+					"name": "Get Expense by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/expenses.php?id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "expenses.php"],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Expense",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"category_id\": \"1\",\n    \"description\": \"Pembelian bahan baku\",\n    \"amount\": 500000,\n    \"expense_date\": \"2025-12-05\",\n    \"notes\": \"Belanja di pasar pagi\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/expenses.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "expenses.php"]
+						}
+					}
+				},
+				{
+					"name": "Update Expense",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"1\",\n    \"category_id\": \"1\",\n    \"description\": \"Pembelian bahan baku updated\",\n    \"amount\": 550000,\n    \"expense_date\": \"2025-12-05\",\n    \"notes\": \"Belanja di pasar pagi - updated\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/expenses.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "expenses.php"]
+						}
+					}
+				},
+				{
+					"name": "Delete Expense",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/expenses.php?id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "expenses.php"],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Expense Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/expense-categories.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "expense-categories.php"]
+						}
+					}
+				},
+				{
+					"name": "Create Expense Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Transportasi\",\n    \"description\": \"Biaya transportasi dan pengiriman\",\n    \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/expense-categories.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "expense-categories.php"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/dashboard-stats.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "dashboard-stats.php"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Users & Roles",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users.php"]
+						}
+					}
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users.php?id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users.php"],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"newuser\",\n    \"email\": \"newuser@example.com\",\n    \"password\": \"password123\",\n    \"full_name\": \"New User\",\n    \"role_id\": \"2\",\n    \"phone\": \"08123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users.php"]
+						}
+					}
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"1\",\n    \"username\": \"updateduser\",\n    \"email\": \"updated@example.com\",\n    \"full_name\": \"Updated User\",\n    \"role_id\": \"2\",\n    \"phone\": \"08987654321\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/users.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users.php"]
+						}
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/users.php?id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "users.php"],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Roles",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/roles.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "roles.php"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Midtrans Payment",
+			"item": [
+				{
+					"name": "Get Snap Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order_number\": \"ORD-20251205-001\",\n    \"customer_name\": \"John Doe\",\n    \"total_amount\": 50000,\n    \"items\": [\n        {\n            \"id\": \"1\",\n            \"name\": \"Seblak Level 2\",\n            \"price\": 15000,\n            \"quantity\": 2\n        },\n        {\n            \"id\": \"2\",\n            \"name\": \"Bakso\",\n            \"price\": 5000,\n            \"quantity\": 4\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/midtrans/get-snap-token.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "midtrans", "get-snap-token.php"]
+						}
+					}
+				},
+				{
+					"name": "Midtrans Notification Webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transaction_time\": \"2025-12-05 12:00:00\",\n    \"transaction_status\": \"capture\",\n    \"transaction_id\": \"test-transaction-123\",\n    \"status_message\": \"midtrans payment successful\",\n    \"status_code\": \"200\",\n    \"signature_key\": \"test-signature\",\n    \"payment_type\": \"credit_card\",\n    \"order_id\": \"ORD-20251205-001\",\n    \"merchant_id\": \"test-merchant\",\n    \"gross_amount\": \"50000.00\",\n    \"fraud_status\": \"accept\",\n    \"currency\": \"IDR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/midtrans/notification.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "midtrans", "notification.php"]
+						},
+						"description": "This endpoint receives payment notifications from Midtrans"
+					}
+				}
+			]
+		},
+		{
+			"name": "Mobile API",
+			"item": [
+				{
+					"name": "Create Delivery Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\": \"1\",\n    \"delivery_address\": \"Jl. Merdeka No. 123, Jakarta\",\n    \"notes\": \"Mohon bungkus rapi\",\n    \"payment_method\": \"midtrans\",\n    \"items\": [\n        {\n            \"quantity\": 1,\n            \"spice_level\": \"2\",\n            \"customizations\": {\n                \"kencur_level\": \"1\"\n            },\n            \"toppings\": [\n                {\n                    \"topping_id\": \"1\",\n                    \"topping_name\": \"Bakso\",\n                    \"quantity\": 2,\n                    \"unit_price\": 5000\n                }\n            ]\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/mobile/create-transaction.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "mobile", "create-transaction.php"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Account Settings",
+			"item": [
+				{
+					"name": "Get Account Settings",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/account-settings.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "account-settings.php"]
+						}
+					}
+				},
+				{
+					"name": "Update Account Settings",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"full_name\": \"Updated Full Name\",\n    \"email\": \"newemail@example.com\",\n    \"phone\": \"08123456789\",\n    \"current_password\": \"oldpassword123\",\n    \"new_password\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/account-settings.php",
+							"host": ["{{base_url}}"],
+							"path": ["api", "account-settings.php"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost/seblak-predator",
+			"type": "string"
+		}
+	]
+}

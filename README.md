@@ -18,7 +18,7 @@ Project ini dibangun dengan arsitektur **RESTful API** menggunakan PHP native da
 - Otomasi proses pemesanan dan pembayaran
 - Monitoring keuangan real-time dengan laporan PDF
 - Integrasi pembayaran digital (Midtrans Snap)
-- Manajemen multi-role user (Owner, Admin, Staff, Customer)
+- Manajemen multi-role user (Owner, Kasir, dan Customer)
 - Support untuk delivery orders via mobile API
 
 ---
@@ -27,16 +27,16 @@ Project ini dibangun dengan arsitektur **RESTful API** menggunakan PHP native da
 
 ### 🔐 Authentication & Authorization
 - **JWT-based Authentication** dengan access & refresh tokens
-- **Role-based Access Control** (Owner, Admin, Staff, Customer)
+- **Role-based Access Control** (Owner, Kasir, dan Customer)
 - **Session Management** dengan encryption
 - Password reset via email
 - Login/Register dengan validasi
 
 ### 🍽️ Menu Management
-- CRUD Categories (Product & Topping)
-- CRUD Products dengan image upload
+- CRUD Categories (Dasar Seblak & Topping)
+- CRUD Dasar Seblak dengan image upload
 - CRUD Toppings dengan harga dinamis
-- Spice Levels customization (10 level kepedasan)
+- Spice Levels customization
 - Customization Options (Kencur, Kuah, Telur, dll)
 - Soft delete dengan restore capability
 
